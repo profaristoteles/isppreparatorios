@@ -14,6 +14,14 @@ services:
       - DB_PASS=isp_password
     volumes:
       - ./uploads:/var/www/html/uploads
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.isp-web.rule=Host(`ispprepratorios.com.br`) || Host(`www.ispprepratorios.com.br`)"
+      - "traefik.http.routers.isp-web.entrypoints=websecure"
+      - "traefik.http.routers.isp-web.tls.certresolver=myresolver" # Altere 'myresolver' se o seu Traefik usar outro nome
+    networks:
+      - default
+      - traefik-public
     depends_on:
       - db
 
@@ -43,3 +51,7 @@ services:
 
 volumes:
   isp_mysql_data:
+
+networks:
+  traefik-public:
+    external: true
