@@ -21,6 +21,7 @@ $tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1"
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ISP Preparatórios | Elite</title>
+    <link rel="icon" type="image/png" href="uploads/favicon.png">
     <meta name="description" content="ISP Preparatórios — Cursos preparatórios para concursos públicos em Caxias, MA. Aprove-se com nossa metodologia de elite.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
