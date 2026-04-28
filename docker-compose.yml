@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: isp_web
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=isp_db
+      - DB_USER=isp_user
+      - DB_PASS=isp_password
+    volumes:
+      - ./uploads:/var/www/html/uploads
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: isp_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: isp_db
+      MYSQL_USER: isp_user
+      MYSQL_PASSWORD: isp_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - isp_mysql_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: isp_pma
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      - PMA_HOST=db
+      - MYSQL_ROOT_PASSWORD: root_password
+    depends_on:
+      - db
+
+volumes:
+  isp_mysql_data:

@@ -1,0 +1,5 @@
+# Impede a listagem de diretórios
+Options -Indexes
+
+# (Opcional) Proteger acessos diretos se necessário
+# Embora a proteção principal seja feita via sessão PHP.

@@ -1,0 +1,9 @@
+.git
+.gitignore
+scratch
+db_config.php
+Dockerfile
+docker-compose.yml
+.vscode
+.idea
+*.log

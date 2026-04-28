@@ -1,0 +1,244 @@
+/* ============================================
+   CSS de Acessibilidade — ISP Preparatórios
+   ============================================ */
+
+/* === Skip Navigation Link === */
+.skip-link {
+    position: fixed;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--brand-orange);
+    color: #fff;
+    padding: 0.8rem 1.5rem;
+    border-radius: 0 0 8px 8px;
+    z-index: 10000;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: top 0.3s ease;
+}
+.skip-link:focus {
+    top: 0;
+    outline: 3px solid #fff;
+}
+
+/* === Focus States (Navegação por teclado) === */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid var(--brand-orange) !important;
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
+/* === Widget de Acessibilidade (Flutuante) === */
+.a11y-widget {
+    position: fixed !important;
+    left: 20px;
+    bottom: 90px;
+    z-index: 99999 !important;
+    display: block !important;
+    visibility: visible !important;
+}
+
+.a11y-toggle-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff8000 0%, #e06c00 100%) !important;
+    color: #fff !important;
+    border: none !important;
+    cursor: pointer;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(255, 128, 0, 0.4);
+    transition: all 0.3s ease;
+    animation: a11yPulse 3s ease-in-out infinite;
+}
+.a11y-toggle-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(255, 128, 0, 0.5);
+    animation: none;
+}
+
+@keyframes a11yPulse {
+    0%, 100% { box-shadow: 0 4px 15px rgba(255, 128, 0, 0.4); }
+    50% { box-shadow: 0 4px 25px rgba(255, 128, 0, 0.7); }
+}
+
+.a11y-panel {
+    display: none;
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    background: #06088a;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 1.5rem;
+    min-width: 260px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+.a11y-panel.active {
+    display: block;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.a11y-panel h3 {
+    color: var(--brand-orange);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.a11y-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    gap: 1rem;
+}
+.a11y-option span {
+    color: #ccc;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.a11y-controls {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.a11y-option button,
+.a11y-controls button {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    min-height: 34px;
+}
+
+.a11y-option button:hover,
+.a11y-controls button:hover {
+    background: var(--brand-orange);
+    border-color: var(--brand-orange);
+    color: #03045e;
+}
+
+.a11y-option button.active-option {
+    background: var(--brand-orange);
+    border-color: var(--brand-orange);
+    color: #03045e;
+}
+
+/* === Alto Contraste === */
+body.high-contrast {
+    filter: contrast(1.4) !important;
+}
+body.high-contrast *:not(.a11y-widget):not(.a11y-widget *) {
+    border-color: #fff !important;
+}
+body.high-contrast a:not(.a11y-widget a):not(.a11y-toggle-btn),
+body.high-contrast button:not(.a11y-widget button):not(.a11y-toggle-btn) {
+    text-decoration: underline !important;
+}
+
+/* Proteger o widget contra todos os modos */
+.a11y-widget,
+.a11y-widget * {
+    filter: none !important;
+    font-family: 'Poppins', sans-serif !important;
+}
+.a11y-widget .a11y-toggle-btn {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+.a11y-panel.active {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* === Destacar Links === */
+body.highlight-links a:not(.a11y-widget a) {
+    outline: 2px solid #ff8000 !important;
+    outline-offset: 2px;
+    text-decoration: underline !important;
+}
+body.highlight-links a:not(.skip-link):not(.a11y-toggle-btn):not(.footer-social-icon):not(.a11y-widget a) {
+    background: rgba(255, 128, 0, 0.1) !important;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+/* === Fonte Legível (Verdana / Arial) === */
+body.readable-font,
+body.readable-font * {
+    font-family: Verdana, Arial, sans-serif !important;
+    letter-spacing: 0.5px !important;
+    word-spacing: 2px !important;
+}
+
+/* === Font Size Steps === */
+body.font-size-1 { font-size: 18px !important; }
+body.font-size-2 { font-size: 20px !important; }
+body.font-size-3 { font-size: 22px !important; }
+
+/* === Reduzir movimento para quem prefere === */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    .prism-overlay { display: none; }
+}
+
+/* === Responsivo — Widgets mobile === */
+@media (max-width: 768px) {
+    .a11y-widget {
+        left: 10px;
+        bottom: 80px;
+    }
+    .a11y-toggle-btn {
+        width: 44px;
+        height: 44px;
+    }
+    .a11y-panel {
+        min-width: 240px;
+        left: 0;
+    }
+}
+
+/* === Chat Widget (LeadConnector) — Flutuante === */
+#lc_chat_layout,
+[id*="chat-widget"],
+iframe[src*="leadconnectorhq"],
+iframe[src*="widgets.leadconnectorhq"] {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 99998 !important;
+}

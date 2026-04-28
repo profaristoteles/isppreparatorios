@@ -1,0 +1,16 @@
+# Dependências e uploads
+uploads/
+vendor/
+
+# Arquivos de sistema e ambiente
+.env
+*.log
+.DS_Store
+Thumbs.db
+
+# Configurações de IDE
+.vscode/
+.idea/
+
+# Docker data (se montado localmente)
+mysql_data/
