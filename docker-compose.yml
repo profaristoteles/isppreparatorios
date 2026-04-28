@@ -22,10 +22,10 @@ services:
     container_name: isp_db
     restart: always
     environment:
-      MYSQL_DATABASE: isp_db
-      MYSQL_USER: isp_user
-      MYSQL_PASSWORD: isp_password
-      MYSQL_ROOT_PASSWORD: root_password
+      - MYSQL_DATABASE=isp_db
+      - MYSQL_USER=isp_user
+      - MYSQL_PASSWORD=isp_password
+      - MYSQL_ROOT_PASSWORD=root_password
     volumes:
       - isp_mysql_data:/var/lib/mysql
 
@@ -37,7 +37,7 @@ services:
       - "8081:80"
     environment:
       - PMA_HOST=db
-      - MYSQL_ROOT_PASSWORD: root_password
+      - MYSQL_ROOT_PASSWORD=root_password
     depends_on:
       - db
 
