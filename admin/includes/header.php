@@ -45,13 +45,14 @@
     <a href="gerenciar-depoimentos.php">Depoimentos</a>
     <a href="inscricoes.php">Inscrições</a>
     <a href="configuracoes.php">Configurações</a>
+    <a href="perfil.php">Meu Perfil</a>
     <a href="logout.php">Sair</a>
 </div>
 
 <div class="main-content">
     <div class="header">
         <h1>Dashboard</h1>
-        <div>Olá, Administrador</div>
+        <div>Olá, <?= htmlspecialchars($_SESSION['admin_name'] ?? 'Administrador') ?></div>
     </div>
     
     <?php if(isset($_SESSION['msg'])): ?>
