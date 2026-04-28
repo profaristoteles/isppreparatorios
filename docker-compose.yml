@@ -16,9 +16,10 @@ services:
       - ./uploads:/var/www/html/uploads
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.isp-web.rule=Host(`ispprepratorios.com.br`) || Host(`www.ispprepratorios.com.br`)"
-      - "traefik.http.routers.isp-web.entrypoints=websecure"
-      - "traefik.http.routers.isp-web.tls.certresolver=myresolver" # Altere 'myresolver' se o seu Traefik usar outro nome
+      - "traefik.http.routers.isp-web.rule=Host(`ispprepratorios.com.br`) || Host(`www.ispprepratorios.com.br`) || Host(`isppreparatorios.com.br`) || Host(`www.isppreparatorios.com.br`)"
+      - "traefik.http.routers.isp-web.entrypoints=web,websecure"
+      - "traefik.http.routers.isp-web.tls.certresolver=myresolver"
+      - "traefik.http.services.isp-web.loadbalancer.server.port=80"
     networks:
       - default
       - proxy
