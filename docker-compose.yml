@@ -20,6 +20,7 @@ services:
       - "traefik.http.routers.isp-web.entrypoints=web,websecure"
       - "traefik.http.routers.isp-web.tls.certresolver=letsencrypt"
       - "traefik.http.services.isp-web.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
     networks:
       - default
       - proxy
