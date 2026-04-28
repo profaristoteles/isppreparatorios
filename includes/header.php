@@ -20,9 +20,31 @@ $tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1"
     <!-- End Google Tag Manager -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ISP Preparatórios | Elite</title>
+    <?php
+        $page_title = isset($dynamic_title) ? $dynamic_title . " | ISP Preparatórios" : "ISP Preparatórios | Elite - Concursos Públicos em Caxias, MA";
+        $current_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+    ?>
+    <title><?= htmlspecialchars($page_title) ?></title>
     <link rel="icon" type="image/png" href="uploads/favicon.png">
-    <meta name="description" content="ISP Preparatórios — Cursos preparatórios para concursos públicos em Caxias, MA. Aprove-se com nossa metodologia de elite.">
+    <link rel="canonical" href="<?= htmlspecialchars($current_url) ?>">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="<?= htmlspecialchars($dynamic_desc ?? 'ISP Preparatórios — Cursos preparatórios para concursos públicos em Caxias, MA. Aprove-se com nossa metodologia de elite.') ?>">
+    <meta name="keywords" content="concurso público, caxias ma, preparatório, educação especial, inclusiva, curso online, curso presencial">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<?= htmlspecialchars($current_url) ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($page_title) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($dynamic_desc ?? 'ISP Preparatórios — Cursos preparatórios para concursos públicos em Caxias, MA.') ?>">
+    <meta property="og:image" content="https://isppreparatorios.com.br/uploads/logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="<?= htmlspecialchars($current_url) ?>">
+    <meta property="twitter:title" content="<?= htmlspecialchars($page_title) ?>">
+    <meta property="twitter:description" content="<?= htmlspecialchars($dynamic_desc ?? 'ISP Preparatórios — Cursos preparatórios para concursos públicos em Caxias, MA.') ?>">
+    <meta property="twitter:image" content="https://isppreparatorios.com.br/uploads/logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700;800&display=swap" rel="stylesheet">

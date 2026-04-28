@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://isppreparatorios.com.br/sitemap.php
+
+# Bloquear área administrativa
+Disallow: /admin/
+Disallow: /scratch/
+Disallow: /update_social.php
+Disallow: /reset_admin.php
