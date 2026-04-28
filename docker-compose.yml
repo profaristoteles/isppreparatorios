@@ -21,7 +21,7 @@ services:
       - "traefik.http.routers.isp-web.tls.certresolver=myresolver" # Altere 'myresolver' se o seu Traefik usar outro nome
     networks:
       - default
-      - traefik-public
+      - proxy
     depends_on:
       - db
 
@@ -53,5 +53,5 @@ volumes:
   isp_mysql_data:
 
 networks:
-  traefik-public:
+  proxy:
     external: true
