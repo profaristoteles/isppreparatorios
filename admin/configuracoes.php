@@ -10,14 +10,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
     $facebook = $_POST['facebook'];
     $instagram = $_POST['instagram'];
+    $youtube = $_POST['youtube'];
+    $tiktok = $_POST['tiktok'];
     $ai_provider = $_POST['ai_provider'] ?? 'gemini';
     $ai_api_key = $_POST['ai_api_key'] ?? '';
     $ai_groq_key = $_POST['ai_groq_key'] ?? '';
     $ai_openai_key = $_POST['ai_openai_key'] ?? '';
     $ai_openrouter_key = $_POST['ai_openrouter_key'] ?? '';
 
-    $stmt = $pdo->prepare("UPDATE configuracoes SET theme_color_primary=?, theme_color_secondary=?, footer_text=?, phone=?, email=?, facebook=?, instagram=?, ai_provider=?, ai_api_key=?, ai_groq_key=?, ai_openai_key=?, ai_openrouter_key=? WHERE id=1");
-    if($stmt->execute([$primary, $secondary, $footer, $phone, $email, $facebook, $instagram, $ai_provider, $ai_api_key, $ai_groq_key, $ai_openai_key, $ai_openrouter_key])){
+    $stmt = $pdo->prepare("UPDATE configuracoes SET theme_color_primary=?, theme_color_secondary=?, footer_text=?, phone=?, email=?, facebook=?, instagram=?, youtube=?, tiktok=?, ai_provider=?, ai_api_key=?, ai_groq_key=?, ai_openai_key=?, ai_openrouter_key=? WHERE id=1");
+    if($stmt->execute([$primary, $secondary, $footer, $phone, $email, $facebook, $instagram, $youtube, $tiktok, $ai_provider, $ai_api_key, $ai_groq_key, $ai_openai_key, $ai_openrouter_key])){
         $_SESSION['msg'] = "Configurações salvas com sucesso!";
     } else {
         $_SESSION['erro'] = "Erro ao salvar configurações.";
@@ -67,6 +69,16 @@ require_once 'includes/header.php';
         <div class="form-group">
             <label>Link Instagram</label>
             <input type="url" name="instagram" class="form-control" value="<?= htmlspecialchars($config['instagram']) ?>">
+        </div>
+
+        <div class="form-group">
+            <label>Link YouTube</label>
+            <input type="url" name="youtube" class="form-control" value="<?= htmlspecialchars($config['youtube'] ?? '') ?>">
+        </div>
+
+        <div class="form-group">
+            <label>Link TikTok</label>
+            <input type="url" name="tiktok" class="form-control" value="<?= htmlspecialchars($config['tiktok'] ?? '') ?>">
         </div>
 
         <!-- Seção de Inteligência Artificial -->
