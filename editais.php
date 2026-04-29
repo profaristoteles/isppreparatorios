@@ -100,6 +100,28 @@ $dynamic_desc = "Confira os concursos abertos e previstos na área da educação
 require_once 'includes/header.php';
 ?>
 
+<!-- Loading Overlay -->
+<div id="loading-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 2, 58, 0.9); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+    <div class="spinner" style="width: 50px; height: 50px; border: 5px solid rgba(255,128,0,0.1); border-top-color: var(--brand-orange); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <p style="color: #fff; margin-top: 1.5rem; font-family: var(--font-mono); letter-spacing: 2px;">BUSCANDO VAGAS EM <?= $uf ?>...</p>
+</div>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-active { overflow: hidden; }
+</style>
+
+<script>
+function handleUFChange(select) {
+    document.getElementById('loading-overlay').style.display = 'flex';
+    document.body.classList.add('loading-active');
+    setTimeout(() => {
+        select.form.submit();
+    }, 100); // Small delay to ensure loader is visible
+}
+    document.getElementById('loading-overlay').style.display = 'none';
+</script>
+
 <div class="container section-padding" style="margin-top: 5rem;">
     <div class="section-header reveal" style="text-align: center;">
         <span class="hero-pre-title">CENTRAL DE EDITAIS</span>
@@ -111,7 +133,7 @@ require_once 'includes/header.php';
     <div class="reveal" style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 1.5rem; border-radius: 12px; margin-bottom: 3rem; display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap;">
         <span style="color: #fff; font-weight: bold;">Mudar Estado:</span>
         <form method="GET" id="uf-form" style="display: flex; gap: 0.5rem;">
-            <select name="uf" class="form-control" style="width: auto; background: #02023a; color: #fff; border: 1px solid var(--prism-cyan);" onchange="this.form.submit()">
+            <select name="uf" class="form-control" style="width: auto; background: #02023a; color: #fff; border: 1px solid var(--prism-cyan);" onchange="handleUFChange(this)">
                 <?php foreach($allowed_ufs as $sigla): ?>
                     <option value="<?= $sigla ?>" <?= $uf == $sigla ? 'selected' : '' ?>><?= $sigla ?></option>
                 <?php endforeach; ?>
