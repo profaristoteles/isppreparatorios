@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category = $_POST['category'] ?: 'Geral';
     // TinyMCE sends HTML content
     $content = $_POST['content'];
+    $image_alt = $_POST['image_alt'] ?: '';
 
     $cover = '';
     if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
@@ -29,15 +30,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($_POST['id'])) {
         if ($cover) {
-            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, cover_image=? WHERE id=?");
-            $stmt->execute([$title, $category, $content, $cover, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, cover_image=?, image_alt=? WHERE id=?");
+            $stmt->execute([$title, $category, $content, $cover, $image_alt, $_POST['id']]);
         } else {
-            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=? WHERE id=?");
-            $stmt->execute([$title, $category, $content, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, image_alt=? WHERE id=?");
+            $stmt->execute([$title, $category, $content, $image_alt, $_POST['id']]);
         }
     } else {
-        $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$title, $category, $content, $cover]);
+        $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image, image_alt) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $category, $content, $cover, $image_alt]);
     }
     $_SESSION['msg'] = "Post salvo com sucesso.";
     header("Location: gerenciar-posts.php");
@@ -91,9 +92,15 @@ require_once 'includes/header.php';
             <label>Conteúdo (Use o editor para formatar, adicionar vídeos, botões e imagens)</label>
             <textarea name="content" id="post_content" class="form-control" rows="15"></textarea>
         </div>
-        <div class="form-group">
-            <label>Imagem da Capa</label>
-            <input type="file" name="cover_image" class="form-control" accept="image/*">
+        <div style="display:flex; gap:1rem;">
+            <div class="form-group" style="flex:1;">
+                <label>Imagem da Capa</label>
+                <input type="file" name="cover_image" class="form-control" accept="image/*">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Texto Alternativo da Imagem (SEO)</label>
+                <input type="text" name="image_alt" id="post_image_alt" class="form-control" placeholder="Ex: Professor dando aula de educação especial">
+            </div>
         </div>
         <button type="submit" class="btn">Salvar Post</button>
         <button type="button" class="btn btn-warning" onclick="resetForm()">Novo Post</button>
@@ -127,7 +134,8 @@ require_once 'includes/header.php';
                     'id' => $p['id'],
                     'title' => $p['title'],
                     'category' => $p['category'],
-                    'content' => $p['content']
+                    'content' => $p['content'],
+                    'image_alt' => $p['image_alt']
                 ])) ?>)">Editar</button>
                 <a href="?del=<?= $p['id'] ?>" class="btn btn-danger" onclick="return confirm('Excluir este post?')">Excluir</a>
             </td>
@@ -159,6 +167,7 @@ function editarPost(p) {
     } else {
         document.getElementById('post_content').value = p.content || '';
     }
+    document.getElementById('post_image_alt').value = p.image_alt || '';
     
     window.scrollTo(0,0);
 }
@@ -173,6 +182,7 @@ function resetForm() {
     } else {
         document.getElementById('post_content').value = '';
     }
+    document.getElementById('post_image_alt').value = '';
 }
 
 async function gerarArtigoIA() {

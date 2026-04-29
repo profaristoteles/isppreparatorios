@@ -105,7 +105,7 @@ $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id
                         <span style="background: rgba(255, 255, 255, 0.05); color: #fff; font-size: 0.75rem; font-family: var(--font-mono); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid var(--glass-border); font-weight: 500;">📍 <?= htmlspecialchars($c['modality'] ?: 'Presencial e Online') ?></span>
                     </div>
                     <?php if($c['thumbnail']): ?>
-                        <img src="uploads/<?= $c['thumbnail'] ?>" alt="<?= htmlspecialchars($c['title']) ?>" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--glass-border);">
+                        <img src="uploads/<?= $c['thumbnail'] ?>" alt="<?= htmlspecialchars($c['image_alt'] ?: $c['title']) ?>" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--glass-border);">
                     <?php else: ?>
                         <div style="width: 100%; height: 200px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 1.5rem;">
                             <span style="color: var(--text-secondary);">Sem Imagem</span>

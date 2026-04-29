@@ -87,7 +87,7 @@ if(!$post) {
         <!-- Cover Image -->
         <?php if($post['cover_image']): ?>
             <div style="margin-bottom: 3rem; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                <img src="uploads/<?= $post['cover_image'] ?>" alt="<?= htmlspecialchars($post['title']) ?>" style="width: 100%; object-fit: cover; border: 1px solid var(--glass-border); display: block;">
+                <img src="uploads/<?= $post['cover_image'] ?>" alt="<?= htmlspecialchars($post['image_alt'] ?: $post['title']) ?>" style="width: 100%; object-fit: cover; border: 1px solid var(--glass-border); display: block;">
             </div>
         <?php endif; ?>
         

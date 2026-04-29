@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $info_extra = $_POST['info_extra'];
     $disciplinas = $_POST['disciplinas'];
     $conteudo = $_POST['conteudo'];
+    $image_alt = $_POST['image_alt'];
     
     // Upload de Imagem
     $thumbnail = '';
@@ -39,17 +40,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['id'])) {
         // Update
         if ($thumbnail) {
-            $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, thumbnail=? WHERE id=?");
-            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $thumbnail, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, thumbnail=?, image_alt=? WHERE id=?");
+            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $thumbnail, $image_alt, $_POST['id']]);
         } else {
-            $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=? WHERE id=?");
-            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, image_alt=? WHERE id=?");
+            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $image_alt, $_POST['id']]);
         }
         $_SESSION['msg'] = "Curso atualizado.";
     } else {
         // Insert
-        $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, description, payment_link, info_extra, disciplinas, conteudo, thumbnail) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $thumbnail]);
+        $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, description, payment_link, info_extra, disciplinas, conteudo, thumbnail, image_alt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $thumbnail, $image_alt]);
         $_SESSION['msg'] = "Curso adicionado.";
     }
     header("Location: gerenciar-cursos.php");
@@ -107,9 +108,15 @@ require_once 'includes/header.php';
             <label>Conteúdo Programático</label>
             <textarea name="conteudo" id="curso_conteudo" class="form-control" rows="3"></textarea>
         </div>
-        <div class="form-group">
-            <label>Imagem (Thumbnail)</label>
-            <input type="file" name="thumbnail" class="form-control" accept="image/*">
+        <div style="display:flex; gap:1rem;">
+            <div class="form-group" style="flex:1;">
+                <label>Imagem (Thumbnail)</label>
+                <input type="file" name="thumbnail" class="form-control" accept="image/*">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Texto Alternativo da Imagem (SEO)</label>
+                <input type="text" name="image_alt" id="curso_image_alt" class="form-control" placeholder="Ex: Capa do curso de Educação Especial">
+            </div>
         </div>
         <button type="submit" class="btn">Salvar Curso</button>
         <button type="button" class="btn btn-warning" onclick="resetForm()">Novo</button>
@@ -161,6 +168,7 @@ function editarCurso(curso) {
     document.getElementById('curso_info_extra').value = curso.info_extra || '';
     document.getElementById('curso_disciplinas').value = curso.disciplinas || '';
     document.getElementById('curso_conteudo').value = curso.conteudo || '';
+    document.getElementById('curso_image_alt').value = curso.image_alt || '';
     window.scrollTo(0,0);
 }
 function resetForm() {
@@ -174,6 +182,7 @@ function resetForm() {
     document.getElementById('curso_info_extra').value = '';
     document.getElementById('curso_disciplinas').value = '';
     document.getElementById('curso_conteudo').value = '';
+    document.getElementById('curso_image_alt').value = '';
 }
 </script>
 

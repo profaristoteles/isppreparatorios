@@ -32,7 +32,7 @@ $recent_posts = count($all_posts) > 1 ? array_slice($all_posts, 1) : [];
                 <a href="post.php?id=<?= $hero_post['id'] ?>" style="text-decoration: none; display: block; margin-bottom: 4rem; position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); group;">
                     <div style="position: relative; width: 100%; padding-bottom: 50%; background: #111;">
                         <?php if($hero_post['cover_image']): ?>
-                            <img src="uploads/<?= $hero_post['cover_image'] ?>" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;" alt="<?= htmlspecialchars($hero_post['title']) ?>">
+                            <img src="uploads/<?= $hero_post['cover_image'] ?>" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;" alt="<?= htmlspecialchars($hero_post['image_alt'] ?: $hero_post['title']) ?>">
                         <?php endif; ?>
                         <!-- Overlay gradient for text readability -->
                         <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 80%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);"></div>
@@ -58,7 +58,7 @@ $recent_posts = count($all_posts) > 1 ? array_slice($all_posts, 1) : [];
                             
                             <div style="width: 35%; flex-shrink: 0; background: #111; position: relative;">
                                 <?php if($p['cover_image']): ?>
-                                    <img src="uploads/<?= $p['cover_image'] ?>" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" alt="<?= htmlspecialchars($p['title']) ?>">
+                                    <img src="uploads/<?= $p['cover_image'] ?>" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" alt="<?= htmlspecialchars($p['image_alt'] ?: $p['title']) ?>">
                                 <?php else: ?>
                                     <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
                                         Sem imagem

@@ -22,7 +22,7 @@ require_once 'includes/header.php';
                     <?php foreach($apostilas as $apo): ?>
                     <div class="feature-card reveal" style="display: flex; flex-direction: column;">
                         <?php if($apo['cover_image']): ?>
-                            <img src="uploads/<?= $apo['cover_image'] ?>" alt="<?= htmlspecialchars($apo['title']) ?>" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--glass-border);">
+                            <img src="uploads/<?= $apo['cover_image'] ?>" alt="<?= htmlspecialchars($apo['image_alt'] ?: $apo['title']) ?>" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid var(--glass-border);">
                         <?php else: ?>
                             <div style="width: 100%; aspect-ratio: 1/1; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 1.5rem;">
                                 <span style="color: var(--text-secondary);">Sem Capa</span>

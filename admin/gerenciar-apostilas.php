@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sec3_btn_text = $_POST['sec3_btn_text'] ?: 'Comprar Agora';
     $video_title = $_POST['video_title'] ?: '';
     $video_url = $_POST['video_url'] ?: '';
+    $image_alt = $_POST['image_alt'] ?: '';
 
     $cover = '';
     if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
@@ -61,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['id'])) {
         $id = $_POST['id'];
         
-        $sql = "UPDATE apostilas SET title=?, payment_link=?, active=?, price=?, subtitle=?, is_internal=?, topics=?, hero_btn_text=?, sec1_title=?, sec1_btn_text=?, sec2_title=?, sec3_title=?, sec3_btn_text=?, video_title=?, video_url=?";
-        $params = [$title, $payment_link, $active, $price, $subtitle, $is_internal, $topics, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_btn_text, $video_title, $video_url];
+        $sql = "UPDATE apostilas SET title=?, payment_link=?, active=?, price=?, subtitle=?, is_internal=?, topics=?, hero_btn_text=?, sec1_title=?, sec1_btn_text=?, sec2_title=?, sec3_title=?, sec3_btn_text=?, video_title=?, video_url=?, image_alt=?";
+        $params = [$title, $payment_link, $active, $price, $subtitle, $is_internal, $topics, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_btn_text, $video_title, $video_url, $image_alt];
         
         if ($cover) {
             $sql .= ", cover_image=?";
@@ -79,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
     } else {
-        $stmt = $pdo->prepare("INSERT INTO apostilas (title, payment_link, cover_image, active, price, subtitle, is_internal, topics, preview_images, hero_btn_text, sec1_title, sec1_btn_text, sec2_title, sec3_title, sec3_btn_text, video_title, video_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $payment_link, $cover, $active, $price, $subtitle, $is_internal, $topics, $preview_str, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_btn_text, $video_title, $video_url]);
+        $stmt = $pdo->prepare("INSERT INTO apostilas (title, payment_link, cover_image, active, price, subtitle, is_internal, topics, preview_images, hero_btn_text, sec1_title, sec1_btn_text, sec2_title, sec3_title, sec3_btn_text, video_title, video_url, image_alt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $payment_link, $cover, $active, $price, $subtitle, $is_internal, $topics, $preview_str, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_btn_text, $video_title, $video_url, $image_alt]);
     }
     $_SESSION['msg'] = "Apostila salva com sucesso.";
     header("Location: gerenciar-apostilas.php");
@@ -175,9 +176,15 @@ require_once 'includes/header.php';
             </div>
         </div>
 
-        <div class="form-group">
-            <label>Imagem da Capa (Vitrine e Topo da Landing Page)</label>
-            <input type="file" name="cover_image" class="form-control" accept="image/*">
+        <div style="display:flex; gap:1rem;">
+            <div class="form-group" style="flex:1;">
+                <label>Imagem da Capa (Vitrine e Topo da Landing Page)</label>
+                <input type="file" name="cover_image" class="form-control" accept="image/*">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Texto Alternativo da Imagem (SEO)</label>
+                <input type="text" name="image_alt" id="apo_image_alt" class="form-control" placeholder="Ex: Capa da apostila de Português para Caxias">
+            </div>
         </div>
 
         <div class="form-group">
@@ -255,6 +262,7 @@ function editarApostila(a) {
     
     document.getElementById('apo_video_title').value = a.video_title || '';
     document.getElementById('apo_video_url').value = a.video_url || '';
+    document.getElementById('apo_image_alt').value = a.image_alt || '';
 
     toggleInternalFields();
     window.scrollTo(0,0);
@@ -280,6 +288,7 @@ function resetForm() {
     
     document.getElementById('apo_video_title').value = '';
     document.getElementById('apo_video_url').value = '';
+    document.getElementById('apo_image_alt').value = '';
 
     toggleInternalFields();
 }
