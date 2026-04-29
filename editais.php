@@ -23,7 +23,8 @@ $concursos = [];
 if ($html) {
     libxml_use_internal_errors(true);
     $dom = new DOMDocument();
-    $dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
+    // Using this trick to handle UTF-8 without the deprecated HTML-ENTITIES warning
+    @$dom->loadHTML('<?xml encoding="utf-8" ?>' . $html);
     $xpath = new DOMXPath($dom);
 
     // Look for tr elements inside the table with class 'list-concursos' or similar
