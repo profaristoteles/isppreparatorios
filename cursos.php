@@ -12,7 +12,7 @@ $cursos = $stmt->fetchAll();
         <h2>Cursos Disponíveis</h2>
     </div>
     
-    <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));">
+    <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));">
         <?php if(count($cursos) == 0): ?>
             <p class="reveal" style="font-family: var(--font-mono); color: var(--brand-orange);">Nenhum curso encontrado no momento.</p>
         <?php endif; ?>

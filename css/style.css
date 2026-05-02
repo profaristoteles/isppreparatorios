@@ -429,6 +429,11 @@ footer a:hover {
     padding: 10rem 5%;
 }
 
+/* Grid de Modalidades — mobile-safe */
+.grid-modalidades {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .mobile-menu-toggle { display: block !important; }
@@ -459,6 +464,7 @@ footer a:hover {
     .stats > div { text-align: center !important; }
 
     .grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .grid-modalidades { grid-template-columns: 1fr !important; }
     .section-padding { padding: 2rem 5%; }
     .content-block { padding: 1.5rem; text-align: center; align-items: center; display: flex; flex-direction: column; }
     .content-block ul { width: 100%; text-align: left; }
@@ -497,14 +503,31 @@ footer a:hover {
     
     .final-cta { padding: 4rem 5% !important; }
 
-    /* Footer responsivo */
-    footer > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; text-align: center; gap: 2rem !important; }
+    /* Footer responsivo — força 1 coluna no mobile */
+    .footer-grid { grid-template-columns: 1fr !important; gap: 2rem !important; text-align: center; }
+    footer > div { text-align: center; }
     footer div > h4 { text-align: center; }
     footer ul { align-items: center !important; }
     footer div[style*="display: flex; gap: 1rem"] { justify-content: center; }
     footer div[style*="display: flex; gap: 0.8rem"] { justify-content: center; }
     footer .footer-whatsapp { justify-content: center; }
     footer a[style*="display: flex; align-items: center; gap: 0.5rem"] { justify-content: center; }
+
+    /* --- Banner LGPD mobile: compacto e não conflita com chat --- */
+    #lgpd-banner {
+        padding: 1rem 4% !important;
+        gap: 0.75rem !important;
+        bottom: 0 !important;
+    }
+    #lgpd-banner p {
+        font-size: 0.78rem !important;
+        line-height: 1.4 !important;
+    }
+    #lgpd-banner .btn {
+        padding: 0.5rem 1.2rem !important;
+        font-size: 0.8rem !important;
+        width: auto !important;
+    }
 }
 
 /* Content Blocks for generic pages (About, Post) */

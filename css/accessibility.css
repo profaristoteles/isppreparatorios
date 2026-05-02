@@ -220,15 +220,19 @@ body.font-size-3 { font-size: 22px !important; }
 @media (max-width: 768px) {
     .a11y-widget {
         left: 10px;
-        bottom: 80px;
+        bottom: 80px; /* fallback — o JS ajusta dinamicamente */
     }
     .a11y-toggle-btn {
         width: 44px;
         height: 44px;
     }
+    /* Painel abre para a direita no mobile para não cortar */
     .a11y-panel {
         min-width: 240px;
         left: 0;
+        right: auto;
+        /* Garante que não ultrapasse a tela */
+        max-width: calc(100vw - 20px);
     }
 }
 
@@ -241,4 +245,16 @@ iframe[src*="widgets.leadconnectorhq"] {
     bottom: 20px !important;
     right: 20px !important;
     z-index: 99998 !important;
+}
+
+/* No mobile, garante que o chat não fique sobre o banner LGPD */
+@media (max-width: 768px) {
+    #lc_chat_layout,
+    [id*="chat-widget"],
+    iframe[src*="leadconnectorhq"],
+    iframe[src*="widgets.leadconnectorhq"],
+    div[class*="chat-widget"],
+    div[id*="lc_chat"] {
+        right: 12px !important;
+    }
 }

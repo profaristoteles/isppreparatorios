@@ -135,7 +135,7 @@ $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id
                 <p style="color: var(--text-secondary); max-width: 600px; margin: 1rem auto 0;">Duas modalidades pensadas para diferentes realidades, com a mesma qualidade de conteúdo.</p>
             </div>
             
-            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));">
+            <div class="grid grid-modalidades">
                 <div class="content-block reveal" style="width: 100%; max-width: none;">
                     <span class="feature-id">PRESENCIAL</span>
                     <h3>Aulas Presenciais</h3>

@@ -4,7 +4,7 @@ $site_config = $site_config ?? get_config($pdo);
     </main><!-- fim #main-content -->
     <footer role="contentinfo" style="padding: 0; padding-bottom: 5rem; background: linear-gradient(180deg, var(--obsidian-deep) 0%, #010130 100%); border-top: 1px solid var(--glass-border);">
         <!-- Footer Principal em Colunas -->
-        <div style="max-width: 1200px; margin: 0 auto; padding: 4rem 5% 3rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3rem;">
+        <div class="footer-grid" style="max-width: 1200px; margin: 0 auto; padding: 4rem 5% 3rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3rem;">
             
             <!-- Coluna 1: Sobre -->
             <div>
@@ -114,17 +114,61 @@ $site_config = $site_config ?? get_config($pdo);
     <script src="js/main.js"></script>
     <script>
         // LGPD Logic
-        if(!localStorage.getItem('lgpd_accepted')) {
-            document.getElementById('lgpd-banner').style.display = 'flex';
-            if(window.innerWidth > 768) {
-                document.getElementById('lgpd-banner').style.flexDirection = 'row';
-                document.getElementById('lgpd-banner').style.justifyContent = 'space-between';
-                document.getElementById('lgpd-banner').style.textAlign = 'left';
+        const lgpdBanner = document.getElementById('lgpd-banner');
+        const a11yWidget = document.getElementById('accessibility-widget');
+
+        function adjustFloatingWidgets() {
+            if (!lgpdBanner) return;
+            const bannerVisible = lgpdBanner.style.display !== 'none';
+            const bannerH = bannerVisible ? lgpdBanner.offsetHeight : 0;
+
+            // Empurra o widget de acessibilidade para cima quando o banner está visível
+            if (a11yWidget) {
+                a11yWidget.style.bottom = (bannerH + 12) + 'px';
+            }
+
+            // Empurra o chat widget (LeadConnector) para cima quando o banner está visível
+            // O chat usa shadow DOM, então usamos CSS variable/override via elemento pai
+            const chatOffset = bannerH + 16;
+            let styleEl = document.getElementById('chat-offset-style');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'chat-offset-style';
+                document.head.appendChild(styleEl);
+            }
+            if (bannerVisible) {
+                styleEl.textContent = `
+                    #lc_chat_layout,
+                    [id*="chat-widget"],
+                    iframe[src*="leadconnectorhq"],
+                    iframe[src*="widgets.leadconnectorhq"],
+                    div[class*="chat-widget"],
+                    div[id*="lc_chat"] {
+                        bottom: ${chatOffset}px !important;
+                    }
+                `;
+            } else {
+                styleEl.textContent = '';
             }
         }
+
+        if (!localStorage.getItem('lgpd_accepted')) {
+            lgpdBanner.style.display = 'flex';
+            if (window.innerWidth > 768) {
+                lgpdBanner.style.flexDirection = 'row';
+                lgpdBanner.style.justifyContent = 'space-between';
+                lgpdBanner.style.textAlign = 'left';
+            }
+            // Pequeno delay para garantir que o banner foi renderizado e tem altura
+            requestAnimationFrame(() => adjustFloatingWidgets());
+        } else {
+            adjustFloatingWidgets();
+        }
+
         function acceptCookies() {
             localStorage.setItem('lgpd_accepted', 'true');
-            document.getElementById('lgpd-banner').style.display = 'none';
+            lgpdBanner.style.display = 'none';
+            adjustFloatingWidgets();
         }
 
         // Reveal animation on scroll
