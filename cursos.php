@@ -18,8 +18,12 @@ $cursos = $stmt->fetchAll();
         <?php endif; ?>
 
         <?php foreach($cursos as $c): ?>
+        <?php $is_reserva = ($c['status'] ?? 'Disponível') == 'Pegando Reserva'; ?>
         <div class="feature-card reveal" style="display: flex; flex-direction: column;">
             <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <?php if($is_reserva): ?>
+                    <span style="background: var(--brand-orange); color: #fff; font-size: 0.75rem; font-family: var(--font-mono); padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: 700;">🚨 RESERVA DE VAGAS</span>
+                <?php endif; ?>
                 <span style="background: rgba(255, 128, 0, 0.1); color: var(--brand-orange); font-size: 0.75rem; font-family: var(--font-mono); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid rgba(255, 128, 0, 0.3); font-weight: 500;">⏱ <?= htmlspecialchars($c['duration']) ?></span>
                 <span style="background: rgba(255, 255, 255, 0.05); color: #fff; font-size: 0.75rem; font-family: var(--font-mono); padding: 0.3rem 0.8rem; border-radius: 20px; border: 1px solid var(--glass-border); font-weight: 500;">📍 <?= htmlspecialchars($c['modality'] ?: 'Presencial e Online') ?></span>
             </div>
@@ -36,8 +40,13 @@ $cursos = $stmt->fetchAll();
             <p style="color: var(--text-secondary); margin-bottom: 2rem;"><?= htmlspecialchars(substr($c['description'], 0, 150)) ?>...</p>
             
             <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
-                <span style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1.3rem; font-weight: 700;">R$ <?= number_format($c['price'], 2, ',', '.') ?></span>
-                <a href="curso-detalhes.php?id=<?= $c['id'] ?>" class="btn" style="padding: 0.8rem 1.5rem; font-size: 0.8rem;">Saiba Mais</a>
+                <?php if($is_reserva): ?>
+                    <span style="font-family: var(--font-mono); color: var(--text-secondary); font-size: 0.9rem; font-weight: 500;">Valores sob consulta</span>
+                    <a href="curso-detalhes.php?id=<?= $c['id'] ?>" class="btn" style="padding: 0.8rem 1.5rem; font-size: 0.8rem; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar Vaga</a>
+                <?php else: ?>
+                    <span style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1.3rem; font-weight: 700;">R$ <?= number_format($c['price'], 2, ',', '.') ?></span>
+                    <a href="curso-detalhes.php?id=<?= $c['id'] ?>" class="btn" style="padding: 0.8rem 1.5rem; font-size: 0.8rem;">Saiba Mais</a>
+                <?php endif; ?>
             </div>
         </div>
         <?php endforeach; ?>

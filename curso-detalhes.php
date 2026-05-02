@@ -90,16 +90,24 @@ require_once 'includes/header.php';
             </div>
             
             <!-- Right: Investment Card -->
+            <?php $is_reserva = ($curso['status'] ?? 'Disponível') == 'Pegando Reserva'; ?>
             <div style="flex: 1; min-width: 300px;">
                 <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px; padding: 2.5rem; position: sticky; top: 120px;">
-                    <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-secondary);">Investimento</h3>
-                    <div style="font-size: 3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2rem; font-family: var(--font-mono);">
-                        <span style="font-size: 1.5rem; vertical-align: super;">R$</span> <?= number_format($curso['price'], 2, ',', '.') ?>
-                    </div>
+                    <?php if($is_reserva): ?>
+                        <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--brand-orange); text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">🚨 Reserva de Vagas</h3>
+                        <div style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 2rem; line-height: 1.6; border-left: 3px solid var(--brand-orange); padding-left: 1rem;">
+                            Garanta seu lugar na próxima turma! Os valores e condições especiais de pré-venda serão informados pela nossa equipe após o seu cadastro.
+                        </div>
+                    <?php else: ?>
+                        <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-secondary);">Investimento</h3>
+                        <div style="font-size: 3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2rem; font-family: var(--font-mono);">
+                            <span style="font-size: 1.5rem; vertical-align: super;">R$</span> <?= number_format($curso['price'], 2, ',', '.') ?>
+                        </div>
+                    <?php endif; ?>
                     
                     <ul style="list-style: none; margin: 0 0 2rem 0; padding: 0; color: var(--text-secondary);">
                         <li style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 10px;">
-                            <span style="color: #25D366;">✓</span> Acesso Imediato
+                            <span style="color: #25D366;">✓</span> <?php echo $is_reserva ? "Prioridade de Matrícula" : "Acesso Imediato"; ?>
                         </li>
                         <li style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 10px;">
                             <span style="color: #25D366;">✓</span> Material em PDF
@@ -112,7 +120,11 @@ require_once 'includes/header.php';
                         </li>
                     </ul>
 
-                    <a href="<?= htmlspecialchars($link_venda) ?>" <?= !empty($curso['payment_link']) ? 'target="_blank"' : '' ?> class="btn" style="width: 100%; font-size: 1rem; padding: 1.2rem; text-align: center; display: block; box-sizing: border-box;">Garantir Minha Vaga</a>
+                    <?php if($is_reserva): ?>
+                        <a href="<?= htmlspecialchars($link_venda) ?>" <?= !empty($curso['payment_link']) ? 'target="_blank"' : '' ?> class="btn" style="width: 100%; font-size: 1rem; padding: 1.2rem; text-align: center; display: block; box-sizing: border-box; background: var(--brand-orange); border-color: var(--brand-orange);">Reservar Minha Vaga</a>
+                    <?php else: ?>
+                        <a href="<?= htmlspecialchars($link_venda) ?>" <?= !empty($curso['payment_link']) ? 'target="_blank"' : '' ?> class="btn" style="width: 100%; font-size: 1rem; padding: 1.2rem; text-align: center; display: block; box-sizing: border-box;">Garantir Minha Vaga</a>
+                    <?php endif; ?>
                     
                     <div style="text-align: center; margin-top: 1.5rem;">
                         <a href="https://wa.me/559931999394" target="_blank" style="color: #25D366; text-decoration: none; font-size: 0.9rem; font-weight: 500;">Dúvidas? Fale pelo WhatsApp</a>

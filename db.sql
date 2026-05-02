@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS cursos (
     disciplinas TEXT,
     conteudo TEXT,
     modality VARCHAR(100) DEFAULT 'Presencial e Online',
+    status VARCHAR(50) DEFAULT 'Disponível',
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categorias(id) ON DELETE SET NULL

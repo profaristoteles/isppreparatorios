@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $info_extra = $_POST['info_extra'];
     $disciplinas = $_POST['disciplinas'];
     $conteudo = $_POST['conteudo'];
+    $status = $_POST['status'] ?: 'Disponível';
     $image_alt = $_POST['image_alt'];
     
     // Upload de Imagem
@@ -40,17 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['id'])) {
         // Update
         if ($thumbnail) {
-            $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, thumbnail=?, image_alt=? WHERE id=?");
-            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $thumbnail, $image_alt, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=? WHERE id=?");
+            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $_POST['id']]);
         } else {
-            $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, image_alt=? WHERE id=?");
-            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $image_alt, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=? WHERE id=?");
+            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $_POST['id']]);
         }
         $_SESSION['msg'] = "Curso atualizado.";
     } else {
         // Insert
-        $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, description, payment_link, info_extra, disciplinas, conteudo, thumbnail, image_alt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $thumbnail, $image_alt]);
+        $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, description, payment_link, info_extra, disciplinas, conteudo, status, thumbnail, image_alt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt]);
         $_SESSION['msg'] = "Curso adicionado.";
     }
     header("Location: gerenciar-cursos.php");
@@ -87,9 +88,16 @@ require_once 'includes/header.php';
                     <option value="Presencial">Presencial</option>
                 </select>
             </div>
+            <div class="form-group" style="flex:1;">
+                <label>Status do Curso</label>
+                <select name="status" id="curso_status" class="form-control">
+                    <option value="Disponível">Disponível</option>
+                    <option value="Pegando Reserva">Pegando Reserva (Lista de Espera)</option>
+                </select>
+            </div>
         </div>
         <div class="form-group">
-            <label>Link de Pagamento (Hotmart, Kiwify, etc)</label>
+            <label>Link de Pagamento / Formulário de Reserva</label>
             <input type="url" name="payment_link" id="curso_payment_link" class="form-control" placeholder="https://...">
         </div>
         <div class="form-group">
@@ -131,6 +139,7 @@ require_once 'includes/header.php';
                 <th>ID</th>
                 <th>Imagem</th>
                 <th>Título</th>
+                <th>Status</th>
                 <th>Preço</th>
                 <th>Ações</th>
             </tr>
@@ -145,6 +154,13 @@ require_once 'includes/header.php';
                     <?php endif; ?>
                 </td>
                 <td><?= htmlspecialchars($c['title']) ?></td>
+                <td>
+                    <?php if(($c['status'] ?? 'Disponível') == 'Pegando Reserva'): ?>
+                        <span style="background: var(--brand-orange); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">Reserva</span>
+                    <?php else: ?>
+                        <span style="background: #28a745; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">Disponível</span>
+                    <?php endif; ?>
+                </td>
                 <td>R$ <?= number_format($c['price'], 2, ',', '.') ?></td>
                 <td>
                     <button class="btn" onclick='editarCurso(<?= json_encode($c) ?>)'>Editar</button>
@@ -168,6 +184,7 @@ function editarCurso(curso) {
     document.getElementById('curso_info_extra').value = curso.info_extra || '';
     document.getElementById('curso_disciplinas').value = curso.disciplinas || '';
     document.getElementById('curso_conteudo').value = curso.conteudo || '';
+    document.getElementById('curso_status').value = curso.status || 'Disponível';
     document.getElementById('curso_image_alt').value = curso.image_alt || '';
     window.scrollTo(0,0);
 }
@@ -182,6 +199,7 @@ function resetForm() {
     document.getElementById('curso_info_extra').value = '';
     document.getElementById('curso_disciplinas').value = '';
     document.getElementById('curso_conteudo').value = '';
+    document.getElementById('curso_status').value = 'Disponível';
     document.getElementById('curso_image_alt').value = '';
 }
 </script>
