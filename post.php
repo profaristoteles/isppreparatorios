@@ -14,7 +14,8 @@ if(!$post) {
 }
 
 $dynamic_title = $post['title'];
-$dynamic_desc = substr(strip_tags($post['content']), 0, 150) . '...';
+$content_clean = preg_replace(['/<style\b[^>]*>(.*?)<\/style>/is', '/<script\b[^>]*>(.*?)<\/script>/is'], '', $post['content']);
+$dynamic_desc = mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($content_clean))), 0, 150) . '...';
 require_once 'includes/header.php';
 ?>
 

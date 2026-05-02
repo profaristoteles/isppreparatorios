@@ -73,8 +73,9 @@ $recent_posts = count($all_posts) > 1 ? array_slice($all_posts, 1) : [];
                                 <h3 style="color: var(--text-primary); font-size: 1.3rem; margin-bottom: 0.5rem; line-height: 1.3;">
                                     <?= htmlspecialchars($p['title']) ?>
                                 </h3>
+                                <?php $clean_excerpt = preg_replace(['/<style\b[^>]*>(.*?)<\/style>/is', '/<script\b[^>]*>(.*?)<\/script>/is'], '', $p['content']); ?>
                                 <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1rem; line-height: 1.5;">
-                                    <?= htmlspecialchars(mb_substr(strip_tags($p['content']), 0, 120)) ?>...
+                                    <?= htmlspecialchars(mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($clean_excerpt))), 0, 120)) ?>...
                                 </p>
                                 <div style="color: #666; font-size: 0.8rem; font-family: var(--font-mono); margin-top: auto;">
                                     <?= date('d/m/Y', strtotime($p['created_at'])) ?>
