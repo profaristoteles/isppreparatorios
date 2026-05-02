@@ -465,9 +465,10 @@ footer a:hover {
 
     .grid { grid-template-columns: 1fr; gap: 1.5rem; }
     .grid-modalidades { grid-template-columns: 1fr !important; }
-    .section-padding { padding: 2rem 5%; }
-    .content-block { padding: 1.5rem; text-align: center; align-items: center; display: flex; flex-direction: column; }
-    .content-block ul { width: 100%; text-align: left; }
+    .container { width: 100%; padding: 0 15px; }
+    .section-padding { padding: 2rem 0; }
+    .content-block { padding: 2rem 15px; text-align: left; display: block; border-left: none; border-right: none; border-radius: 0; width: 100%; }
+    .content-block ul { width: 100%; text-align: left; margin-left: 1.5rem; }
     
     /* Centralização Geral */
     .section-header { text-align: center; }
