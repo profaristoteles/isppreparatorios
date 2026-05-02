@@ -162,13 +162,15 @@ require_once 'includes/header.php';
 // Inicializa o TinyMCE
 tinymce.init({
     selector: '#post_content',
-    plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount code',
-    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | code',
+    plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount code preview',
+    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | code preview',
     height: 500,
     language: 'pt_BR',
     content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px; background: #f4f4f4; color: #333; }',
     skin: "oxide-dark",
-    content_css: "dark"
+    content_css: "dark",
+    valid_children: "+body[style],+div[style]",
+    extended_valid_elements: "style[type|media|scoped]"
 });
 
 function editarPost(p) {
