@@ -39,7 +39,7 @@ $recent_posts = count($all_posts) > 1 ? array_slice($all_posts, 1) : [];
                     </div>
                     
                     <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 2rem;">
-                        <span style="background: #E50914; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 1rem; display: inline-block;">
+                        <span style="background: #ff8000; color: #03045e; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 1rem; display: inline-block;">
                             <?= htmlspecialchars($hero_post['category']) ?>
                         </span>
                         <h2 style="color: #fff; font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 0.5rem; line-height: 1.2;">
@@ -67,7 +67,7 @@ $recent_posts = count($all_posts) > 1 ? array_slice($all_posts, 1) : [];
                             </div>
                             
                             <div style="padding: 1.5rem 1.5rem 1.5rem 0; flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                                <span style="color: var(--brand-orange); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 0.5rem; display: block;">
+                                <span style="background: #ff8000; color: #03045e; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; margin-bottom: 0.5rem; display: inline-table;">
                                     <?= htmlspecialchars($p['category']) ?>
                                 </span>
                                 <h3 style="color: var(--text-primary); font-size: 1.3rem; margin-bottom: 0.5rem; line-height: 1.3;">

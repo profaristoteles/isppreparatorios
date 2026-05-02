@@ -131,7 +131,7 @@ require_once 'includes/header.php';
                 <?php endif; ?>
             </td>
             <td><?= htmlspecialchars($p['title']) ?></td>
-            <td><span style="background: var(--prism-cyan); color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;"><?= htmlspecialchars($p['category']) ?></span></td>
+            <td><span style="background: #ff8000; color: #03045e; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;"><?= htmlspecialchars($p['category']) ?></span></td>
             <td>
                 <?php 
                 $is_scheduled = strtotime($p['created_at']) > time();

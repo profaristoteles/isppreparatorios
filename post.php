@@ -73,7 +73,7 @@ require_once 'includes/header.php';
         
         <!-- Post Header -->
         <div style="text-align: center; margin-bottom: 3rem;">
-            <span style="background: var(--prism-cyan); color: #000; padding: 4px 12px; border-radius: 4px; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; margin-bottom: 1.5rem; display: inline-block;">
+            <span style="background: #ff8000; color: #03045e; padding: 4px 12px; border-radius: 4px; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; margin-bottom: 1.5rem; display: inline-block;">
                 <?= htmlspecialchars($post['category']) ?>
             </span>
             
