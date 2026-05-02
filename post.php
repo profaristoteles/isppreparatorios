@@ -175,8 +175,8 @@ require_once 'includes/header.php';
         
         <!-- Author Box -->
         <div style="margin-top: 5rem; padding: 2rem; background: #f8f9fa; border: 1px solid #dee2e6; border-left: 4px solid #03045e; border-radius: 12px; display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
-            <div style="width: 70px; height: 70px; border-radius: 50%; background: #03045e; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                <img src="uploads/logo.png" alt="ISP" style="max-width: 100%; filter: brightness(0) invert(1);" onerror="this.style.display='none'">
+            <div style="width: 80px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                <img src="uploads/logo.png" alt="ISP" style="max-width: 100%; height: auto;" onerror="this.style.display='none'">
             </div>
             <div style="flex: 1; min-width: 250px;">
                 <h4 style="color: #03045e; font-family: 'Sora', sans-serif; font-size: 1.2rem; margin-bottom: 0.5rem; font-weight: 700;">ISP Preparatórios</h4>
@@ -186,8 +186,15 @@ require_once 'includes/header.php';
             </div>
         </div>
         
-        <div style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #dee2e6;">
-            <a href="blog.php" class="btn" style="background: #03045e; color: #fff; border: none; font-weight: 600;">← VOLTAR PARA O BLOG</a>
+        <div style="text-align: center; margin-top: 4rem; padding-top: 3rem; border-top: 1px solid #dee2e6; display: flex; flex-direction: column; gap: 2rem; align-items: center;">
+            <div>
+                <h3 style="color: #03045e; font-family: 'Sora', sans-serif; font-size: 1.4rem; margin-bottom: 1.2rem; font-weight: 700;">Dê o próximo passo rumo à sua aprovação!</h3>
+                <a href="cursos.php" class="btn" style="background: #ff8000; color: #fff; border: none; font-weight: 800; font-size: 1.05rem; padding: 1.2rem 2.5rem; border-radius: 8px; box-shadow: 0 8px 20px rgba(255,128,0,0.3); text-transform: uppercase; letter-spacing: 1px;">CONHECER NOSSOS CURSOS</a>
+            </div>
+            
+            <a href="blog.php" style="color: #6c757d; font-size: 0.95rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: color 0.3s;" onmouseover="this.style.color='#03045e'" onmouseout="this.style.color='#6c757d'">
+                <span style="font-size: 1.2rem;">←</span> Voltar para os Artigos
+            </a>
         </div>
     </article>
 </div>
