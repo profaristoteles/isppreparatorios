@@ -1,6 +1,5 @@
 <?php
 require_once 'db_config.php';
-require_once 'includes/header.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $stmt = $pdo->prepare("SELECT * FROM posts WHERE id = ? AND active = 1");
@@ -8,10 +7,15 @@ $stmt->execute([$id]);
 $post = $stmt->fetch();
 
 if(!$post) {
-    echo "<div class='container section-padding' style='margin-top: 5rem;'><h1 style='color: var(--brand-orange); font-family: var(--font-mono); text-align: center;'>// ERRO: ARQUIVO NÃO ENCONTRADO</h1></div>";
+    require_once 'includes/header.php';
+    echo "<div class='container section-padding' style='margin-top: 5rem;'><h1 style='color: var(--brand-orange); font-family: var(--font-mono); text-align: center;'>// ERRO: POST NÃO ENCONTRADO</h1></div>";
     require_once 'includes/footer.php';
     exit;
 }
+
+$dynamic_title = $post['title'];
+$dynamic_desc = substr(strip_tags($post['content']), 0, 150) . '...';
+require_once 'includes/header.php';
 ?>
 
 <!-- TinyMCE Default Styles for Frontend Rendering (optional but helpful for tables, lists, etc) -->
@@ -65,7 +69,7 @@ if(!$post) {
 </style>
 
 <div class="container section-padding" style="margin-top: 5rem;">
-    <div class="content-block reveal" style="max-width: 800px; margin: 0 auto;">
+    <div class="content-block" style="max-width: 800px; margin: 0 auto; animation: slideUp 0.8s ease;">
         
         <!-- Post Header -->
         <div style="text-align: center; margin-bottom: 3rem;">
