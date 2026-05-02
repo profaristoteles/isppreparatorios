@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // TinyMCE sends HTML content
     $content = $_POST['content'];
     $image_alt = $_POST['image_alt'] ?: '';
+    $created_at = !empty($_POST['created_at']) ? date('Y-m-d H:i:s', strtotime($_POST['created_at'])) : date('Y-m-d H:i:s');
 
     $cover = '';
     if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
@@ -30,15 +31,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($_POST['id'])) {
         if ($cover) {
-            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, cover_image=?, image_alt=? WHERE id=?");
-            $stmt->execute([$title, $category, $content, $cover, $image_alt, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, cover_image=?, image_alt=?, created_at=? WHERE id=?");
+            $stmt->execute([$title, $category, $content, $cover, $image_alt, $created_at, $_POST['id']]);
         } else {
-            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, image_alt=? WHERE id=?");
-            $stmt->execute([$title, $category, $content, $image_alt, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, image_alt=?, created_at=? WHERE id=?");
+            $stmt->execute([$title, $category, $content, $image_alt, $created_at, $_POST['id']]);
         }
     } else {
-        $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image, image_alt) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $category, $content, $cover, $image_alt]);
+        $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image, image_alt, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $category, $content, $cover, $image_alt, $created_at]);
     }
     $_SESSION['msg'] = "Post salvo com sucesso.";
     header("Location: gerenciar-posts.php");
@@ -66,6 +67,10 @@ require_once 'includes/header.php';
             <div class="form-group" style="flex:1;">
                 <label>Categoria (Ex: Notícias, Dicas, Edital)</label>
                 <input type="text" name="category" id="post_category" class="form-control" placeholder="Geral">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Data de Publicação</label>
+                <input type="datetime-local" name="created_at" id="post_created_at" class="form-control">
             </div>
         </div>
 
@@ -127,7 +132,15 @@ require_once 'includes/header.php';
             </td>
             <td><?= htmlspecialchars($p['title']) ?></td>
             <td><span style="background: var(--prism-cyan); color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;"><?= htmlspecialchars($p['category']) ?></span></td>
-            <td><?= date('d/m/Y', strtotime($p['created_at'])) ?></td>
+            <td>
+                <?php 
+                $is_scheduled = strtotime($p['created_at']) > time();
+                echo date('d/m/Y H:i', strtotime($p['created_at']));
+                if($is_scheduled) {
+                    echo '<br><span style="background:var(--brand-orange); color:#fff; font-size:0.7rem; padding:2px 5px; border-radius:4px; margin-top:4px; display:inline-block;">⏳ Agendado</span>';
+                }
+                ?>
+            </td>
             <td>
                 <!-- Pass content securely -->
                 <button class="btn" onclick="editarPost(<?= htmlspecialchars(json_encode([
@@ -135,7 +148,8 @@ require_once 'includes/header.php';
                     'title' => $p['title'],
                     'category' => $p['category'],
                     'content' => $p['content'],
-                    'image_alt' => $p['image_alt']
+                    'image_alt' => $p['image_alt'],
+                    'created_at' => $p['created_at']
                 ])) ?>)">Editar</button>
                 <a href="?del=<?= $p['id'] ?>" class="btn btn-danger" onclick="return confirm('Excluir este post?')">Excluir</a>
             </td>
@@ -169,6 +183,12 @@ function editarPost(p) {
     }
     document.getElementById('post_image_alt').value = p.image_alt || '';
     
+    if (p.created_at) {
+        document.getElementById('post_created_at').value = p.created_at.substring(0, 16).replace(' ', 'T');
+    } else {
+        document.getElementById('post_created_at').value = '';
+    }
+    
     window.scrollTo(0,0);
 }
 
@@ -183,6 +203,7 @@ function resetForm() {
         document.getElementById('post_content').value = '';
     }
     document.getElementById('post_image_alt').value = '';
+    document.getElementById('post_created_at').value = '';
 }
 
 async function gerarArtigoIA() {

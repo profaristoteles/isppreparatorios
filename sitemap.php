@@ -26,7 +26,7 @@ foreach ($cursos as $c) {
 }
 
 // Posts do Blog
-$posts = $pdo->query("SELECT id FROM posts WHERE active=1")->fetchAll();
+$posts = $pdo->query("SELECT id FROM posts WHERE active=1 AND created_at <= NOW()")->fetchAll();
 foreach ($posts as $p) {
     echo '<url>';
     echo '<loc>' . $base_url . 'post.php?id=' . $p['id'] . '</loc>';

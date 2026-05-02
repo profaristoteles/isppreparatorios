@@ -2,7 +2,7 @@
 require_once 'db_config.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$stmt = $pdo->prepare("SELECT * FROM posts WHERE id = ? AND active = 1");
+$stmt = $pdo->prepare("SELECT * FROM posts WHERE id = ? AND active = 1 AND created_at <= NOW()");
 $stmt->execute([$id]);
 $post = $stmt->fetch();
 
@@ -69,7 +69,7 @@ require_once 'includes/header.php';
 </style>
 
 <div class="container section-padding" style="margin-top: 5rem;">
-    <div class="content-block" style="max-width: 800px; margin: 0 auto; animation: slideUp 0.8s ease;">
+    <div class="content-block" style="max-width: 1000px; margin: 0 auto; animation: slideUp 0.8s ease;">
         
         <!-- Post Header -->
         <div style="text-align: center; margin-bottom: 3rem;">
