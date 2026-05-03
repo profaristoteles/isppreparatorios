@@ -38,21 +38,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (!empty($_POST['id'])) {
-        // Update
-        if ($thumbnail) {
-            $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=? WHERE id=?");
-            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $_POST['id']]);
+    try {
+        if (!empty($_POST['id'])) {
+            // Update
+            if ($thumbnail) {
+                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=? WHERE id=?");
+                $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $_POST['id']]);
+            } else {
+                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=? WHERE id=?");
+                $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $_POST['id']]);
+            }
+            $_SESSION['msg'] = "Curso atualizado.";
         } else {
-            $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=? WHERE id=?");
-            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $_POST['id']]);
+            // Insert
+            $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, description, payment_link, info_extra, disciplinas, conteudo, status, thumbnail, image_alt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt]);
+            $_SESSION['msg'] = "Curso adicionado.";
         }
-        $_SESSION['msg'] = "Curso atualizado.";
-    } else {
-        // Insert
-        $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, description, payment_link, info_extra, disciplinas, conteudo, status, thumbnail, image_alt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt]);
-        $_SESSION['msg'] = "Curso adicionado.";
+    } catch (\PDOException $e) {
+        if (strpos($e->getMessage(), 'Data too long') !== false) {
+            $_SESSION['erro'] = "Erro ao salvar: O texto que você inseriu em um dos campos (ex: Título, Duração ou Modalidade) é muito longo e excedeu o limite máximo de caracteres.";
+        } else {
+            $_SESSION['erro'] = "Erro no banco de dados: " . $e->getMessage();
+        }
     }
     header("Location: gerenciar-cursos.php");
     exit;

@@ -57,10 +57,10 @@ INSERT INTO categorias (name) VALUES ('Carreiras Policiais'), ('Tribunais'), ('A
 CREATE TABLE IF NOT EXISTS cursos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     category_id INT,
-    title VARCHAR(255) NOT NULL,
+    title VARCHAR(500) NOT NULL,
     description TEXT,
     thumbnail VARCHAR(255),
-    duration VARCHAR(100),
+    duration VARCHAR(255),
     price DECIMAL(10,2),
     payment_link VARCHAR(255) DEFAULT '',
     info_extra TEXT,
