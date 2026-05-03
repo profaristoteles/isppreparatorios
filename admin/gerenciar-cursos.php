@@ -71,6 +71,9 @@ $cursos = $pdo->query("SELECT * FROM cursos ORDER BY id DESC")->fetchAll();
 require_once 'includes/header.php';
 ?>
 
+<!-- TinyMCE CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js" referrerpolicy="origin"></script>
+
 <div class="card">
     <h2>Adicionar / Editar Curso</h2>
     <form method="POST" enctype="multipart/form-data">
@@ -181,34 +184,66 @@ require_once 'includes/header.php';
 </div>
 
 <script>
+// Inicializa o TinyMCE para os campos de texto do curso
+tinymce.init({
+    selector: '#curso_desc, #curso_info_extra, #curso_disciplinas, #curso_conteudo',
+    plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount code preview',
+    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | code preview',
+    height: 300,
+    language: 'pt_BR',
+    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px; background: #f4f4f4; color: #333; }',
+    skin: "oxide-dark",
+    content_css: "dark",
+    valid_children: "+body[style],+div[style]",
+    extended_valid_elements: "style[type|media|scoped]"
+});
+
 function editarCurso(curso) {
     document.getElementById('curso_id').value = curso.id;
     document.getElementById('curso_title').value = curso.title;
     document.getElementById('curso_price').value = curso.price;
     document.getElementById('curso_duration').value = curso.duration;
     document.getElementById('curso_modality').value = curso.modality || 'Presencial e Online';
-    document.getElementById('curso_desc').value = curso.description || '';
     document.getElementById('curso_payment_link').value = curso.payment_link || '';
-    document.getElementById('curso_info_extra').value = curso.info_extra || '';
-    document.getElementById('curso_disciplinas').value = curso.disciplinas || '';
-    document.getElementById('curso_conteudo').value = curso.conteudo || '';
     document.getElementById('curso_status').value = curso.status || 'Disponível';
     document.getElementById('curso_image_alt').value = curso.image_alt || '';
+    
+    const fields = [
+        { id: 'curso_desc', content: curso.description },
+        { id: 'curso_info_extra', content: curso.info_extra },
+        { id: 'curso_disciplinas', content: curso.disciplinas },
+        { id: 'curso_conteudo', content: curso.conteudo }
+    ];
+    
+    fields.forEach(f => {
+        if (tinymce.get(f.id)) {
+            tinymce.get(f.id).setContent(f.content || '');
+        } else {
+            document.getElementById(f.id).value = f.content || '';
+        }
+    });
+
     window.scrollTo(0,0);
 }
+
 function resetForm() {
     document.getElementById('curso_id').value = '';
     document.getElementById('curso_title').value = '';
     document.getElementById('curso_price').value = '';
     document.getElementById('curso_duration').value = '';
     document.getElementById('curso_modality').value = 'Presencial e Online';
-    document.getElementById('curso_desc').value = '';
     document.getElementById('curso_payment_link').value = '';
-    document.getElementById('curso_info_extra').value = '';
-    document.getElementById('curso_disciplinas').value = '';
-    document.getElementById('curso_conteudo').value = '';
     document.getElementById('curso_status').value = 'Disponível';
     document.getElementById('curso_image_alt').value = '';
+    
+    const fields = ['curso_desc', 'curso_info_extra', 'curso_disciplinas', 'curso_conteudo'];
+    fields.forEach(id => {
+        if (tinymce.get(id)) {
+            tinymce.get(id).setContent('');
+        } else {
+            document.getElementById(id).value = '';
+        }
+    });
 }
 </script>
 

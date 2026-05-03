@@ -15,6 +15,14 @@ if (!$curso) {
 $link_venda = !empty($curso['payment_link']) ? $curso['payment_link'] : "inscricao.php?curso_id=" . $curso['id'];
 
 require_once 'includes/header.php';
+
+function render_html_or_text($content) {
+    if (empty($content)) return '';
+    if (preg_match('/<(p|br|ul|ol|li|strong|em|div|span|h[1-6])[> ]/i', $content)) {
+        return $content;
+    }
+    return nl2br(htmlspecialchars($content));
+}
 ?>
 
 <main style="background: var(--obsidian-deep); min-height: 100vh;">
@@ -58,14 +66,14 @@ require_once 'includes/header.php';
             <div style="flex: 2; min-width: 300px;">
                 <h2 style="font-size: 2rem; margin-bottom: 2rem; color: var(--brand-orange);">Sobre o Curso</h2>
                 <div style="color: var(--text-secondary); font-size: 1.1rem; line-height: 1.8; margin-bottom: 3rem;">
-                    <?= nl2br(htmlspecialchars($curso['description'])) ?>
+                    <?= render_html_or_text($curso['description']) ?>
                 </div>
 
                 <?php if(!empty($curso['info_extra'])): ?>
                     <div style="margin-bottom: 3rem; background: rgba(255,255,255,0.02); padding: 2rem; border-radius: 8px; border-left: 4px solid var(--brand-orange);">
                         <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">Informações</h3>
                         <div style="color: var(--text-secondary); line-height: 1.8;">
-                            <?= nl2br(htmlspecialchars($curso['info_extra'])) ?>
+                            <?= render_html_or_text($curso['info_extra']) ?>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -74,7 +82,7 @@ require_once 'includes/header.php';
                     <div style="margin-bottom: 3rem; background: rgba(255,255,255,0.02); padding: 2rem; border-radius: 8px; border-left: 4px solid var(--prism-cyan);">
                         <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">Disciplinas</h3>
                         <div style="color: var(--text-secondary); line-height: 1.8;">
-                            <?= nl2br(htmlspecialchars($curso['disciplinas'])) ?>
+                            <?= render_html_or_text($curso['disciplinas']) ?>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -83,7 +91,7 @@ require_once 'includes/header.php';
                     <div style="margin-bottom: 3rem; background: rgba(255,255,255,0.02); padding: 2rem; border-radius: 8px; border-left: 4px solid var(--prism-violet);">
                         <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">Conteúdo Programático</h3>
                         <div style="color: var(--text-secondary); line-height: 1.8;">
-                            <?= nl2br(htmlspecialchars($curso['conteudo'])) ?>
+                            <?= render_html_or_text($curso['conteudo']) ?>
                         </div>
                     </div>
                 <?php endif; ?>
