@@ -112,7 +112,6 @@ $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id
                         </div>
                     <?php endif; ?>
                     <h3 style="font-size: 1.4rem; margin-bottom: 1rem; flex-grow: 1;"><?= htmlspecialchars($c['title']) ?></h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 2rem;"><?= htmlspecialchars(substr($c['description'], 0, 100)) ?>...</p>
                     <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
                         <span style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1.3rem; font-weight: 700;">R$ <?= number_format($c['price'], 2, ',', '.') ?></span>
                         <a href="curso-detalhes.php?id=<?= $c['id'] ?>" class="btn" style="padding: 0.8rem 1.5rem; font-size: 0.8rem;">Saiba Mais</a>

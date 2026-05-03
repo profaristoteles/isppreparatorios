@@ -37,7 +37,6 @@ $cursos = $stmt->fetchAll();
             <?php endif; ?>
             
             <h3 style="font-size: 1.4rem; margin-bottom: 1rem; flex-grow: 1;"><?= htmlspecialchars($c['title']) ?></h3>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem;"><?= htmlspecialchars(substr($c['description'], 0, 150)) ?>...</p>
             
             <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
                 <?php if($is_reserva): ?>
