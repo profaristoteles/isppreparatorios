@@ -27,6 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cover = uniqid() . '.' . $ext;
             move_uploaded_file($_FILES['cover_image']['tmp_name'], '../uploads/' . $cover);
         }
+    } elseif (!empty($_POST['ai_generated_image'])) {
+        $cover = $_POST['ai_generated_image'];
     }
 
     if (!empty($_POST['id'])) {
@@ -101,6 +103,21 @@ require_once 'includes/header.php';
             <div class="form-group" style="flex:1;">
                 <label>Imagem da Capa</label>
                 <input type="file" name="cover_image" class="form-control" accept="image/*">
+                
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(3, 4, 94, 0.2); border: 1px dashed var(--prism-cyan); border-radius: 8px;">
+                    <label style="font-size: 0.9rem; color: var(--prism-cyan); margin-bottom: 0.5rem; display: block;"><i class="fas fa-magic"></i> Ou gerar capa com IA</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="ai_image_prompt" class="form-control" placeholder="Ex: Professor em sala de aula, estilo realista">
+                        <button type="button" class="btn" onclick="gerarImagemIA()" id="btn_ia_image" style="background: var(--prism-cyan); color: #000; white-space: nowrap;">Gerar Imagem</button>
+                    </div>
+                    <div id="ai_img_loading" style="display:none; color: var(--prism-cyan); font-size: 0.8rem; margin-top: 0.5rem;"><i class="fas fa-spinner fa-spin"></i> Gerando imagem e baixando...</div>
+                    
+                    <div id="ai_img_preview_container" style="display:none; margin-top: 1rem;">
+                        <img id="ai_img_preview" src="" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px;">
+                        <input type="hidden" name="ai_generated_image" id="ai_generated_image">
+                        <small style="color: #ccc; display: block; margin-top: 0.3rem;">Imagem gerada selecionada como capa. Salve o post para aplicar.</small>
+                    </div>
+                </div>
             </div>
             <div class="form-group" style="flex:1;">
                 <label>Texto Alternativo da Imagem (SEO)</label>
@@ -206,6 +223,9 @@ function resetForm() {
     }
     document.getElementById('post_image_alt').value = '';
     document.getElementById('post_created_at').value = '';
+    document.getElementById('ai_image_prompt').value = '';
+    document.getElementById('ai_generated_image').value = '';
+    document.getElementById('ai_img_preview_container').style.display = 'none';
 }
 
 async function gerarArtigoIA() {
@@ -249,6 +269,48 @@ async function gerarArtigoIA() {
             if(document.getElementById('post_title').value === '') {
                 document.getElementById('post_title').value = "Artigo Gerado por IA";
             }
+        }
+    } catch (e) {
+        alert("Erro na requisição: " + e.message);
+        console.error(e);
+    } finally {
+        btn.disabled = false;
+        loading.style.display = 'none';
+    }
+}
+
+async function gerarImagemIA() {
+    const prompt = document.getElementById('ai_image_prompt').value.trim();
+    if (!prompt) {
+        alert("Por favor, digite um prompt para gerar a imagem.");
+        return;
+    }
+
+    const btn = document.getElementById('btn_ia_image');
+    const loading = document.getElementById('ai_img_loading');
+    const previewContainer = document.getElementById('ai_img_preview_container');
+    const previewImg = document.getElementById('ai_img_preview');
+    const hiddenInput = document.getElementById('ai_generated_image');
+    
+    btn.disabled = true;
+    loading.style.display = 'block';
+    previewContainer.style.display = 'none';
+
+    try {
+        const response = await fetch('ajax_ai_generate_image.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            alert(data.error);
+        } else if (data.success) {
+            previewImg.src = data.url;
+            hiddenInput.value = data.filename;
+            previewContainer.style.display = 'block';
         }
     } catch (e) {
         alert("Erro na requisição: " + e.message);
