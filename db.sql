@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS posts (
     category VARCHAR(100) DEFAULT 'Geral',
     content LONGTEXT NOT NULL,
     cover_image VARCHAR(255),
+    status VARCHAR(20) DEFAULT 'publicado',
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

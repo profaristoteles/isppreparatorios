@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // TinyMCE sends HTML content
     $content = $_POST['content'];
     $image_alt = $_POST['image_alt'] ?: '';
+    $status = $_POST['status'] ?? 'publicado';
     $created_at = !empty($_POST['created_at']) ? date('Y-m-d H:i:s', strtotime($_POST['created_at'])) : date('Y-m-d H:i:s');
 
     $cover = '';
@@ -33,17 +34,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($_POST['id'])) {
         if ($cover) {
-            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, cover_image=?, image_alt=?, created_at=? WHERE id=?");
-            $stmt->execute([$title, $category, $content, $cover, $image_alt, $created_at, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, cover_image=?, image_alt=?, status=?, created_at=? WHERE id=?");
+            $stmt->execute([$title, $category, $content, $cover, $image_alt, $status, $created_at, $_POST['id']]);
         } else {
-            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, image_alt=?, created_at=? WHERE id=?");
-            $stmt->execute([$title, $category, $content, $image_alt, $created_at, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, image_alt=?, status=?, created_at=? WHERE id=?");
+            $stmt->execute([$title, $category, $content, $image_alt, $status, $created_at, $_POST['id']]);
         }
     } else {
-        $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image, image_alt, created_at) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $category, $content, $cover, $image_alt, $created_at]);
+        $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image, image_alt, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $category, $content, $cover, $image_alt, $status, $created_at]);
     }
-    $_SESSION['msg'] = "Post salvo com sucesso.";
+    $msgLabel = $status === 'rascunho' ? 'Rascunho salvo com sucesso.' : 'Post publicado com sucesso.';
+    $_SESSION['msg'] = $msgLabel;
     header("Location: gerenciar-posts.php");
     exit;
 }
@@ -60,6 +62,7 @@ require_once 'includes/header.php';
     <h2>Gerenciar Blog (Artigos)</h2>
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="id" id="post_id">
+        <input type="hidden" name="status" id="post_status" value="publicado">
         
         <div style="display:flex; gap:1rem;">
             <div class="form-group" style="flex:2;">
@@ -128,8 +131,12 @@ require_once 'includes/header.php';
                 <div id="ai_alt_loading" style="display:none; color: var(--prism-cyan); font-size: 0.8rem; margin-top: 0.5rem;"><i class="fas fa-spinner fa-spin"></i> Gerando texto alternativo...</div>
             </div>
         </div>
-        <button type="submit" class="btn">Salvar Post</button>
-        <button type="button" class="btn btn-warning" onclick="resetForm()">Novo Post</button>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+            <button type="submit" class="btn" onclick="document.getElementById('post_status').value='publicado'" style="background: var(--brand-orange); border-color: var(--brand-orange);"><i class="fas fa-paper-plane"></i> Publicar</button>
+            <button type="submit" class="btn" onclick="document.getElementById('post_status').value='rascunho'" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: var(--text-primary);"><i class="fas fa-save"></i> Salvar Rascunho</button>
+            <button type="button" class="btn btn-warning" onclick="resetForm()">Novo Post</button>
+            <span id="status_indicator" style="display:none; font-family: var(--font-mono); font-size: 0.8rem; padding: 0.3rem 0.8rem; border-radius: 20px;"></span>
+        </div>
     </form>
 </div>
 
@@ -139,6 +146,7 @@ require_once 'includes/header.php';
             <th>Capa</th>
             <th>Título</th>
             <th>Categoria</th>
+            <th>Status</th>
             <th>Data</th>
             <th>Ações</th>
         </tr>
@@ -153,6 +161,14 @@ require_once 'includes/header.php';
             </td>
             <td><?= htmlspecialchars($p['title']) ?></td>
             <td><span style="background: #ff8000; color: #03045e; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;"><?= htmlspecialchars($p['category']) ?></span></td>
+            <td>
+                <?php $pStatus = $p['status'] ?? 'publicado'; ?>
+                <?php if($pStatus === 'rascunho'): ?>
+                    <span style="background: rgba(255,255,255,0.1); color: #aaa; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; border: 1px solid var(--glass-border);">📝 Rascunho</span>
+                <?php else: ?>
+                    <span style="background: #1a7a4a; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">✅ Publicado</span>
+                <?php endif; ?>
+            </td>
             <td>
                 <?php 
                 $is_scheduled = strtotime($p['created_at']) > time();
@@ -170,6 +186,7 @@ require_once 'includes/header.php';
                     'category' => $p['category'],
                     'content' => $p['content'],
                     'image_alt' => $p['image_alt'],
+                    'status' => $p['status'] ?? 'publicado',
                     'created_at' => $p['created_at']
                 ])) ?>)">Editar</button>
                 <a href="?del=<?= $p['id'] ?>" class="btn btn-danger" onclick="return confirm('Excluir este post?')">Excluir</a>
@@ -206,6 +223,23 @@ function editarPost(p) {
     }
     document.getElementById('post_image_alt').value = p.image_alt || '';
     
+    // Set status
+    document.getElementById('post_status').value = p.status || 'publicado';
+    var indicator = document.getElementById('status_indicator');
+    if (p.status === 'rascunho') {
+        indicator.textContent = '📝 Editando Rascunho';
+        indicator.style.display = 'inline-block';
+        indicator.style.background = 'rgba(255,255,255,0.1)';
+        indicator.style.color = '#aaa';
+        indicator.style.border = '1px solid var(--glass-border)';
+    } else {
+        indicator.textContent = '✅ Publicado';
+        indicator.style.display = 'inline-block';
+        indicator.style.background = '#1a7a4a';
+        indicator.style.color = '#fff';
+        indicator.style.border = 'none';
+    }
+    
     if (p.created_at) {
         document.getElementById('post_created_at').value = p.created_at.substring(0, 16).replace(' ', 'T');
     } else {
@@ -230,6 +264,8 @@ function resetForm() {
     document.getElementById('ai_image_prompt').value = '';
     document.getElementById('ai_generated_image').value = '';
     document.getElementById('ai_img_preview_container').style.display = 'none';
+    document.getElementById('post_status').value = 'publicado';
+    document.getElementById('status_indicator').style.display = 'none';
 }
 
 async function gerarArtigoIA() {

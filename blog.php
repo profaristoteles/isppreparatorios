@@ -3,11 +3,11 @@ require_once 'db_config.php';
 require_once 'includes/header.php';
 
 // Get categories for sidebar
-$stmt_cats = $pdo->query("SELECT category, COUNT(*) as total FROM posts WHERE active=1 AND created_at <= NOW() GROUP BY category ORDER BY total DESC");
+$stmt_cats = $pdo->query("SELECT category, COUNT(*) as total FROM posts WHERE active=1 AND (status='publicado' OR status IS NULL) AND created_at <= NOW() GROUP BY category ORDER BY total DESC");
 $categories = $stmt_cats->fetchAll();
 
 // Get all posts
-$stmt_posts = $pdo->query("SELECT * FROM posts WHERE active=1 AND created_at <= NOW() ORDER BY id DESC");
+$stmt_posts = $pdo->query("SELECT * FROM posts WHERE active=1 AND (status='publicado' OR status IS NULL) AND created_at <= NOW() ORDER BY id DESC");
 $all_posts = $stmt_posts->fetchAll();
 
 $hero_post = count($all_posts) > 0 ? $all_posts[0] : null;

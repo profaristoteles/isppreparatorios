@@ -2,7 +2,7 @@
 require_once 'db_config.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$stmt = $pdo->prepare("SELECT * FROM posts WHERE id = ? AND active = 1 AND created_at <= NOW()");
+$stmt = $pdo->prepare("SELECT * FROM posts WHERE id = ? AND active = 1 AND (status='publicado' OR status IS NULL) AND created_at <= NOW()");
 $stmt->execute([$id]);
 $post = $stmt->fetch();
 

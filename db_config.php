@@ -22,6 +22,14 @@ try {
     die("Erro na conexão com o banco de dados: " . $e->getMessage());
 }
 
+// Auto-migration: coluna status em posts (rascunho/publicado)
+try {
+    $cols = $pdo->query("SHOW COLUMNS FROM posts LIKE 'status'")->fetchAll();
+    if (empty($cols)) {
+        $pdo->exec("ALTER TABLE posts ADD COLUMN status VARCHAR(20) DEFAULT 'publicado' AFTER cover_image");
+    }
+} catch (Exception $e) { /* tabela pode não existir ainda */ }
+
 // Funções utilitárias globais
 function get_config($pdo) {
     $stmt = $pdo->query("SELECT * FROM configuracoes LIMIT 1");
