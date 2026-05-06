@@ -121,7 +121,11 @@ require_once 'includes/header.php';
             </div>
             <div class="form-group" style="flex:1;">
                 <label>Texto Alternativo da Imagem (SEO)</label>
-                <input type="text" name="image_alt" id="post_image_alt" class="form-control" placeholder="Ex: Professor dando aula de educação especial">
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" name="image_alt" id="post_image_alt" class="form-control" placeholder="Ex: Professor dando aula de educação especial" style="flex: 1;">
+                    <button type="button" class="btn" onclick="gerarAltTextIA()" id="btn_ia_alt" style="background: var(--prism-cyan); color: #000; white-space: nowrap; font-size: 0.8rem; padding: 0.5rem 1rem;" title="Gerar texto alternativo com IA"><i class="fas fa-magic"></i> Gerar com IA</button>
+                </div>
+                <div id="ai_alt_loading" style="display:none; color: var(--prism-cyan); font-size: 0.8rem; margin-top: 0.5rem;"><i class="fas fa-spinner fa-spin"></i> Gerando texto alternativo...</div>
             </div>
         </div>
         <button type="submit" class="btn">Salvar Post</button>
@@ -273,6 +277,43 @@ async function gerarArtigoIA() {
     } catch (e) {
         alert("Erro na requisição: " + e.message);
         console.error(e);
+    } finally {
+        btn.disabled = false;
+        loading.style.display = 'none';
+    }
+}
+
+async function gerarAltTextIA() {
+    const title = document.getElementById('post_title').value.trim();
+    if (!title) {
+        alert("Preencha o título do post primeiro para que a IA gere um texto alternativo adequado.");
+        return;
+    }
+
+    const btn = document.getElementById('btn_ia_alt');
+    const loading = document.getElementById('ai_alt_loading');
+    
+    btn.disabled = true;
+    loading.style.display = 'block';
+
+    try {
+        const response = await fetch('ajax_ai_generate.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: 'Gere APENAS um texto alternativo curto (máximo 15 palavras) para a imagem de capa de um artigo de blog sobre: "' + title + '". O texto deve ser descritivo, acessível e bom para SEO. Retorne SOMENTE o texto puro, sem aspas, sem HTML, sem explicação.' })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            alert(data.error);
+        } else if (data.success && data.html) {
+            let altText = data.html.replace(/<[^>]*>/g, '').trim();
+            altText = altText.replace(/^["']|["']$/g, '').trim();
+            document.getElementById('post_image_alt').value = altText;
+        }
+    } catch (e) {
+        alert("Erro: " + e.message);
     } finally {
         btn.disabled = false;
         loading.style.display = 'none';
