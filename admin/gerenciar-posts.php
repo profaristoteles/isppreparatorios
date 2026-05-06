@@ -132,10 +132,10 @@ require_once 'includes/header.php';
             </div>
         </div>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-            <button type="submit" class="btn" onclick="document.getElementById('post_status').value='publicado'" style="background: var(--brand-orange); border-color: var(--brand-orange);"><i class="fas fa-paper-plane"></i> Publicar</button>
-            <button type="submit" class="btn" onclick="document.getElementById('post_status').value='rascunho'" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: var(--text-primary);"><i class="fas fa-save"></i> Salvar Rascunho</button>
+            <button type="submit" class="btn" onclick="document.getElementById('post_status').value='publicado'" style="background: #ff8000; border: none; color: #fff; font-weight: 600; padding: 0.6rem 1.5rem;"><i class="fas fa-paper-plane"></i> Publicar</button>
+            <button type="submit" class="btn" onclick="document.getElementById('post_status').value='rascunho'" style="background: #e9ecef; border: 1px solid #ccc; color: #333; font-weight: 600; padding: 0.6rem 1.5rem;"><i class="fas fa-save"></i> Salvar Rascunho</button>
             <button type="button" class="btn btn-warning" onclick="resetForm()">Novo Post</button>
-            <span id="status_indicator" style="display:none; font-family: var(--font-mono); font-size: 0.8rem; padding: 0.3rem 0.8rem; border-radius: 20px;"></span>
+            <span id="status_indicator" style="display:none; font-size: 0.8rem; padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: 600;"></span>
         </div>
     </form>
 </div>
@@ -229,9 +229,9 @@ function editarPost(p) {
     if (p.status === 'rascunho') {
         indicator.textContent = '📝 Editando Rascunho';
         indicator.style.display = 'inline-block';
-        indicator.style.background = 'rgba(255,255,255,0.1)';
-        indicator.style.color = '#aaa';
-        indicator.style.border = '1px solid var(--glass-border)';
+        indicator.style.background = '#f0f0f0';
+        indicator.style.color = '#666';
+        indicator.style.border = '1px solid #ccc';
     } else {
         indicator.textContent = '✅ Publicado';
         indicator.style.display = 'inline-block';
