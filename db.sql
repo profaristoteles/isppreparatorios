@@ -123,9 +123,12 @@ CREATE TABLE IF NOT EXISTS apostilas (
     sec1_btn_text VARCHAR(100) DEFAULT 'Quero Ter Acesso Agora',
     sec2_title VARCHAR(255) DEFAULT 'Veja o Material por Dentro',
     sec3_title VARCHAR(255) DEFAULT 'Acelerando sua Aprovação',
+    sec3_text TEXT,
+    sec3_bullets TEXT,
     sec3_btn_text VARCHAR(100) DEFAULT 'Comprar Agora',
     video_title VARCHAR(255) DEFAULT '',
     video_url VARCHAR(255) DEFAULT '',
+    image_alt VARCHAR(255) DEFAULT '',
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -30,6 +30,22 @@ try {
     }
 } catch (Exception $e) { /* tabela pode não existir ainda */ }
 
+// Auto-migration: campos editaveis das landing pages de apostilas
+try {
+    $apostilaCols = [
+        'image_alt' => "ALTER TABLE apostilas ADD COLUMN image_alt VARCHAR(255) DEFAULT '' AFTER video_url",
+        'sec3_text' => "ALTER TABLE apostilas ADD COLUMN sec3_text TEXT AFTER sec3_title",
+        'sec3_bullets' => "ALTER TABLE apostilas ADD COLUMN sec3_bullets TEXT AFTER sec3_text"
+    ];
+
+    foreach ($apostilaCols as $column => $sql) {
+        $cols = $pdo->query("SHOW COLUMNS FROM apostilas LIKE " . $pdo->quote($column))->fetchAll();
+        if (empty($cols)) {
+            $pdo->exec($sql);
+        }
+    }
+} catch (Exception $e) { /* tabela pode nao existir ainda */ }
+
 // Funções utilitárias globais
 function get_config($pdo) {
     $stmt = $pdo->query("SELECT * FROM configuracoes LIMIT 1");

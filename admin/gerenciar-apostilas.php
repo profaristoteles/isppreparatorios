@@ -4,6 +4,9 @@ require_once '../db_config.php';
 
 if (!is_dir('../uploads')) { mkdir('../uploads', 0777, true); }
 
+$defaultSec3Text = 'A resolução focada de questões e o estudo direcionado através de mapas e resumos otimizados são fundamentais para garantir sua fixação de conteúdo na reta final.';
+$defaultSec3Bullets = "Questões selecionadas e comentadas por especialistas.\nResumos objetivos para leitura rápida e revisão.\nFormato amigável e direto ao ponto que as bancas cobram.";
+
 if (isset($_GET['del'])) {
     $id = (int)$_GET['del'];
     $pdo->query("DELETE FROM apostilas WHERE id = $id");
@@ -27,6 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sec1_btn_text = $_POST['sec1_btn_text'] ?: 'Quero Ter Acesso Agora';
     $sec2_title = $_POST['sec2_title'] ?: 'Veja o Material por Dentro';
     $sec3_title = $_POST['sec3_title'] ?: 'Acelerando sua Aprovação';
+    $sec3_text = $_POST['sec3_text'] ?: $defaultSec3Text;
+    $sec3_bullets = $_POST['sec3_bullets'] ?: $defaultSec3Bullets;
     $sec3_btn_text = $_POST['sec3_btn_text'] ?: 'Comprar Agora';
     $video_title = $_POST['video_title'] ?: '';
     $video_url = $_POST['video_url'] ?: '';
@@ -62,8 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['id'])) {
         $id = $_POST['id'];
         
-        $sql = "UPDATE apostilas SET title=?, payment_link=?, active=?, price=?, subtitle=?, is_internal=?, topics=?, hero_btn_text=?, sec1_title=?, sec1_btn_text=?, sec2_title=?, sec3_title=?, sec3_btn_text=?, video_title=?, video_url=?, image_alt=?";
-        $params = [$title, $payment_link, $active, $price, $subtitle, $is_internal, $topics, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_btn_text, $video_title, $video_url, $image_alt];
+        $sql = "UPDATE apostilas SET title=?, payment_link=?, active=?, price=?, subtitle=?, is_internal=?, topics=?, hero_btn_text=?, sec1_title=?, sec1_btn_text=?, sec2_title=?, sec3_title=?, sec3_text=?, sec3_bullets=?, sec3_btn_text=?, video_title=?, video_url=?, image_alt=?";
+        $params = [$title, $payment_link, $active, $price, $subtitle, $is_internal, $topics, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_text, $sec3_bullets, $sec3_btn_text, $video_title, $video_url, $image_alt];
         
         if ($cover) {
             $sql .= ", cover_image=?";
@@ -80,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
     } else {
-        $stmt = $pdo->prepare("INSERT INTO apostilas (title, payment_link, cover_image, active, price, subtitle, is_internal, topics, preview_images, hero_btn_text, sec1_title, sec1_btn_text, sec2_title, sec3_title, sec3_btn_text, video_title, video_url, image_alt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $payment_link, $cover, $active, $price, $subtitle, $is_internal, $topics, $preview_str, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_btn_text, $video_title, $video_url, $image_alt]);
+        $stmt = $pdo->prepare("INSERT INTO apostilas (title, payment_link, cover_image, active, price, subtitle, is_internal, topics, preview_images, hero_btn_text, sec1_title, sec1_btn_text, sec2_title, sec3_title, sec3_text, sec3_bullets, sec3_btn_text, video_title, video_url, image_alt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $payment_link, $cover, $active, $price, $subtitle, $is_internal, $topics, $preview_str, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_text, $sec3_bullets, $sec3_btn_text, $video_title, $video_url, $image_alt]);
     }
     $_SESSION['msg'] = "Apostila salva com sucesso.";
     header("Location: gerenciar-apostilas.php");
@@ -92,12 +97,52 @@ $apostilas = $pdo->query("SELECT * FROM apostilas ORDER BY id DESC")->fetchAll()
 require_once 'includes/header.php';
 ?>
 
+<style>
+    .apostila-admin-note {
+        background: #eef4ff;
+        border: 1px solid #cbd8ff;
+        border-left: 5px solid #03045e;
+        border-radius: 6px;
+        color: #172033;
+        margin: 1rem 0 1.5rem;
+        padding: 1rem 1.25rem;
+    }
+    .apostila-admin-note strong {
+        display: block;
+        margin-bottom: .35rem;
+    }
+    .apostila-section-heading {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        color: #03045e;
+        font-size: 1rem;
+        margin: 2rem 0 1rem;
+        padding: .8rem 1rem;
+    }
+    .apostila-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    @media (max-width: 900px) {
+        .apostila-row {
+            display: block;
+        }
+    }
+</style>
+
 <div class="card">
     <h2>Gerenciar Apostilas</h2>
+    <div class="apostila-admin-note">
+        <strong>Fluxo recomendado</strong>
+        Cadastre título, preço e link de compra. Marque "Apostila Própria (ISP)" para criar uma página de venda editável com tópicos, vídeo, imagens e chamada final.
+    </div>
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="id" id="apo_id">
         
-        <div style="display:flex; gap:1rem; margin-bottom: 1rem;">
+        <h3 class="apostila-section-heading">1. Informações principais</h3>
+        <div class="apostila-row">
             <div class="form-group" style="flex:2;">
                 <label>Título da Apostila</label>
                 <input type="text" name="title" id="apo_title" class="form-control" required>
@@ -121,6 +166,7 @@ require_once 'includes/header.php';
             <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">Se marcado, uma Landing Page será criada e o cliente será direcionado para ela.</p>
             
             <div id="internal_fields" style="display: none; margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                <h3 class="apostila-section-heading">2. Conteúdo da página de venda</h3>
                 <div class="form-group">
                     <label>Subtítulo (Ex: Caderno focado nas provas...)</label>
                     <input type="text" name="subtitle" id="apo_subtitle" class="form-control">
@@ -136,7 +182,7 @@ require_once 'includes/header.php';
                 </div>
 
                 <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
-                <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Textos Dinâmicos da Landing Page</h4>
+                <h3 class="apostila-section-heading">3. Textos editáveis da landing page</h3>
                 
                 <div class="form-group">
                     <label>Texto do Botão Principal (Topo)</label>
@@ -159,15 +205,25 @@ require_once 'includes/header.php';
                     <input type="text" name="sec3_title" id="apo_sec3_title" class="form-control" placeholder="Acelerando sua Aprovação">
                 </div>
                 <div class="form-group">
+                    <label>Texto da Seção Final</label>
+                    <textarea name="sec3_text" id="apo_sec3_text" class="form-control" rows="4" placeholder="<?= htmlspecialchars($defaultSec3Text) ?>"></textarea>
+                    <small style="color: var(--text-secondary);">Este texto aparece antes do último botão de compra.</small>
+                </div>
+                <div class="form-group">
+                    <label>Diferenciais da Seção Final (Um por linha)</label>
+                    <textarea name="sec3_bullets" id="apo_sec3_bullets" class="form-control" rows="4" placeholder="Questões selecionadas e comentadas&#10;Resumos objetivos para revisão&#10;Formato direto ao ponto"></textarea>
+                </div>
+                <div class="form-group">
                     <label>Texto do Botão Final</label>
                     <input type="text" name="sec3_btn_text" id="apo_sec3_btn_text" class="form-control" placeholder="Comprar Agora">
                 </div>
 
                 <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
-                <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Seção de Vídeo (YouTube)</h4>
+                <h3 class="apostila-section-heading">4. Vídeo do YouTube</h3>
                 <div class="form-group">
                     <label>Título da Seção de Vídeo (Opcional)</label>
                     <input type="text" name="video_title" id="apo_video_title" class="form-control" placeholder="Entenda como funciona nossa apostila">
+                    <small style="color: var(--text-secondary);">Se ficar vazio, o site usa um título padrão e ainda exibe o vídeo.</small>
                 </div>
                 <div class="form-group">
                     <label>URL do Vídeo do YouTube (Opcional)</label>
@@ -176,7 +232,8 @@ require_once 'includes/header.php';
             </div>
         </div>
 
-        <div style="display:flex; gap:1rem;">
+        <h3 class="apostila-section-heading">5. Imagens e publicação</h3>
+        <div class="apostila-row">
             <div class="form-group" style="flex:1;">
                 <label>Imagem da Capa (Vitrine e Topo da Landing Page)</label>
                 <input type="file" name="cover_image" class="form-control" accept="image/*">
@@ -258,6 +315,8 @@ function editarApostila(a) {
     document.getElementById('apo_sec1_btn_text').value = a.sec1_btn_text || '';
     document.getElementById('apo_sec2_title').value = a.sec2_title || '';
     document.getElementById('apo_sec3_title').value = a.sec3_title || '';
+    document.getElementById('apo_sec3_text').value = a.sec3_text || '';
+    document.getElementById('apo_sec3_bullets').value = a.sec3_bullets || '';
     document.getElementById('apo_sec3_btn_text').value = a.sec3_btn_text || '';
     
     document.getElementById('apo_video_title').value = a.video_title || '';
@@ -284,6 +343,8 @@ function resetForm() {
     document.getElementById('apo_sec1_btn_text').value = '';
     document.getElementById('apo_sec2_title').value = '';
     document.getElementById('apo_sec3_title').value = '';
+    document.getElementById('apo_sec3_text').value = '';
+    document.getElementById('apo_sec3_bullets').value = '';
     document.getElementById('apo_sec3_btn_text').value = '';
     
     document.getElementById('apo_video_title').value = '';
