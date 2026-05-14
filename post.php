@@ -6,6 +6,16 @@ $stmt = $pdo->prepare("SELECT * FROM posts WHERE id = ? AND active = 1 AND (stat
 $stmt->execute([$id]);
 $post = $stmt->fetch();
 
+// Fetch Previous Post
+$stmt_prev = $pdo->prepare("SELECT id, title FROM posts WHERE id < ? AND active = 1 AND (status='publicado' OR status IS NULL) AND created_at <= NOW() ORDER BY id DESC LIMIT 1");
+$stmt_prev->execute([$id]);
+$prev_post = $stmt_prev->fetch();
+
+// Fetch Next Post
+$stmt_next = $pdo->prepare("SELECT id, title FROM posts WHERE id > ? AND active = 1 AND (status='publicado' OR status IS NULL) AND created_at <= NOW() ORDER BY id ASC LIMIT 1");
+$stmt_next->execute([$id]);
+$next_post = $stmt_next->fetch();
+
 if(!$post) {
     require_once 'includes/header.php';
     echo "<div class='container section-padding' style='margin-top: 5rem;'><h1 style='color: var(--brand-orange); font-family: var(--font-mono); text-align: center;'>// ERRO: POST NÃO ENCONTRADO</h1></div>";
@@ -140,6 +150,19 @@ require_once 'includes/header.php';
     .etapas-grid { grid-template-columns: 1fr; }
     .badge-ret { flex-direction: column; }
 }
+
+/* Navegação de Posts */
+.post-navigation { display: flex; justify-content: space-between; align-items: stretch; gap: 1.5rem; margin-top: 4rem; }
+.nav-link { flex: 1; display: flex; flex-direction: column; padding: 1.5rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 12px; text-decoration: none; transition: all 0.3s ease; min-width: 0; }
+.nav-link:hover { background: #fff; border-color: #ff8000; box-shadow: 0 10px 20px rgba(0,0,0,0.05); transform: translateY(-3px); }
+.nav-link.prev { text-align: left; border-left: 4px solid #03045e; }
+.nav-link.next { text-align: right; border-right: 4px solid #03045e; }
+.nav-label { font-size: 0.8rem; color: #6c757d; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 0.5rem; }
+.nav-title { font-family: 'Sora', sans-serif; color: #03045e; font-weight: 700; font-size: 1.1rem; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 600px) {
+    .post-navigation { flex-direction: column; gap: 1rem; }
+}
 </style>
 
 <div class="container section-padding" style="margin-top: 5rem; padding-left: 0; padding-right: 0;">
@@ -185,6 +208,27 @@ require_once 'includes/header.php';
                     Especialistas em aprovação nas carreiras da educação. Nossa missão é entregar o conteúdo mais focado e atualizado para acelerar a sua nomeação.
                 </p>
             </div>
+        </div>
+        
+        <!-- Post Navigation -->
+        <div class="post-navigation">
+            <?php if($prev_post): ?>
+                <a href="post.php?id=<?= $prev_post['id'] ?>" class="nav-link prev">
+                    <span class="nav-label">← Post Anterior</span>
+                    <span class="nav-title"><?= htmlspecialchars($prev_post['title']) ?></span>
+                </a>
+            <?php else: ?>
+                <div style="flex: 1;"></div>
+            <?php endif; ?>
+
+            <?php if($next_post): ?>
+                <a href="post.php?id=<?= $next_post['id'] ?>" class="nav-link next">
+                    <span class="nav-label">Próximo Post →</span>
+                    <span class="nav-title"><?= htmlspecialchars($next_post['title']) ?></span>
+                </a>
+            <?php else: ?>
+                <div style="flex: 1;"></div>
+            <?php endif; ?>
         </div>
         
         <div style="text-align: center; margin-top: 4rem; padding-top: 3rem; border-top: 1px solid #dee2e6; display: flex; flex-direction: column; gap: 2rem; align-items: center;">
