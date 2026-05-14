@@ -28,6 +28,11 @@ try {
     if (empty($cols)) {
         $pdo->exec("ALTER TABLE posts ADD COLUMN status VARCHAR(20) DEFAULT 'publicado' AFTER cover_image");
     }
+    
+    $colsSeo = $pdo->query("SHOW COLUMNS FROM posts LIKE 'seo_keywords'")->fetchAll();
+    if (empty($colsSeo)) {
+        $pdo->exec("ALTER TABLE posts ADD COLUMN seo_keywords VARCHAR(255) DEFAULT '' AFTER status");
+    }
 } catch (Exception $e) { /* tabela pode não existir ainda */ }
 
 // Auto-migration: campos editaveis das landing pages de apostilas

@@ -30,7 +30,7 @@ $tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1"
     
     <!-- SEO Meta Tags -->
     <meta name="description" content="<?= htmlspecialchars($dynamic_desc ?? 'ISP Preparatórios — Cursos preparatórios para concursos públicos em Caxias, MA. Aprove-se com nossa metodologia de elite.') ?>">
-    <meta name="keywords" content="concurso público, caxias ma, preparatório, educação especial, inclusiva, curso online, curso presencial">
+    <meta name="keywords" content="<?= !empty($dynamic_keywords) ? htmlspecialchars($dynamic_keywords) : 'concurso público, caxias ma, preparatório, educação especial, inclusiva, curso online, curso presencial' ?>">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">

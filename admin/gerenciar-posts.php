@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $content = $_POST['content'];
     $image_alt = $_POST['image_alt'] ?: '';
     $status = $_POST['status'] ?? 'publicado';
+    $seo_keywords = $_POST['seo_keywords'] ?? '';
     $created_at = !empty($_POST['created_at']) ? date('Y-m-d H:i:s', strtotime($_POST['created_at'])) : date('Y-m-d H:i:s');
 
     $cover = '';
@@ -34,15 +35,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($_POST['id'])) {
         if ($cover) {
-            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, cover_image=?, image_alt=?, status=?, created_at=? WHERE id=?");
-            $stmt->execute([$title, $category, $content, $cover, $image_alt, $status, $created_at, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, cover_image=?, image_alt=?, status=?, seo_keywords=?, created_at=? WHERE id=?");
+            $stmt->execute([$title, $category, $content, $cover, $image_alt, $status, $seo_keywords, $created_at, $_POST['id']]);
         } else {
-            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, image_alt=?, status=?, created_at=? WHERE id=?");
-            $stmt->execute([$title, $category, $content, $image_alt, $status, $created_at, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, image_alt=?, status=?, seo_keywords=?, created_at=? WHERE id=?");
+            $stmt->execute([$title, $category, $content, $image_alt, $status, $seo_keywords, $created_at, $_POST['id']]);
         }
     } else {
-        $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image, image_alt, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $category, $content, $cover, $image_alt, $status, $created_at]);
+        $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image, image_alt, status, seo_keywords, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $category, $content, $cover, $image_alt, $status, $seo_keywords, $created_at]);
     }
     $msgLabel = $status === 'rascunho' ? 'Rascunho salvo com sucesso.' : 'Post publicado com sucesso.';
     $_SESSION['msg'] = $msgLabel;
@@ -77,6 +78,11 @@ require_once 'includes/header.php';
                 <label>Data de Publicação</label>
                 <input type="datetime-local" name="created_at" id="post_created_at" class="form-control">
             </div>
+        </div>
+
+        <div class="form-group">
+            <label>Palavras-chave SEO (Separadas por vírgula)</label>
+            <input type="text" name="seo_keywords" id="post_seo_keywords" class="form-control" placeholder="concurso, educação, professores, dicas de estudo">
         </div>
 
         <div class="form-group" style="background: rgba(3, 4, 94, 0.4); border: 1px solid var(--prism-cyan); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
@@ -187,6 +193,7 @@ require_once 'includes/header.php';
                     'content' => $p['content'],
                     'image_alt' => $p['image_alt'],
                     'status' => $p['status'] ?? 'publicado',
+                    'seo_keywords' => $p['seo_keywords'] ?? '',
                     'created_at' => $p['created_at']
                 ])) ?>)">Editar</button>
                 <a href="?del=<?= $p['id'] ?>" class="btn btn-danger" onclick="return confirm('Excluir este post?')">Excluir</a>
@@ -222,6 +229,7 @@ function editarPost(p) {
         document.getElementById('post_content').value = p.content || '';
     }
     document.getElementById('post_image_alt').value = p.image_alt || '';
+    document.getElementById('post_seo_keywords').value = p.seo_keywords || '';
     
     // Set status
     document.getElementById('post_status').value = p.status || 'publicado';
@@ -260,6 +268,7 @@ function resetForm() {
         document.getElementById('post_content').value = '';
     }
     document.getElementById('post_image_alt').value = '';
+    document.getElementById('post_seo_keywords').value = '';
     document.getElementById('post_created_at').value = '';
     document.getElementById('ai_image_prompt').value = '';
     document.getElementById('ai_generated_image').value = '';

@@ -12,95 +12,340 @@ $all_posts = $stmt_posts->fetchAll();
 
 $hero_post = count($all_posts) > 0 ? $all_posts[0] : null;
 $recent_posts = count($all_posts) > 1 ? array_slice($all_posts, 1) : [];
+
+function clean_excerpt($html, $length = 120) {
+    // Remove scripts and styles
+    $clean = preg_replace(['/<style\b[^>]*>(.*?)<\/style>/is', '/<script\b[^>]*>(.*?)<\/script>/is'], '', $html);
+    // Strip tags and decode entities (&nbsp;, &eacute;, etc)
+    $clean = html_entity_decode(strip_tags($clean), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    // Remove extra whitespace
+    $clean = trim(preg_replace('/\s+/', ' ', $clean));
+    
+    if (mb_strlen($clean) > $length) {
+        return mb_substr($clean, 0, $length) . '...';
+    }
+    return $clean;
+}
 ?>
 
+<style>
+    :root {
+        --blog-bg: #f8fafc;
+        --blog-card: #ffffff;
+        --blog-border: #e2e8f0;
+        --blog-text: #334155;
+        --blog-heading: #0f172a;
+        --blog-primary: #03045e;
+        --blog-accent: #ff8000;
+    }
+
+    body {
+        background-color: var(--blog-bg);
+    }
+
+    .blog-header {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+
+    .blog-header h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        color: var(--blog-primary);
+        font-weight: 800;
+        letter-spacing: -1px;
+        margin-bottom: 1rem;
+    }
+
+    .blog-header p {
+        color: var(--blog-text);
+        font-size: 1.25rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .blog-layout {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 3rem;
+        align-items: start;
+    }
+
+    /* Cards gerais */
+    .blog-card {
+        background: var(--blog-card);
+        border: 1px solid var(--blog-border);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+    }
+
+    .blog-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    }
+
+    .blog-card-img-wrap {
+        position: relative;
+        overflow: hidden;
+        background: #e2e8f0;
+    }
+
+    .blog-card-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .blog-card:hover .blog-card-img-wrap img {
+        transform: scale(1.05);
+    }
+
+    .blog-badge {
+        background: var(--blog-accent);
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+
+    .blog-meta {
+        color: #64748b;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: auto;
+    }
+
+    /* Hero Post */
+    .hero-post .blog-card-img-wrap {
+        aspect-ratio: 16/9;
+    }
+
+    .hero-post .blog-card-content {
+        padding: 2.5rem;
+    }
+
+    .hero-post h2 {
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
+        color: var(--blog-heading);
+        margin-bottom: 1rem;
+        line-height: 1.3;
+        font-weight: 800;
+    }
+
+    .hero-post p {
+        font-size: 1.1rem;
+        color: var(--blog-text);
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Grid de Posts Recentes */
+    .recent-posts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .recent-post .blog-card-img-wrap {
+        aspect-ratio: 16/10;
+    }
+
+    .recent-post .blog-card-content {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .recent-post h3 {
+        font-size: 1.25rem;
+        color: var(--blog-heading);
+        margin-bottom: 0.75rem;
+        line-height: 1.4;
+        font-weight: 700;
+    }
+
+    .recent-post p {
+        font-size: 0.95rem;
+        color: var(--blog-text);
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Sidebar */
+    .sidebar-widget {
+        background: var(--blog-card);
+        border: 1px solid var(--blog-border);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .sidebar-title {
+        font-size: 1.25rem;
+        color: var(--blog-heading);
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--blog-accent);
+        display: inline-block;
+    }
+
+    .category-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .category-item a {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        color: var(--blog-text);
+        text-decoration: none;
+        border-bottom: 1px solid #f1f5f9;
+        transition: color 0.2s;
+    }
+
+    .category-item a:hover {
+        color: var(--blog-accent);
+    }
+
+    .category-count {
+        background: #f1f5f9;
+        color: #64748b;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .promo-widget {
+        background: linear-gradient(135deg, var(--blog-primary), #0077b6);
+        color: #fff;
+        text-align: center;
+        padding: 2.5rem 2rem;
+    }
+
+    .promo-widget h4 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        font-weight: 800;
+    }
+
+    .promo-widget p {
+        color: #e0f2fe;
+        margin-bottom: 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    .promo-btn {
+        background: var(--blog-accent);
+        color: #fff;
+        padding: 0.8rem 1.5rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 700;
+        display: inline-block;
+        transition: transform 0.2s;
+    }
+
+    .promo-btn:hover {
+        transform: scale(1.05);
+    }
+
+    @media (max-width: 992px) {
+        .blog-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
 <div class="container section-padding" style="margin-top: 5rem;">
-    <div style="text-align: center; margin-bottom: 4rem;">
-        <h1 style="font-size: 3rem; color: var(--text-primary); letter-spacing: -1px; margin-bottom: 0.5rem;">ISP News</h1>
-        <p style="color: var(--text-secondary); font-size: 1.2rem;">Notícias, Editais, Dicas e Artigos para a sua aprovação.</p>
+    <div class="blog-header">
+        <h1>ISP News</h1>
+        <p>Notícias, Editais, Dicas e Artigos para garantir a sua aprovação nos concursos educacionais.</p>
     </div>
 
     <?php if(!$hero_post): ?>
-        <p style="text-align: center; color: var(--brand-orange);">Nenhum artigo publicado ainda.</p>
+        <div style="text-align: center; padding: 4rem; background: var(--blog-card); border-radius: 16px; border: 1px dashed var(--blog-border);">
+            <p style="color: var(--blog-text); font-size: 1.2rem;">Nenhum artigo publicado ainda.</p>
+        </div>
     <?php else: ?>
-        <div style="display: flex; flex-wrap: wrap; gap: 3rem; align-items: flex-start;">
+        <div class="blog-layout">
             
-            <!-- Main Content Area (70%) -->
-            <div style="flex: 1; min-width: 300px; flex-basis: 65%;">
-                
+            <!-- Main Content Area -->
+            <div>
                 <!-- Hero Post -->
-                <a href="post.php?id=<?= $hero_post['id'] ?>" style="text-decoration: none; display: block; margin-bottom: 4rem; position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); group;">
-                    <div style="position: relative; width: 100%; padding-bottom: 50%; background: #111;">
+                <a href="post.php?id=<?= $hero_post['id'] ?>" class="blog-card hero-post">
+                    <div class="blog-card-img-wrap">
                         <?php if($hero_post['cover_image']): ?>
-                            <img src="uploads/<?= $hero_post['cover_image'] ?>" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;" alt="<?= htmlspecialchars($hero_post['image_alt'] ?: $hero_post['title']) ?>">
+                            <img src="uploads/<?= $hero_post['cover_image'] ?>" alt="<?= htmlspecialchars($hero_post['image_alt'] ?: $hero_post['title']) ?>">
+                        <?php else: ?>
+                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8;">Imagem não disponível</div>
                         <?php endif; ?>
-                        <!-- Overlay gradient for text readability -->
-                        <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 80%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);"></div>
                     </div>
-                    
-                    <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 2rem;">
-                        <span style="background: #ff8000; color: #03045e; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 1rem; display: inline-block;">
-                            <?= htmlspecialchars($hero_post['category']) ?>
-                        </span>
-                        <h2 style="color: #fff; font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 0.5rem; line-height: 1.2;">
-                            <?= htmlspecialchars($hero_post['title']) ?>
-                        </h2>
-                        <div style="color: #aaa; font-size: 0.9rem; font-family: var(--font-mono);">
-                            <i class="far fa-calendar-alt"></i> <?= date('d/m/Y', strtotime($hero_post['created_at'])) ?> &nbsp;|&nbsp; Equipe ISP
+                    <div class="blog-card-content">
+                        <span class="blog-badge"><?= htmlspecialchars($hero_post['category']) ?></span>
+                        <h2><?= htmlspecialchars($hero_post['title']) ?></h2>
+                        <p><?= htmlspecialchars(clean_excerpt($hero_post['content'], 180)) ?></p>
+                        <div class="blog-meta">
+                            <i class="far fa-calendar-alt"></i> <?= date('d/m/Y', strtotime($hero_post['created_at'])) ?>
+                            &bull; Por Equipe ISP
                         </div>
                     </div>
                 </a>
 
                 <!-- Grid of Recent Posts -->
-                <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <div class="recent-posts-grid">
                     <?php foreach($recent_posts as $p): ?>
-                        <a href="post.php?id=<?= $p['id'] ?>" style="text-decoration: none; display: flex; gap: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; transition: transform 0.3s, border-color 0.3s; align-items: stretch;">
-                            
-                            <div style="width: 35%; flex-shrink: 0; background: #111; position: relative;">
+                        <a href="post.php?id=<?= $p['id'] ?>" class="blog-card recent-post">
+                            <div class="blog-card-img-wrap">
                                 <?php if($p['cover_image']): ?>
-                                    <img src="uploads/<?= $p['cover_image'] ?>" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" alt="<?= htmlspecialchars($p['image_alt'] ?: $p['title']) ?>">
+                                    <img src="uploads/<?= $p['cover_image'] ?>" alt="<?= htmlspecialchars($p['image_alt'] ?: $p['title']) ?>">
                                 <?php else: ?>
-                                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
-                                        Sem imagem
-                                    </div>
+                                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8; background: #f1f5f9;">Sem Imagem</div>
                                 <?php endif; ?>
                             </div>
-                            
-                            <div style="padding: 1.5rem 1.5rem 1.5rem 0; flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                                <span style="background: #ff8000; color: #03045e; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; margin-bottom: 0.5rem; display: inline-table;">
-                                    <?= htmlspecialchars($p['category']) ?>
-                                </span>
-                                <h3 style="color: var(--text-primary); font-size: 1.3rem; margin-bottom: 0.5rem; line-height: 1.3;">
-                                    <?= htmlspecialchars($p['title']) ?>
-                                </h3>
-                                <?php $clean_excerpt = preg_replace(['/<style\b[^>]*>(.*?)<\/style>/is', '/<script\b[^>]*>(.*?)<\/script>/is'], '', $p['content']); ?>
-                                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1rem; line-height: 1.5;">
-                                    <?= htmlspecialchars(mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags($clean_excerpt))), 0, 120)) ?>...
-                                </p>
-                                <div style="color: #666; font-size: 0.8rem; font-family: var(--font-mono); margin-top: auto;">
-                                    <?= date('d/m/Y', strtotime($p['created_at'])) ?>
+                            <div class="blog-card-content">
+                                <div>
+                                    <span class="blog-badge" style="background: #e2e8f0; color: var(--blog-primary);"><?= htmlspecialchars($p['category']) ?></span>
+                                    <h3><?= htmlspecialchars($p['title']) ?></h3>
+                                    <p><?= htmlspecialchars(clean_excerpt($p['content'], 100)) ?></p>
+                                </div>
+                                <div class="blog-meta">
+                                    <i class="far fa-clock"></i> <?= date('d/m/Y', strtotime($p['created_at'])) ?>
                                 </div>
                             </div>
                         </a>
                     <?php endforeach; ?>
                 </div>
-
             </div>
 
-            <!-- Sidebar (30%) -->
-            <div style="flex: 1; min-width: 280px; flex-basis: 30%;">
-                
+            <!-- Sidebar -->
+            <aside>
                 <!-- Editorias Widget -->
-                <div style="background: rgba(3, 4, 94, 0.4); border: 1px solid var(--prism-cyan); border-radius: 12px; padding: 2rem; margin-bottom: 2rem;">
-                    <h3 style="color: #fff; font-size: 1.2rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">Editorias</h3>
-                    <ul style="list-style: none; margin: 0; padding: 0;">
+                <div class="sidebar-widget">
+                    <h3 class="sidebar-title">Editorias</h3>
+                    <ul class="category-list">
                         <?php foreach($categories as $cat): ?>
-                            <li style="margin-bottom: 0.8rem;">
-                                <a href="#" style="color: var(--text-secondary); text-decoration: none; display: flex; justify-content: space-between; align-items: center; transition: color 0.3s;" onmouseover="this.style.color='var(--brand-orange)'" onmouseout="this.style.color='var(--text-secondary)'">
+                            <li class="category-item">
+                                <a href="#">
                                     <span><?= htmlspecialchars($cat['category']) ?></span>
-                                    <span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; color: #fff;">
-                                        <?= $cat['total'] ?>
-                                    </span>
+                                    <span class="category-count"><?= $cat['total'] ?></span>
                                 </a>
                             </li>
                         <?php endforeach; ?>
@@ -108,15 +353,14 @@ $recent_posts = count($all_posts) > 1 ? array_slice($all_posts, 1) : [];
                 </div>
 
                 <!-- Banner/Ad Widget -->
-                <div style="border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5);">
-                    <div style="padding: 2rem; background: linear-gradient(135deg, #E50914, #800000); text-align: center;">
-                        <h4 style="color: #fff; font-size: 1.5rem; margin-bottom: 1rem; line-height: 1.2;">Prepare-se Conosco</h4>
-                        <p style="color: #ffcccc; font-size: 0.9rem; margin-bottom: 1.5rem;">Cursos para todas as carreiras da educação.</p>
-                        <a href="cursos.php" class="btn" style="background: #fff; color: #E50914; padding: 0.8rem 1.5rem; font-size: 0.9rem; border-radius: 50px;">Ver Cursos Disponíveis</a>
+                <div class="sidebar-widget promo-widget" style="padding: 0; overflow: hidden; border: none;">
+                    <div style="padding: 2.5rem 2rem;">
+                        <h4>Acelere sua Aprovação</h4>
+                        <p>Descubra nossos cursos focados nas carreiras da educação.</p>
+                        <a href="cursos.php" class="promo-btn">Ver Cursos</a>
                     </div>
                 </div>
-
-            </div>
+            </aside>
 
         </div>
     <?php endif; ?>

@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS posts (
     content LONGTEXT NOT NULL,
     cover_image VARCHAR(255),
     status VARCHAR(20) DEFAULT 'publicado',
+    seo_keywords VARCHAR(255) DEFAULT '',
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
