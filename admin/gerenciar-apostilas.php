@@ -137,7 +137,7 @@ require_once 'includes/header.php';
     <h2>Gerenciar Apostilas</h2>
     <div class="apostila-admin-note">
         <strong>Fluxo recomendado</strong>
-        Cadastre título, preço e link de compra. Marque \"Apostila Própria (ISP)\" para criar uma página de venda editável com tópicos, vídeo, imagens e chamada final.
+        Cadastre título, preço e link de compra. Marque "Apostila Própria (ISP)" para criar uma página de venda editável com tópicos, vídeo, imagens e chamada final.
     </div>
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="id" id="apo_id">
@@ -207,65 +207,65 @@ require_once 'includes/header.php';
                 </div>
                 <div class="form-group">
                     <label>Texto da Seção Final</label>
-                    <textarea name="sec3_text" id="apo_sec3_text" class="form-control" rows="4" placeholder=\"<?= htmlspecialchars($defaultSec3Text) ?>\"></textarea>
+                    <textarea name="sec3_text" id="apo_sec3_text" class="form-control" rows="4" placeholder="<?= htmlspecialchars($defaultSec3Text) ?>"></textarea>
                     <small style="color: var(--text-secondary);">Este texto aparece antes do último botão de compra.</small>
                 </div>
                 <div class="form-group">
                     <label>Diferenciais da Seção Final (Um por linha)</label>
-                    <textarea name="sec3_bullets" id="apo_sec3_bullets" class="form-control" rows="4" placeholder=\"Questões selecionadas e comentadas&#10;Resumos objetivos para revisão&#10;Formato direto ao ponto\"></textarea>
+                    <textarea name="sec3_bullets" id="apo_sec3_bullets" class="form-control" rows="4" placeholder="Questões selecionadas e comentadas&#10;Resumos objetivos para revisão&#10;Formato direto ao ponto"></textarea>
                 </div>
                 <div class="form-group">
                     <label>Texto do Botão Final</label>
-                    <input type="text" name="sec3_btn_text" id="apo_sec3_btn_text" class="form-control" placeholder=\"Comprar Agora\">
+                    <input type="text" name="sec3_btn_text" id="apo_sec3_btn_text" class="form-control" placeholder="Comprar Agora">
                 </div>
 
-                <hr style=\"border: 0; border-top: 1px solid var(--glass-border); margin: 2rem 0;\">
-                <h3 class=\"apostila-section-heading\">4. Vídeo do YouTube</h3>
-                <div class=\"form-group\">
+                <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
+                <h3 class="apostila-section-heading">4. Vídeo do YouTube</h3>
+                <div class="form-group">
                     <label>Título da Seção de Vídeo (Opcional)</label>
-                    <input type=\"text\" name=\"video_title\" id=\"apo_video_title\" class=\"form-control\" placeholder=\"Entenda como funciona nossa apostila\">
-                    <small style=\"color: var(--text-secondary);\">Se ficar vazio, o site usa um título padrão e ainda exibe o vídeo.</small>
+                    <input type="text" name="video_title" id="apo_video_title" class="form-control" placeholder="Entenda como funciona nossa apostila">
+                    <small style="color: var(--text-secondary);">Se ficar vazio, o site usa um título padrão e ainda exibe o vídeo.</small>
                 </div>
-                <div class=\"form-group\">
+                <div class="form-group">
                     <label>URL do Vídeo do YouTube (Opcional)</label>
-                    <input type=\"url\" name=\"video_url\" id=\"apo_video_url\" class=\"form-control\" placeholder=\"https://www.youtube.com/watch?v=...\">
+                    <input type="url" name="video_url" id="apo_video_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
                 </div>
 
-                <hr style=\"border: 0; border-top: 1px solid var(--glass-border); margin: 2rem 0;\">
-                <h3 class=\"apostila-section-heading\">5. Seções Extras Dinâmicas</h3>
-                <p style=\"color: var(--text-secondary); margin-bottom: 1rem;\">Crie seções personalizadas com título e conteúdo livre.</p>
+                <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
+                <h3 class="apostila-section-heading">5. Seções Extras Dinâmicas</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Crie seções personalizadas com título e conteúdo livre.</p>
                 
-                <div id=\"extra_sections_container\"></div>
-                <button type=\"button\" class=\"btn btn-secondary\" onclick=\"addExtraSection()\" style=\"margin-bottom: 1.5rem;\">+ Adicionar Nova Seção</button>
-                <input type=\"hidden\" name=\"extra_sections\" id=\"apo_extra_sections\">
+                <div id="extra_sections_container"></div>
+                <button type="button" class="btn btn-secondary" onclick="addExtraSection()" style="margin-bottom: 1.5rem;">+ Adicionar Nova Seção</button>
+                <input type="hidden" name="extra_sections" id="apo_extra_sections">
             </div>
         </div>
 
-        <h3 class=\"apostila-section-heading\">6. Imagens e publicação</h3>
-        <div class=\"apostila-row\">
-            <div class=\"form-group\" style=\"flex:1;\">
+        <h3 class="apostila-section-heading">6. Imagens e publicação</h3>
+        <div class="apostila-row">
+            <div class="form-group" style="flex:1;">
                 <label>Imagem da Capa (Vitrine e Topo da Landing Page)</label>
-                <input type=\"file\" name=\"cover_image\" class=\"form-control\" accept=\"image/*\">
+                <input type="file" name="cover_image" class="form-control" accept="image/*">
             </div>
-            <div class=\"form-group\" style=\"flex:1;\">
+            <div class="form-group" style="flex:1;">
                 <label>Texto Alternativo da Imagem (SEO)</label>
-                <input type=\"text\" name=\"image_alt\" id=\"apo_image_alt\" class=\"form-control\" placeholder=\"Ex: Capa da apostila de Português para Caxias\">
+                <input type="text" name="image_alt" id="apo_image_alt" class="form-control" placeholder="Ex: Capa da apostila de Português para Caxias">
             </div>
         </div>
 
-        <div class=\"form-group\">
+        <div class="form-group">
             <label>
-                <input type=\"checkbox\" name=\"active\" id=\"apo_active\" value=\"1\" checked> Ativo (Visível na loja)
+                <input type="checkbox" name="active" id="apo_active" value="1" checked> Ativo (Visível na loja)
             </label>
         </div>
         
-        <button type=\"submit\" class=\"btn\">Salvar Apostila</button>
-        <button type=\"button\" class=\"btn btn-warning\" onclick=\"resetForm()\">Nova Apostila</button>
+        <button type="submit" class="btn">Salvar Apostila</button>
+        <button type="button" class="btn btn-warning" onclick="resetForm()">Nova Apostila</button>
     </form>
 </div>
 
-<div class=\"card\">
-    <table class=\"table\">
+<div class="card">
+    <table class="table">
         <tr>
             <th>Capa</th>
             <th>Título</th>
@@ -278,7 +278,7 @@ require_once 'includes/header.php';
         <tr>
             <td>
                 <?php if($a['cover_image']): ?>
-                    <img src=\"../uploads/<?= $a['cover_image'] ?>\" height=\"50\" style=\"border-radius: 4px;\">
+                    <img src="../uploads/<?= $a['cover_image'] ?>" height="50" style="border-radius: 4px;">
                 <?php else: ?>
                     Sem capa
                 <?php endif; ?>
@@ -286,16 +286,16 @@ require_once 'includes/header.php';
             <td><?= htmlspecialchars($a['title']) ?></td>
             <td>
                 <?php if($a['is_internal']): ?>
-                    <span style=\"background: var(--prism-cyan); color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;\">Própria</span>
+                    <span style="background: var(--prism-cyan); color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">Própria</span>
                 <?php else: ?>
-                    <span style=\"background: var(--glass-border); color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;\">Externa</span>
+                    <span style="background: var(--glass-border); color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">Externa</span>
                 <?php endif; ?>
             </td>
             <td>R$ <?= number_format($a['price'], 2, ',', '.') ?></td>
             <td><?= $a['active'] ? 'Ativa' : 'Inativa' ?></td>
             <td>
-                <button class=\"btn\" onclick='editarApostila(<?= json_encode($a) ?>)'>Editar</button>
-                <a href=\"?del=<?= $a['id'] ?>\" class=\"btn btn-danger\" onclick=\"return confirm('Excluir esta apostila?')\">Excluir</a>
+                <button class="btn" onclick='editarApostila(<?= json_encode($a) ?>)'>Editar</button>
+                <a href="?del=<?= $a['id'] ?>" class="btn btn-danger" onclick="return confirm('Excluir esta apostila?')">Excluir</a>
             </td>
         </tr>
         <?php endforeach; ?>
@@ -366,18 +366,18 @@ function renderSections() {
     
     currentSections.forEach((sec, index) => {
         const div = document.createElement('div');
-        div.style = \"background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; position: relative;\";
-        div.innerHTML = \`
-            <button type=\"button\" onclick=\"removeSection(\${index})\" style=\"position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer;\">Remover</button>
-            <div class=\"form-group\">
+        div.style = "background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; position: relative;";
+        div.innerHTML = `
+            <button type="button" onclick="removeSection(${index})" style="position: absolute; top: 10px; right: 10px; background: #ff4444; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer;">Remover</button>
+            <div class="form-group">
                 <label>Título da Seção</label>
-                <input type=\"text\" class=\"form-control\" value=\"\${sec.title}\" oninput=\"updateSection(\${index}, 'title', this.value)\" placeholder=\"Ex: Por que escolher nosso material?\">
+                <input type="text" class="form-control" value="${sec.title}" oninput="updateSection(${index}, 'title', this.value)" placeholder="Ex: Por que escolher nosso material?">
             </div>
-            <div class=\"form-group\">
+            <div class="form-group">
                 <label>Conteúdo da Seção (HTML permitido)</label>
-                <textarea class=\"form-control\" rows=\"3\" oninput=\"updateSection(\${index}, 'content', this.value)\" placeholder=\"Descreva aqui os detalhes...\">\${sec.content}</textarea>
+                <textarea class="form-control" rows="3" oninput="updateSection(${index}, 'content', this.value)" placeholder="Descreva aqui os detalhes...">${sec.content}</textarea>
             </div>
-        \`;
+        `;
         container.appendChild(div);
     });
     document.getElementById('apo_extra_sections').value = JSON.stringify(currentSections);
