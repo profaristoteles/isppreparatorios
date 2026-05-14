@@ -71,8 +71,8 @@ require_once 'includes/header.php';
         --obsidian-bg: #020617;
         --obsidian-card: #0f172a;
         --obsidian-border: rgba(255, 255, 255, 0.1);
-        --obsidian-accent: #fbbf24; /* Gold/Amber */
-        --obsidian-success: #10b981;
+        --obsidian-accent: #ff8000; /* Laranja */
+        --obsidian-success: #ff8000; /* Botões Laranja */
         --obsidian-text: #f8fafc;
         --obsidian-text-dim: #94a3b8;
     }
@@ -155,7 +155,7 @@ require_once 'includes/header.php';
 
     .apostila-btn {
         background: var(--obsidian-success);
-        color: #fff !important;
+        color: #03045e !important;
         padding: 1.25rem 2.5rem;
         border-radius: 99px;
         font-weight: 800;
@@ -165,15 +165,15 @@ require_once 'includes/header.php';
         text-decoration: none;
         display: inline-block;
         transition: all 0.3s ease;
-        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        box-shadow: 0 10px 25px rgba(255, 128, 0, 0.3);
         border: none;
         text-align: center;
     }
 
     .apostila-btn:hover {
         transform: translateY(-3px);
-        box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4);
-        background: #059669;
+        box-shadow: 0 15px 30px rgba(255, 128, 0, 0.4);
+        background: #e67300;
     }
 
     .apostila-cover-wrap {
