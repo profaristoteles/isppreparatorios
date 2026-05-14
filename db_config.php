@@ -35,7 +35,8 @@ try {
     $apostilaCols = [
         'image_alt' => "ALTER TABLE apostilas ADD COLUMN image_alt VARCHAR(255) DEFAULT '' AFTER video_url",
         'sec3_text' => "ALTER TABLE apostilas ADD COLUMN sec3_text TEXT AFTER sec3_title",
-        'sec3_bullets' => "ALTER TABLE apostilas ADD COLUMN sec3_bullets TEXT AFTER sec3_text"
+        'sec3_bullets' => "ALTER TABLE apostilas ADD COLUMN sec3_bullets TEXT AFTER sec3_text",
+        'extra_sections' => "ALTER TABLE apostilas ADD COLUMN extra_sections TEXT AFTER sec3_btn_text"
     ];
 
     foreach ($apostilaCols as $column => $sql) {

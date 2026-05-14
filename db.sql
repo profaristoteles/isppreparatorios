@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS apostilas (
     sec3_text TEXT,
     sec3_bullets TEXT,
     sec3_btn_text VARCHAR(100) DEFAULT 'Comprar Agora',
+    extra_sections TEXT,
     video_title VARCHAR(255) DEFAULT '',
     video_url VARCHAR(255) DEFAULT '',
     image_alt VARCHAR(255) DEFAULT '',

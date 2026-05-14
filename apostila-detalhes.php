@@ -54,6 +54,11 @@ $videoEmbed = getYouTubeEmbedUrl($apostila['video_url'] ?? '');
 $videoTitle = trim($apostila['video_title'] ?? '') ?: 'Conheça a apostila por dentro';
 $coverAlt = trim($apostila['image_alt'] ?? '') ?: 'Capa da apostila ' . $apostila['title'];
 
+$extraSections = [];
+try {
+    $extraSections = JSON_decode($apostila['extra_sections'] ?: '[]', true);
+} catch(Exception $e) { $extraSections = []; }
+
 $dynamic_title = $apostila['title'];
 $dynamic_desc = $apostila['subtitle'] ?: 'Apostila digital ISP Preparatórios com conteúdo focado para concursos.';
 
@@ -61,184 +66,205 @@ require_once 'includes/header.php';
 ?>
 
 <style>
+    /* Premium Obsidian Design System */
+    :root {
+        --obsidian-bg: #020617;
+        --obsidian-card: #0f172a;
+        --obsidian-border: rgba(255, 255, 255, 0.1);
+        --obsidian-accent: #fbbf24; /* Gold/Amber */
+        --obsidian-success: #10b981;
+        --obsidian-text: #f8fafc;
+        --obsidian-text-dim: #94a3b8;
+    }
+
     .apostila-page {
-        background: #f7f9fc;
-        color: #172033;
+        background: var(--obsidian-bg);
+        color: var(--obsidian-text);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        overflow-x: hidden;
     }
-    .apostila-page * {
-        letter-spacing: 0;
-    }
+
     .apostila-page .lp-section {
-        padding: 4.5rem 5%;
+        padding: 6rem 5%;
+        position: relative;
     }
+
     .apostila-page .lp-container {
         width: 90%;
-        max-width: 1120px;
+        max-width: 1200px;
         margin: 0 auto;
     }
+
+    /* Fix header overlap */
     .apostila-hero {
-        padding-top: 9rem;
-        background: linear-gradient(135deg, #ffffff 0%, #eef4ff 55%, #fff6ec 100%);
-        border-bottom: 1px solid #d9e2ef;
+        padding-top: 10rem !important;
+        background: radial-gradient(circle at top right, rgba(251, 191, 36, 0.05), transparent),
+                    radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent);
     }
+
     .apostila-hero-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-        gap: 3rem;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 4rem;
         align-items: center;
     }
+
     .apostila-kicker {
-        display: inline-flex;
-        align-items: center;
-        gap: .5rem;
-        color: #03045e;
-        background: #e8efff;
-        border: 1px solid #cbd8ff;
-        padding: .45rem .8rem;
-        border-radius: 999px;
-        font-weight: 700;
-        font-size: .86rem;
-        margin-bottom: 1rem;
-    }
-    .apostila-page h1 {
-        color: #07123d;
-        font-size: clamp(2.25rem, 5vw, 4.4rem);
-        line-height: 1.05;
-        margin-bottom: 1rem;
-    }
-    .apostila-subtitle {
-        color: #344057;
-        font-size: 1.15rem;
-        max-width: 680px;
-        margin-bottom: 1.75rem;
-    }
-    .apostila-price {
-        display: inline-block;
-        color: #064e2c;
-        background: #dcfce7;
-        border: 1px solid #86efac;
-        border-radius: 8px;
-        padding: .8rem 1rem;
-        font-size: 1.4rem;
-        font-weight: 800;
-        margin-bottom: 1.5rem;
-    }
-    .apostila-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        align-items: center;
-    }
-    .apostila-btn {
-        background: #e50914;
-        color: #fff !important;
-        border-radius: 8px;
-        padding: 1rem 1.5rem;
-        text-decoration: none;
+        color: var(--obsidian-accent);
         text-transform: uppercase;
         font-weight: 800;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 52px;
-        border: 2px solid #e50914;
-        box-shadow: 0 10px 20px rgba(229, 9, 20, .18);
+        letter-spacing: 2px;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        display: block;
     }
-    .apostila-btn:hover,
-    .apostila-btn:focus {
-        background: #b80710;
-        border-color: #b80710;
-        transform: none;
-        box-shadow: 0 12px 22px rgba(229, 9, 20, .24);
+
+    .apostila-page h1 {
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        line-height: 1.1;
+        font-weight: 900;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(to bottom right, #fff, #94a3b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
-    .apostila-btn.secondary {
-        background: #12823b;
-        border-color: #12823b;
-        box-shadow: 0 10px 20px rgba(18, 130, 59, .18);
+
+    .apostila-subtitle {
+        color: var(--obsidian-text-dim);
+        font-size: 1.25rem;
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+        max-width: 600px;
     }
+
+    .apostila-price-tag {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: var(--obsidian-accent);
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+
+    .apostila-price-tag small {
+        font-size: 1rem;
+        color: var(--obsidian-text-dim);
+        text-decoration: line-through;
+    }
+
+    .apostila-btn {
+        background: var(--obsidian-success);
+        color: #fff !important;
+        padding: 1.25rem 2.5rem;
+        border-radius: 99px;
+        font-weight: 800;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        border: none;
+        text-align: center;
+    }
+
+    .apostila-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4);
+        background: #059669;
+    }
+
+    .apostila-cover-wrap {
+        position: relative;
+    }
+
+    .apostila-cover-wrap::before {
+        content: '';
+        position: absolute;
+        inset: -20px;
+        background: var(--obsidian-accent);
+        filter: blur(60px);
+        opacity: 0.15;
+        border-radius: 50%;
+        z-index: 0;
+    }
+
     .apostila-cover {
-        background: #fff;
-        border: 1px solid #d9e2ef;
-        border-radius: 12px;
+        background: var(--obsidian-card);
+        border: 1px solid var(--obsidian-border);
         padding: 1rem;
-        box-shadow: 0 24px 50px rgba(15, 23, 42, .14);
+        border-radius: 20px;
+        position: relative;
+        z-index: 1;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     }
+
     .apostila-cover img {
         width: 100%;
+        border-radius: 12px;
         display: block;
-        border-radius: 8px;
     }
-    .apostila-empty-cover {
-        min-height: 420px;
-        display: grid;
-        place-items: center;
-        color: #5b6578;
-        background: #edf2f7;
-        border-radius: 8px;
-        font-weight: 600;
-    }
+
+    /* Section Styles */
     .apostila-section-title {
-        color: #07123d;
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 800;
         text-align: center;
-        font-size: clamp(1.8rem, 3vw, 2.5rem);
-        margin-bottom: 1rem;
+        margin-bottom: 3rem;
+        color: #fff;
     }
-    .apostila-section-lead {
-        color: #4a5568;
-        text-align: center;
-        max-width: 760px;
-        margin: 0 auto 2rem;
-        font-size: 1.05rem;
+
+    .glass-card {
+        background: var(--obsidian-card);
+        border: 1px solid var(--obsidian-border);
+        border-radius: 24px;
+        padding: 3rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     }
-    .topics-box,
-    .final-box {
-        background: #fff;
-        border: 1px solid #d9e2ef;
-        border-radius: 12px;
-        padding: 2rem;
-        box-shadow: 0 18px 40px rgba(15, 23, 42, .08);
-    }
-    .topics-list,
-    .final-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
+
+    .topics-grid {
         display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .topic-item {
+        display: flex;
         gap: 1rem;
+        align-items: flex-start;
+        color: var(--obsidian-text-dim);
+        font-size: 1.1rem;
     }
-    .topics-list li,
-    .final-list li {
-        display: grid;
-        grid-template-columns: 28px 1fr;
-        gap: .75rem;
-        color: #263247;
-        font-size: 1rem;
+
+    .topic-icon {
+        color: var(--obsidian-accent);
+        flex-shrink: 0;
+        margin-top: 3px;
     }
-    .checkmark {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        display: inline-grid;
-        place-items: center;
-        background: #dcfce7;
-        color: #087a35;
-        font-weight: 900;
-        line-height: 1;
+
+    /* Video Section */
+    .video-section {
+        background: #000;
+        overflow: hidden;
     }
-    .video-wrap {
-        background: #07123d;
-        border-radius: 12px;
-        padding: .75rem;
-        box-shadow: 0 18px 40px rgba(15, 23, 42, .16);
+
+    .video-container {
+        max-width: 900px;
+        margin: 0 auto;
+        border-radius: 20px;
+        border: 1px solid var(--obsidian-border);
+        overflow: hidden;
+        box-shadow: 0 0 50px rgba(251, 191, 36, 0.1);
     }
+
     .video-frame {
         position: relative;
         padding-bottom: 56.25%;
         height: 0;
-        overflow: hidden;
-        border-radius: 8px;
-        background: #000;
     }
+
     .video-frame iframe {
         position: absolute;
         inset: 0;
@@ -246,100 +272,132 @@ require_once 'includes/header.php';
         height: 100%;
         border: 0;
     }
-    .preview-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.25rem;
+
+    /* Previews */
+    .preview-scroll {
+        display: flex;
+        gap: 1.5rem;
+        overflow-x: auto;
+        padding-bottom: 2rem;
+        scroll-snap-type: x mandatory;
     }
-    .preview-card {
-        background: #fff;
-        border: 1px solid #d9e2ef;
-        border-radius: 10px;
-        padding: .75rem;
-        box-shadow: 0 14px 30px rgba(15, 23, 42, .08);
+
+    .preview-item {
+        flex: 0 0 300px;
+        scroll-snap-align: start;
+        border-radius: 15px;
+        overflow: hidden;
+        border: 1px solid var(--obsidian-border);
+        transition: transform 0.3s ease;
     }
-    .preview-card img {
+
+    .preview-item:hover {
+        transform: scale(1.05);
+    }
+
+    .preview-item img {
         width: 100%;
         display: block;
-        border-radius: 6px;
     }
+
+    /* Dynamic Sections */
+    .extra-section {
+        border-top: 1px solid var(--obsidian-border);
+    }
+
+    .extra-section-content {
+        font-size: 1.2rem;
+        line-height: 1.7;
+        color: var(--obsidian-text-dim);
+    }
+
+    .extra-section-content h2, .extra-section-content h3 {
+        color: #fff;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Final Section */
     .final-section {
-        background: #ffffff;
-        border-top: 1px solid #d9e2ef;
-    }
-    .final-box {
-        max-width: 820px;
-        margin: 0 auto;
-    }
-    .final-cta-wrap {
+        background: linear-gradient(to bottom, var(--obsidian-bg), #000);
         text-align: center;
-        margin-top: 2rem;
     }
-    @media (max-width: 820px) {
-        .apostila-page .lp-section {
-            padding: 3rem 0;
-        }
-        .apostila-hero {
-            padding-top: 7rem;
-        }
+
+    .final-lead {
+        font-size: 1.4rem;
+        color: var(--obsidian-text-dim);
+        max-width: 800px;
+        margin: 0 auto 3rem;
+    }
+
+    @media (max-width: 900px) {
         .apostila-hero-grid {
             grid-template-columns: 1fr;
+            text-align: center;
         }
-        .apostila-actions .apostila-btn {
-            width: 100%;
+        .apostila-subtitle {
+            margin: 0 auto 2.5rem;
         }
-        .topics-box,
-        .final-box {
-            padding: 1.25rem;
+        .apostila-price-tag {
+            justify-content: center;
+        }
+        .lp-section {
+            padding: 4rem 5%;
         }
     }
 </style>
 
 <div class="apostila-page">
-    <section class="apostila-hero lp-section" aria-labelledby="apostila-title">
+    <!-- HERO SECTION -->
+    <section class="lp-section apostila-hero">
         <div class="lp-container apostila-hero-grid">
-            <div>
-                <span class="apostila-kicker">Material digital ISP</span>
-                <h1 id="apostila-title"><?= htmlspecialchars($apostila['title']) ?></h1>
-
+            <div class="hero-content">
+                <span class="apostila-kicker">Material Exclusivo ISP</span>
+                <h1><?= htmlspecialchars($apostila['title']) ?></h1>
+                
                 <?php if (!empty($apostila['subtitle'])): ?>
                     <p class="apostila-subtitle"><?= htmlspecialchars($apostila['subtitle']) ?></p>
                 <?php endif; ?>
 
-                <p class="apostila-price">Por R$ <?= number_format((float)$apostila['price'], 2, ',', '.') ?></p>
-
-                <div class="apostila-actions">
-                    <a href="<?= htmlspecialchars($apostila['payment_link']) ?>" class="apostila-btn" target="_blank" rel="noopener noreferrer">
-                        <?= htmlspecialchars($apostila['hero_btn_text'] ?: 'Garantir meu material') ?>
-                    </a>
+                <div class="apostila-price-tag">
+                    <small>R$ <?= number_format((float)$apostila['price'] * 1.5, 2, ',', '.') ?></small>
+                    R$ <?= number_format((float)$apostila['price'], 2, ',', '.') ?>
                 </div>
+
+                <a href="<?= htmlspecialchars($apostila['payment_link']) ?>" class="apostila-btn">
+                    <?= htmlspecialchars($apostila['hero_btn_text'] ?: 'Garantir meu material') ?>
+                </a>
             </div>
 
-            <div class="apostila-cover">
-                <?php if (!empty($apostila['cover_image'])): ?>
-                    <img src="uploads/<?= htmlspecialchars($apostila['cover_image']) ?>" alt="<?= htmlspecialchars($coverAlt) ?>">
-                <?php else: ?>
-                    <div class="apostila-empty-cover">Capa em breve</div>
-                <?php endif; ?>
+            <div class="apostila-cover-wrap">
+                <div class="apostila-cover">
+                    <?php if (!empty($apostila['cover_image'])): ?>
+                        <img src="uploads/<?= htmlspecialchars($apostila['cover_image']) ?>" alt="<?= htmlspecialchars($coverAlt) ?>">
+                    <?php else: ?>
+                        <div style="aspect-ratio: 3/4; display: grid; place-items: center; color: var(--obsidian-text-dim);">Capa em breve</div>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </section>
 
+    <!-- TOPICS SECTION -->
     <?php if (!empty($topics)): ?>
-    <section class="lp-section" aria-labelledby="topics-title">
-        <div class="lp-container" style="max-width: 860px;">
-            <h2 class="apostila-section-title" id="topics-title">
-                <?= htmlspecialchars($apostila['sec1_title'] ?: 'O que você vai encontrar no material?') ?>
-            </h2>
-            <div class="topics-box">
-                <ul class="topics-list">
+    <section class="lp-section">
+        <div class="lp-container">
+            <h2 class="apostila-section-title"><?= htmlspecialchars($apostila['sec1_title'] ?: 'O que você vai encontrar?') ?></h2>
+            <div class="glass-card">
+                <div class="topics-grid">
                     <?php foreach ($topics as $topic): ?>
-                        <li><span class="checkmark" aria-hidden="true">&check;</span><span><?= htmlspecialchars($topic) ?></span></li>
+                        <div class="topic-item">
+                            <span class="topic-icon">
+                                <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                            </span>
+                            <span><?= htmlspecialchars($topic) ?></span>
+                        </div>
                     <?php endforeach; ?>
-                </ul>
-
-                <div class="final-cta-wrap">
-                    <a href="<?= htmlspecialchars($apostila['payment_link']) ?>" class="apostila-btn" target="_blank" rel="noopener noreferrer">
+                </div>
+                <div style="text-align: center; margin-top: 3rem;">
+                    <a href="<?= htmlspecialchars($apostila['payment_link']) ?>" class="apostila-btn" style="background: transparent; border: 2px solid var(--obsidian-accent); color: var(--obsidian-accent) !important; box-shadow: none;">
                         <?= htmlspecialchars($apostila['sec1_btn_text'] ?: 'Quero ter acesso agora') ?>
                     </a>
                 </div>
@@ -348,11 +406,24 @@ require_once 'includes/header.php';
     </section>
     <?php endif; ?>
 
+    <!-- DYNAMIC EXTRA SECTIONS -->
+    <?php foreach ($extraSections as $sec): ?>
+    <section class="lp-section extra-section">
+        <div class="lp-container">
+            <h2 class="apostila-section-title"><?= htmlspecialchars($sec['title']) ?></h2>
+            <div class="extra-section-content">
+                <?= $sec['content'] ?>
+            </div>
+        </div>
+    </section>
+    <?php endforeach; ?>
+
+    <!-- VIDEO SECTION -->
     <?php if ($videoEmbed !== ''): ?>
-    <section class="lp-section" aria-labelledby="video-title" style="background:#eef4ff;">
-        <div class="lp-container" style="max-width: 860px;">
-            <h2 class="apostila-section-title" id="video-title"><?= htmlspecialchars($videoTitle) ?></h2>
-            <div class="video-wrap">
+    <section class="lp-section video-section">
+        <div class="lp-container">
+            <h2 class="apostila-section-title"><?= htmlspecialchars($videoTitle) ?></h2>
+            <div class="video-container">
                 <div class="video-frame">
                     <iframe src="<?= htmlspecialchars($videoEmbed) ?>" title="<?= htmlspecialchars($videoTitle) ?>" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                 </div>
@@ -361,16 +432,15 @@ require_once 'includes/header.php';
     </section>
     <?php endif; ?>
 
+    <!-- PREVIEWS SECTION -->
     <?php if (!empty($previews)): ?>
-    <section class="lp-section" aria-labelledby="preview-title">
+    <section class="lp-section">
         <div class="lp-container">
-            <h2 class="apostila-section-title" id="preview-title">
-                <?= htmlspecialchars($apostila['sec2_title'] ?: 'Veja o material por dentro') ?>
-            </h2>
-            <div class="preview-grid">
-                <?php foreach ($previews as $index => $img): ?>
-                    <div class="preview-card">
-                        <img src="uploads/<?= htmlspecialchars($img) ?>" alt="Prévia da apostila <?= $index + 1 ?>">
+            <h2 class="apostila-section-title"><?= htmlspecialchars($apostila['sec2_title'] ?: 'Veja por dentro') ?></h2>
+            <div class="preview-scroll">
+                <?php foreach ($previews as $img): ?>
+                    <div class="preview-item">
+                        <img src="uploads/<?= htmlspecialchars($img) ?>" alt="Prévia do material">
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -378,28 +448,28 @@ require_once 'includes/header.php';
     </section>
     <?php endif; ?>
 
-    <section class="lp-section final-section" aria-labelledby="final-title">
+    <!-- FINAL CTA SECTION -->
+    <section class="lp-section final-section">
         <div class="lp-container">
-            <h2 class="apostila-section-title" id="final-title">
-                <?= htmlspecialchars($apostila['sec3_title'] ?: 'Acelerando sua aprovação') ?>
-            </h2>
-            <p class="apostila-section-lead"><?= htmlspecialchars($finalText) ?></p>
+            <h2 class="apostila-section-title"><?= htmlspecialchars($apostila['sec3_title'] ?: 'Pronto para sua aprovação?') ?></h2>
+            <p class="final-lead"><?= htmlspecialchars($finalText) ?></p>
 
             <?php if (!empty($finalBullets)): ?>
-                <div class="final-box">
-                    <ul class="final-list">
+                <div class="glass-card" style="max-width: 600px; margin: 0 auto 3rem; text-align: left;">
+                    <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem;">
                         <?php foreach ($finalBullets as $item): ?>
-                            <li><span class="checkmark" aria-hidden="true">&check;</span><span><?= htmlspecialchars($item) ?></span></li>
+                            <li style="display: flex; gap: 1rem; color: var(--obsidian-text);">
+                                <span style="color: var(--obsidian-success);">✓</span>
+                                <span><?= htmlspecialchars($item) ?></span>
+                            </li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
             <?php endif; ?>
 
-            <div class="final-cta-wrap">
-                <a href="<?= htmlspecialchars($apostila['payment_link']) ?>" class="apostila-btn secondary" target="_blank" rel="noopener noreferrer">
-                    <?= htmlspecialchars($apostila['sec3_btn_text'] ?: 'Comprar agora') ?>
-                </a>
-            </div>
+            <a href="<?= htmlspecialchars($apostila['payment_link']) ?>" class="apostila-btn">
+                <?= htmlspecialchars($apostila['sec3_btn_text'] ?: 'Comprar agora') ?>
+            </a>
         </div>
     </section>
 </div>
