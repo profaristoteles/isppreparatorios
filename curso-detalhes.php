@@ -33,7 +33,7 @@ function render_html_or_text($content) {
                 <span style="font-family: var(--font-mono); color: var(--brand-orange); letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 1rem; display: block;">Educação Especial Inclusiva</span>
                 <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; margin-bottom: 1.5rem;"><?= htmlspecialchars($curso['title']) ?></h1>
                 
-                <div style="display: flex; gap: 2rem; margin-bottom: 2rem; color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.9rem;">
+                <div style="display: flex; gap: 2rem; margin-bottom: 2rem; color: rgba(255, 255, 255, 0.85); font-family: var(--font-mono); font-size: 0.9rem;">
                     <div>
                         <strong style="display: block; color: var(--text-primary);">DURAÇÃO</strong>
                         <?= htmlspecialchars($curso['duration']) ?>
@@ -52,7 +52,7 @@ function render_html_or_text($content) {
                     </div>
                 <?php else: ?>
                     <div style="width: 100%; max-width: 500px; height: 300px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
-                        <span style="color: var(--text-secondary);">Sem Imagem</span>
+                        <span style="color: rgba(255, 255, 255, 0.85);">Sem Imagem</span>
                     </div>
                 <?php endif; ?>
             </div>
@@ -65,36 +65,11 @@ function render_html_or_text($content) {
             <!-- Left: Description -->
             <div style="flex: 2; min-width: 300px;">
                 <h2 style="font-size: 2rem; margin-bottom: 2rem; color: var(--brand-orange);">Sobre o Curso</h2>
-                <div style="color: var(--text-secondary); font-size: 1.1rem; line-height: 1.8; margin-bottom: 3rem;">
+                <div style="color: rgba(255, 255, 255, 0.85); font-size: 1.1rem; line-height: 1.8; margin-bottom: 3rem;">
                     <?= render_html_or_text($curso['description']) ?>
                 </div>
 
-                <?php if(!empty($curso['info_extra'])): ?>
-                    <div style="margin-bottom: 3rem; background: rgba(255,255,255,0.02); padding: 2rem; border-radius: 8px; border-left: 4px solid var(--brand-orange);">
-                        <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">Informações</h3>
-                        <div style="color: var(--text-secondary); line-height: 1.8;">
-                            <?= render_html_or_text($curso['info_extra']) ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
 
-                <?php if(!empty($curso['disciplinas'])): ?>
-                    <div style="margin-bottom: 3rem; background: rgba(255,255,255,0.02); padding: 2rem; border-radius: 8px; border-left: 4px solid var(--prism-cyan);">
-                        <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">Disciplinas</h3>
-                        <div style="color: var(--text-secondary); line-height: 1.8;">
-                            <?= render_html_or_text($curso['disciplinas']) ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <?php if(!empty($curso['conteudo'])): ?>
-                    <div style="margin-bottom: 3rem; background: rgba(255,255,255,0.02); padding: 2rem; border-radius: 8px; border-left: 4px solid var(--prism-violet);">
-                        <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">Conteúdo Programático</h3>
-                        <div style="color: var(--text-secondary); line-height: 1.8;">
-                            <?= render_html_or_text($curso['conteudo']) ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
             </div>
             
             <!-- Right: Investment Card -->
@@ -107,13 +82,13 @@ function render_html_or_text($content) {
                             Garanta seu lugar na próxima turma! Os valores e condições especiais de pré-venda serão informados pela nossa equipe após o seu cadastro.
                         </div>
                     <?php else: ?>
-                        <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-secondary);">Investimento</h3>
+                        <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: rgba(255, 255, 255, 0.85);">Investimento</h3>
                         <div style="font-size: 3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2rem; font-family: var(--font-mono);">
                             <span style="font-size: 1.5rem; vertical-align: super;">R$</span> <?= number_format($curso['price'], 2, ',', '.') ?>
                         </div>
                     <?php endif; ?>
                     
-                    <ul style="list-style: none; margin: 0 0 2rem 0; padding: 0; color: var(--text-secondary);">
+                    <ul style="list-style: none; margin: 0 0 2rem 0; padding: 0; color: rgba(255, 255, 255, 0.85);">
                         <li style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 10px;">
                             <span style="color: #25D366;">✓</span> <?php echo $is_reserva ? "Prioridade de Matrícula" : "Acesso Imediato"; ?>
                         </li>

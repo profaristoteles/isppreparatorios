@@ -22,9 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $modality = $_POST['modality'] ?: 'Presencial e Online';
     $description = $_POST['description'];
     $payment_link = $_POST['payment_link'];
-    $info_extra = $_POST['info_extra'];
-    $disciplinas = $_POST['disciplinas'];
-    $conteudo = $_POST['conteudo'];
+    $info_extra = $_POST['info_extra'] ?? '';
+    $disciplinas = $_POST['disciplinas'] ?? '';
+    $conteudo = $_POST['conteudo'] ?? '';
     $status = $_POST['status'] ?: 'Disponível';
     $image_alt = $_POST['image_alt'];
     
@@ -115,18 +115,7 @@ require_once 'includes/header.php';
             <label>Descrição (Sobre o Curso)</label>
             <textarea name="description" id="curso_desc" class="form-control" rows="3"></textarea>
         </div>
-        <div class="form-group">
-            <label>Informações</label>
-            <textarea name="info_extra" id="curso_info_extra" class="form-control" rows="3"></textarea>
-        </div>
-        <div class="form-group">
-            <label>Disciplinas</label>
-            <textarea name="disciplinas" id="curso_disciplinas" class="form-control" rows="3"></textarea>
-        </div>
-        <div class="form-group">
-            <label>Conteúdo Programático</label>
-            <textarea name="conteudo" id="curso_conteudo" class="form-control" rows="3"></textarea>
-        </div>
+
         <div style="display:flex; gap:1rem;">
             <div class="form-group" style="flex:1;">
                 <label>Imagem (Thumbnail)</label>
@@ -186,7 +175,7 @@ require_once 'includes/header.php';
 <script>
 // Inicializa o TinyMCE para os campos de texto do curso
 tinymce.init({
-    selector: '#curso_desc, #curso_info_extra, #curso_disciplinas, #curso_conteudo',
+    selector: '#curso_desc',
     plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount code preview',
     toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | code preview',
     height: 300,
@@ -209,10 +198,7 @@ function editarCurso(curso) {
     document.getElementById('curso_image_alt').value = curso.image_alt || '';
     
     const fields = [
-        { id: 'curso_desc', content: curso.description },
-        { id: 'curso_info_extra', content: curso.info_extra },
-        { id: 'curso_disciplinas', content: curso.disciplinas },
-        { id: 'curso_conteudo', content: curso.conteudo }
+        { id: 'curso_desc', content: curso.description }
     ];
     
     fields.forEach(f => {
@@ -236,7 +222,7 @@ function resetForm() {
     document.getElementById('curso_status').value = 'Disponível';
     document.getElementById('curso_image_alt').value = '';
     
-    const fields = ['curso_desc', 'curso_info_extra', 'curso_disciplinas', 'curso_conteudo'];
+    const fields = ['curso_desc'];
     fields.forEach(id => {
         if (tinymce.get(id)) {
             tinymce.get(id).setContent('');
