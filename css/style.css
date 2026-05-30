@@ -52,7 +52,7 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    z-index: 1000;
+    z-index: 9999;
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--glass-border);
     background: rgba(3, 4, 94, 0.7);

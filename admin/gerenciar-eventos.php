@@ -18,6 +18,7 @@ if (isset($_GET['del'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = $_POST['title'];
     $description = $_POST['description'];
+    $schedule = $_POST['schedule'] ?? '';
     $event_date = str_replace('T', ' ', $_POST['event_date']) . ':00'; // Formata datetime-local para MySQL DATETIME
     
     // Tratamento da data de término (opcional)
@@ -56,17 +57,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_POST['id'])) {
             // Update
             if ($thumbnail) {
-                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, thumbnail=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
-                $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, schedule=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, thumbnail=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
+                $stmt->execute([$title, $description, $schedule, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed, $_POST['id']]);
             } else {
-                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
-                $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $slug, $meta_title, $meta_description, $video_embed, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, schedule=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
+                $stmt->execute([$title, $description, $schedule, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $slug, $meta_title, $meta_description, $video_embed, $_POST['id']]);
             }
             if(!isset($_SESSION['erro'])) $_SESSION['msg'] = "Evento atualizado com sucesso.";
         } else {
             // Insert
-            $stmt = $pdo->prepare("INSERT INTO eventos (title, description, event_date, event_end_date, form_type, form_link, form_embed, active, thumbnail, slug, meta_title, meta_description, video_embed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed]);
+            $stmt = $pdo->prepare("INSERT INTO eventos (title, description, schedule, event_date, event_end_date, form_type, form_link, form_embed, active, thumbnail, slug, meta_title, meta_description, video_embed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $description, $schedule, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed]);
             if(!isset($_SESSION['erro'])) $_SESSION['msg'] = "Evento adicionado com sucesso.";
         }
     } catch (\PDOException $e) {
@@ -113,6 +114,11 @@ require_once 'includes/header.php';
         <div class="form-group">
             <label>Descrição do Evento (Conteúdo para convencer a inscrição)</label>
             <textarea name="description" id="evento_desc" class="form-control" rows="3"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Programação do Evento <small style="color:#999;">(Opcional, preencha para exibir na página)</small></label>
+            <textarea name="schedule" id="evento_schedule" class="form-control" rows="3"></textarea>
         </div>
 
         <div style="background: rgba(255,165,0,0.05); padding: 1.5rem; border: 1px solid var(--brand-orange); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
@@ -229,7 +235,7 @@ function toggleFormFields() {
 
 // Inicializa o TinyMCE
 tinymce.init({
-    selector: '#evento_desc',
+    selector: '#evento_desc, #evento_schedule',
     plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
     toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline | link image media | align lineheight | numlist bullist | emoticons charmap | removeformat',
     height: 300,
@@ -270,6 +276,12 @@ function editarEvento(evento) {
         tinymce.get('evento_desc').setContent(evento.description || '');
     } else {
         document.getElementById('evento_desc').value = evento.description || '';
+    }
+    
+    if (tinymce.get('evento_schedule')) {
+        tinymce.get('evento_schedule').setContent(evento.schedule || '');
+    } else {
+        document.getElementById('evento_schedule').value = evento.schedule || '';
     }
     
     toggleFormFields();
@@ -316,6 +328,12 @@ function resetForm() {
         tinymce.get('evento_desc').setContent('');
     } else {
         document.getElementById('evento_desc').value = '';
+    }
+    
+    if (tinymce.get('evento_schedule')) {
+        tinymce.get('evento_schedule').setContent('');
+    } else {
+        document.getElementById('evento_schedule').value = '';
     }
     
     toggleFormFields();
