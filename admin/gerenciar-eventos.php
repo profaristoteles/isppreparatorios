@@ -56,9 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_POST['id'])) {
             // Update
             if ($thumbnail) {
-        if (!empty($_POST['id'])) {
-            // Update
-            if ($thumbnail) {
                 $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, thumbnail=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
                 $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed, $_POST['id']]);
             } else {
