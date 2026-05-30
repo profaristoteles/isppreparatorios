@@ -15,7 +15,7 @@ require_once 'includes/header.php';
 $is_future = strtotime($evento['event_date']) >= time();
 ?>
 
-<div style="background: linear-gradient(to bottom, #02023a, #03045e); padding: 4rem 5%; border-bottom: 1px solid var(--glass-border);">
+<div style="background: linear-gradient(to bottom, #02023a, #03045e); padding: 10rem 5% 4rem; border-bottom: 1px solid var(--glass-border);">
     <div class="container">
         <div class="row align-items-center" style="display: flex; flex-wrap: wrap; gap: 2rem;">
             
