@@ -44,6 +44,7 @@
     <a href="gerenciar-eventos.php">Eventos (Leads)</a>
     <a href="gerenciar-posts.php">Blog</a>
     <a href="gerenciar-depoimentos.php">Depoimentos</a>
+    <a href="gerenciar-menu.php">Menu do Site</a>
     <a href="inscricoes.php">Inscrições</a>
     <a href="configuracoes.php">Configurações</a>
     <a href="perfil.php">Meu Perfil</a>

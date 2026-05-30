@@ -6,7 +6,10 @@ $site_config = get_config($pdo);
 $primary = $site_config['theme_color_primary'] ?? '#03045e';
 $secondary = $site_config['theme_color_secondary'] ?? '#ff8000';
 
-$tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1")->fetchColumn();
+$tem_depoimentos = $pdo->query("SELECT COUNT(*) FROM depoimentos WHERE active=1")->fetchColumn();
+
+// Buscar itens do menu
+$menu_items = $pdo->query("SELECT * FROM menu_items ORDER BY order_index ASC")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -106,18 +109,17 @@ $tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1"
             </svg>
         </button>
         <div class="nav-links" role="menubar">
-            <a href="/index.php" role="menuitem">Início</a>
-            <a href="/index.php#diferenciais" role="menuitem">Diferenciais</a>
-            <a href="/cursos.php" role="menuitem">Cursos</a>
-            <a href="/editais.php" role="menuitem">Editais</a>
-            <a href="/eventos.php" role="menuitem">Eventos (Aulas/Lives)</a>
-            <a href="/index.php#modalidades" role="menuitem">Modalidades</a>
-            <?php if($tem_depoimentos > 0): ?>
-                <a href="/index.php#depoimentos" role="menuitem">Depoimentos</a>
-            <?php endif; ?>
-            <a href="/blog.php" role="menuitem">Blog</a>
-            <a href="/apostilas.php" role="menuitem">Apostilas</a>
-            <a href="https://ispreparatorios.classbuild.com" target="_blank" rel="noopener noreferrer" class="nav-btn-alt" role="menuitem" aria-label="Área do Aluno - abre em nova aba">Já sou Aluno(a)</a>
+            <?php foreach($menu_items as $item): ?>
+                <?php 
+                    // Pular Depoimentos se a condição não for satisfeita (mantendo a regra original)
+                    if ($item['label'] === 'Depoimentos' && $tem_depoimentos == 0) continue; 
+                    
+                    $class = $item['is_button'] ? 'nav-btn-alt' : '';
+                    $target = $item['target_blank'] ? 'target="_blank" rel="noopener noreferrer"' : '';
+                    $aria = $item['target_blank'] ? 'aria-label="' . htmlspecialchars($item['label']) . ' - abre em nova aba"' : '';
+                ?>
+                <a href="<?= htmlspecialchars($item['url']) ?>" class="<?= $class ?>" <?= $target ?> role="menuitem" <?= $aria ?>><?= htmlspecialchars($item['label']) ?></a>
+            <?php endforeach; ?>
         </div>
     </nav>
 
