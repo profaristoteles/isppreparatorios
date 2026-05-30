@@ -46,5 +46,15 @@ foreach ($posts as $p) {
     echo '</url>';
 }
 
+// Eventos
+$eventos = $pdo->query("SELECT id, slug FROM eventos WHERE active=1")->fetchAll();
+foreach ($eventos as $e) {
+    echo '<url>';
+    $urlPath = !empty($e['slug']) ? 'evento/' . $e['slug'] : 'evento-detalhes.php?id=' . $e['id'];
+    echo '<loc>' . $base_url . $urlPath . '</loc>';
+    echo '<priority>0.8</priority>';
+    echo '</url>';
+}
+
 echo '</urlset>';
 ?>

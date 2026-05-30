@@ -110,6 +110,7 @@ $tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1"
             <a href="/index.php#diferenciais" role="menuitem">Diferenciais</a>
             <a href="/cursos.php" role="menuitem">Cursos</a>
             <a href="/editais.php" role="menuitem">Editais</a>
+            <a href="/eventos.php" role="menuitem">Eventos (Aulas/Lives)</a>
             <a href="/index.php#modalidades" role="menuitem">Modalidades</a>
             <?php if($tem_depoimentos > 0): ?>
                 <a href="/index.php#depoimentos" role="menuitem">Depoimentos</a>

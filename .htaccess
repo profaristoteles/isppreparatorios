@@ -11,3 +11,6 @@ RewriteRule ^curso/([a-z0-9\-]+)/?$ curso-redirect.php?slug=$1 [L,QSA]
 
 # Rota para apostilas com slug
 RewriteRule ^apostila/([a-z0-9\-]+)/?$ apostila-redirect.php?slug=$1 [L,QSA]
+
+# Rota para eventos com slug
+RewriteRule ^evento/([a-z0-9\-]+)/?$ evento-redirect.php?slug=$1 [L,QSA]

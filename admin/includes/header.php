@@ -41,6 +41,7 @@
     <a href="dashboard.php">Dashboard</a>
     <a href="gerenciar-cursos.php">Cursos</a>
     <a href="gerenciar-apostilas.php">Apostilas</a>
+    <a href="gerenciar-eventos.php">Eventos (Leads)</a>
     <a href="gerenciar-posts.php">Blog</a>
     <a href="gerenciar-depoimentos.php">Depoimentos</a>
     <a href="inscricoes.php">Inscrições</a>
