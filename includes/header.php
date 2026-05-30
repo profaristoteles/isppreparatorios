@@ -25,7 +25,7 @@ $tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1"
         $current_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
     ?>
     <title><?= htmlspecialchars($page_title) ?></title>
-    <link rel="icon" type="image/png" href="uploads/favicon.png">
+    <link rel="icon" type="image/png" href="/uploads/favicon.png">
     <link rel="canonical" href="<?= htmlspecialchars($current_url) ?>">
     
     <!-- SEO Meta Tags -->
@@ -48,8 +48,8 @@ $tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1"
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="css/accessibility.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/style.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/css/accessibility.css?v=<?= time() ?>">
     <style>
         :root {
             --brand-blue: <?= htmlspecialchars($primary) ?>;
@@ -89,10 +89,10 @@ $tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1"
     <div class="prism-overlay" aria-hidden="true"></div>
 
     <nav role="navigation" aria-label="Menu principal">
-        <a href="index.php" style="text-decoration: none;" aria-label="ISP Preparatórios — Página inicial">
+        <a href="/index.php" style="text-decoration: none;" aria-label="ISP Preparatórios — Página inicial">
             <div class="logo">
-                <?php if(file_exists('uploads/logo.png')): ?>
-                    <img src="uploads/logo.png" alt="Logo ISP Preparatórios">
+                <?php if(file_exists(__DIR__ . '/../uploads/logo.png') || file_exists('uploads/logo.png')): ?>
+                    <img src="/uploads/logo.png" alt="Logo ISP Preparatórios">
                 <?php else: ?>
                     ISP.
                 <?php endif; ?>
@@ -104,16 +104,16 @@ $tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1"
             </svg>
         </button>
         <div class="nav-links" role="menubar">
-            <a href="index.php" role="menuitem">Início</a>
-            <a href="index.php#diferenciais" role="menuitem">Diferenciais</a>
-            <a href="cursos.php" role="menuitem">Cursos</a>
-            <a href="editais.php" role="menuitem">Editais</a>
-            <a href="index.php#modalidades" role="menuitem">Modalidades</a>
+            <a href="/index.php" role="menuitem">Início</a>
+            <a href="/index.php#diferenciais" role="menuitem">Diferenciais</a>
+            <a href="/cursos.php" role="menuitem">Cursos</a>
+            <a href="/editais.php" role="menuitem">Editais</a>
+            <a href="/index.php#modalidades" role="menuitem">Modalidades</a>
             <?php if($tem_depoimentos > 0): ?>
-                <a href="index.php#depoimentos" role="menuitem">Depoimentos</a>
+                <a href="/index.php#depoimentos" role="menuitem">Depoimentos</a>
             <?php endif; ?>
-            <a href="blog.php" role="menuitem">Blog</a>
-            <a href="apostilas.php" role="menuitem">Apostilas</a>
+            <a href="/blog.php" role="menuitem">Blog</a>
+            <a href="/apostilas.php" role="menuitem">Apostilas</a>
             <a href="https://ispreparatorios.classbuild.com" target="_blank" rel="noopener noreferrer" class="nav-btn-alt" role="menuitem" aria-label="Área do Aluno - abre em nova aba">Já sou Aluno(a)</a>
         </div>
     </nav>

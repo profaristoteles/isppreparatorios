@@ -8,8 +8,8 @@ $site_config = $site_config ?? get_config($pdo);
             
             <!-- Coluna 1: Sobre -->
             <div>
-                <?php if(file_exists('uploads/logo.png')): ?>
-                    <a href="index.php"><img src="uploads/logo.png" alt="Logo ISP" style="max-height: 60px; margin-bottom: 1rem; mix-blend-mode: screen;"></a>
+                <?php if(file_exists(__DIR__ . '/../uploads/logo.png') || file_exists('uploads/logo.png')): ?>
+                    <a href="/index.php"><img src="/uploads/logo.png" alt="Logo ISP" style="max-height: 60px; margin-bottom: 1rem; mix-blend-mode: screen;"></a>
                 <?php else: ?>
                     <h4 style="color: var(--brand-orange); font-size: 1.1rem; font-weight: 700; margin-bottom: 1.2rem; text-transform: uppercase; letter-spacing: 1px;">ISP Preparatórios</h4>
                 <?php endif; ?>
@@ -49,11 +49,11 @@ $site_config = $site_config ?? get_config($pdo);
             <div>
                 <h4 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 1.2rem; text-transform: uppercase; letter-spacing: 1px;">Navegação</h4>
                 <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem;">
-                    <li><a href="index.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Início</a></li>
-                    <li><a href="cursos.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Cursos</a></li>
-                    <li><a href="apostilas.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Apostilas</a></li>
-                    <li><a href="blog.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Blog</a></li>
-                    <li><a href="contato.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Contato</a></li>
+                    <li><a href="/index.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Início</a></li>
+                    <li><a href="/cursos.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Cursos</a></li>
+                    <li><a href="/apostilas.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Apostilas</a></li>
+                    <li><a href="/blog.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Blog</a></li>
+                    <li><a href="/contato.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Contato</a></li>
                 </ul>
             </div>
 
@@ -61,8 +61,8 @@ $site_config = $site_config ?? get_config($pdo);
             <div>
                 <h4 style="color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 1.2rem; text-transform: uppercase; letter-spacing: 1px;">Legal</h4>
                 <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem;">
-                    <li><a href="privacidade.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Política de Privacidade</a></li>
-                    <li><a href="termos.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Termos de Uso</a></li>
+                    <li><a href="/privacidade.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Política de Privacidade</a></li>
+                    <li><a href="/termos.php" style="color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; transition: color 0.3s;">Termos de Uso</a></li>
                 </ul>
             </div>
 
@@ -106,12 +106,12 @@ $site_config = $site_config ?? get_config($pdo);
     <!-- LGPD Banner -->
     <div id="lgpd-banner" style="display:none; position: fixed; bottom: 0; left: 0; width: 100%; background: #02023a; border-top: 1px solid var(--prism-cyan); padding: 1.5rem 5%; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 1rem; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
         <p style="color: #ccc; font-size: 0.9rem; margin: 0; max-width: 800px; line-height: 1.5;">
-            Utilizamos cookies e tecnologias semelhantes para melhorar a sua experiência em nossos serviços. Ao continuar navegando, você concorda com a nossa <a href="privacidade.php" style="color: var(--brand-orange); text-decoration: underline;">Política de Privacidade</a> e <a href="termos.php" style="color: var(--brand-orange); text-decoration: underline;">Termos de Uso</a>.
+            Utilizamos cookies e tecnologias semelhantes para melhorar a sua experiência em nossos serviços. Ao continuar navegando, você concorda com a nossa <a href="/privacidade.php" style="color: var(--brand-orange); text-decoration: underline;">Política de Privacidade</a> e <a href="/termos.php" style="color: var(--brand-orange); text-decoration: underline;">Termos de Uso</a>.
         </p>
         <button onclick="acceptCookies()" class="btn" style="padding: 0.5rem 2rem; font-size: 0.9rem;">Estou Ciente e Aceito</button>
     </div>
 
-    <script src="js/main.js"></script>
+    <script src="/js/main.js"></script>
     <script>
         // LGPD Logic
         const lgpdBanner = document.getElementById('lgpd-banner');
