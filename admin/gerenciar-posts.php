@@ -227,14 +227,8 @@ require_once 'includes/header.php';
                     "category" => $p["category"],
                     "content" => $p["content"],
                     "image_alt" => $p["image_alt"],
-                    "status" => $p["status"] ?? "publicado",
-                    "seo_keywords" => $p["seo_keywords"] ?? "",
-                    "meta_title" => $p["meta_title"] ?? "",
-                    "meta_description" => $p["meta_description"] ?? "",
-                    "slug" => $p["slug"] ?? "",
-                    "created_at" => $p["created_at"]
-                ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)) ?>)'>Editar</button>
-                <a href="?del=<?= $p['id'] ?>" class="btn btn-danger" onclick="return confirm('Excluir este post?')">Excluir</a>
+                <button class="btn" onclick="editarPost(<?= htmlspecialchars(json_encode($p), ENT_QUOTES, 'UTF-8') ?>)">Editar</button>
+                <a href="?del=<?= $p['id'] ?>" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</a>
             </td>
         </tr>
         <?php endforeach; ?>

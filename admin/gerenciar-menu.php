@@ -139,7 +139,7 @@ require_once 'includes/header.php';
                     <?php endif; ?>
                 </td>
                 <td>
-                    <button class="btn" onclick='editarItem(<?= json_encode($i) ?>)'>Editar</button>
+                    <button class="btn" onclick="editarItem(<?= htmlspecialchars(json_encode($i), ENT_QUOTES, 'UTF-8') ?>)">Editar</button>
                     <a href="?del=<?= $i['id'] ?>" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</a>
                 </td>
             </tr>

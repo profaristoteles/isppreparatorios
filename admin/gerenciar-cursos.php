@@ -201,7 +201,7 @@ require_once 'includes/header.php';
                 </td>
                 <td>R$ <?= number_format($c['price'], 2, ',', '.') ?></td>
                 <td>
-                    <button class="btn" onclick='editarCurso(<?= json_encode($c) ?>)'>Editar</button>
+                    <button class="btn" onclick="editarCurso(<?= htmlspecialchars(json_encode($c), ENT_QUOTES, 'UTF-8') ?>)">Editar</button>
                     <a href="?del=<?= $c['id'] ?>" class="btn btn-danger" onclick="return confirm('Tem certeza?')">Excluir</a>
                 </td>
             </tr>

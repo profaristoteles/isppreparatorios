@@ -314,10 +314,10 @@ require_once 'includes/header.php';
             </td>
             <td>R$ <?= number_format($a['price'], 2, ',', '.') ?></td>
             <td><?= $a['active'] ? 'Ativa' : 'Inativa' ?></td>
-            <td>
-                <button class="btn" onclick='editarApostila(<?= json_encode($a) ?>)'>Editar</button>
-                <a href="?del=<?= $a['id'] ?>" class="btn btn-danger" onclick="return confirm('Excluir esta apostila?')">Excluir</a>
-            </td>
+                <td>
+                    <button class="btn" onclick="editarApostila(<?= htmlspecialchars(json_encode($a), ENT_QUOTES, 'UTF-8') ?>)">Editar</button>
+                    <a href="?del=<?= $a['id'] ?>" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja remover esta apostila?')">Excluir</a>
+                </td>
         </tr>
         <?php endforeach; ?>
     </table>
