@@ -20,7 +20,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $image_alt = $_POST['image_alt'] ?: '';
     $status = $_POST['status'] ?? 'publicado';
     $seo_keywords = $_POST['seo_keywords'] ?? '';
+    $meta_title = $_POST['meta_title'] ?? '';
+    $meta_description = $_POST['meta_description'] ?? '';
+    $slug = $_POST['slug'] ?? '';
     $created_at = !empty($_POST['created_at']) ? date('Y-m-d H:i:s', strtotime($_POST['created_at'])) : date('Y-m-d H:i:s');
+
+    if (!$slug) {
+        $slug_text = strtr(strtolower($title), [
+            'á'=>'a','à'=>'a','ã'=>'a','â'=>'a','ä'=>'a',
+            'é'=>'e','è'=>'e','ê'=>'e','ë'=>'e',
+            'í'=>'i','ì'=>'i','î'=>'i','ï'=>'i',
+            'ó'=>'o','ò'=>'o','õ'=>'o','ô'=>'o','ö'=>'o',
+            'ú'=>'u','ù'=>'u','û'=>'u','ü'=>'u',
+            'ç'=>'c','ñ'=>'n'
+        ]);
+        $slug = preg_replace('/[\s-]+/', '-', trim(preg_replace('/[^a-z0-9\s-]/', '', $slug_text)));
+    }
 
     $cover = '';
     if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
@@ -35,15 +50,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($_POST['id'])) {
         if ($cover) {
-            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, cover_image=?, image_alt=?, status=?, seo_keywords=?, created_at=? WHERE id=?");
-            $stmt->execute([$title, $category, $content, $cover, $image_alt, $status, $seo_keywords, $created_at, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, cover_image=?, image_alt=?, status=?, seo_keywords=?, meta_title=?, meta_description=?, slug=?, created_at=? WHERE id=?");
+            $stmt->execute([$title, $category, $content, $cover, $image_alt, $status, $seo_keywords, $meta_title, $meta_description, $slug, $created_at, $_POST['id']]);
         } else {
-            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, image_alt=?, status=?, seo_keywords=?, created_at=? WHERE id=?");
-            $stmt->execute([$title, $category, $content, $image_alt, $status, $seo_keywords, $created_at, $_POST['id']]);
+            $stmt = $pdo->prepare("UPDATE posts SET title=?, category=?, content=?, image_alt=?, status=?, seo_keywords=?, meta_title=?, meta_description=?, slug=?, created_at=? WHERE id=?");
+            $stmt->execute([$title, $category, $content, $image_alt, $status, $seo_keywords, $meta_title, $meta_description, $slug, $created_at, $_POST['id']]);
         }
     } else {
-        $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image, image_alt, status, seo_keywords, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $category, $content, $cover, $image_alt, $status, $seo_keywords, $created_at]);
+        $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image, image_alt, status, seo_keywords, meta_title, meta_description, slug, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $category, $content, $cover, $image_alt, $status, $seo_keywords, $meta_title, $meta_description, $slug, $created_at]);
     }
     $msgLabel = $status === 'rascunho' ? 'Rascunho salvo com sucesso.' : 'Post publicado com sucesso.';
     $_SESSION['msg'] = $msgLabel;
@@ -83,6 +98,26 @@ require_once 'includes/header.php';
         <div class="form-group">
             <label>Palavras-chave SEO (Separadas por vírgula)</label>
             <input type="text" name="seo_keywords" id="post_seo_keywords" class="form-control" placeholder="concurso, educação, professores, dicas de estudo">
+        </div>
+
+        <div style="display:flex; gap:1rem; margin-bottom: 1.5rem; background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #dee2e6;">
+            <div style="flex: 1;">
+                <h4 style="margin-top: 0; color: #03045e; font-size: 1rem;">Configurações de SEO</h4>
+                <div class="form-group">
+                    <label>Meta Title (Deixe vazio para usar o título do post)</label>
+                    <input type="text" name="meta_title" id="post_meta_title" class="form-control" maxlength="70" placeholder="Ex: Dicas para Concurso | ISP">
+                    <small style="color: #666;">Máximo de 70 caracteres</small>
+                </div>
+                <div class="form-group">
+                    <label>Meta Description (Deixe vazio para usar o resumo)</label>
+                    <textarea name="meta_description" id="post_meta_description" class="form-control" rows="2" maxlength="160" placeholder="Ex: Descubra as melhores dicas para passar no concurso de professores da rede pública..."></textarea>
+                    <small style="color: #666;">Máximo de 160 caracteres</small>
+                </div>
+                <div class="form-group">
+                    <label>Slug Personalizado (Deixe vazio para gerar automaticamente do título)</label>
+                    <input type="text" name="slug" id="post_slug" class="form-control" placeholder="ex: dicas-para-concurso">
+                </div>
+            </div>
         </div>
 
         <div class="form-group" style="background: rgba(3, 4, 94, 0.4); border: 1px solid var(--prism-cyan); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
@@ -186,16 +221,19 @@ require_once 'includes/header.php';
             </td>
             <td>
                 <!-- Pass content securely -->
-                <button class="btn" onclick="editarPost(<?= htmlspecialchars(json_encode([
-                    'id' => $p['id'],
-                    'title' => $p['title'],
-                    'category' => $p['category'],
-                    'content' => $p['content'],
-                    'image_alt' => $p['image_alt'],
-                    'status' => $p['status'] ?? 'publicado',
-                    'seo_keywords' => $p['seo_keywords'] ?? '',
-                    'created_at' => $p['created_at']
-                ])) ?>)">Editar</button>
+                <button class="btn" onclick='editarPost(<?= htmlspecialchars(json_encode([
+                    "id" => $p["id"],
+                    "title" => $p["title"],
+                    "category" => $p["category"],
+                    "content" => $p["content"],
+                    "image_alt" => $p["image_alt"],
+                    "status" => $p["status"] ?? "publicado",
+                    "seo_keywords" => $p["seo_keywords"] ?? "",
+                    "meta_title" => $p["meta_title"] ?? "",
+                    "meta_description" => $p["meta_description"] ?? "",
+                    "slug" => $p["slug"] ?? "",
+                    "created_at" => $p["created_at"]
+                ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)) ?>)'>Editar</button>
                 <a href="?del=<?= $p['id'] ?>" class="btn btn-danger" onclick="return confirm('Excluir este post?')">Excluir</a>
             </td>
         </tr>
@@ -230,6 +268,9 @@ function editarPost(p) {
     }
     document.getElementById('post_image_alt').value = p.image_alt || '';
     document.getElementById('post_seo_keywords').value = p.seo_keywords || '';
+    document.getElementById('post_meta_title').value = p.meta_title || '';
+    document.getElementById('post_meta_description').value = p.meta_description || '';
+    document.getElementById('post_slug').value = p.slug || '';
     
     // Set status
     document.getElementById('post_status').value = p.status || 'publicado';
@@ -269,6 +310,9 @@ function resetForm() {
     }
     document.getElementById('post_image_alt').value = '';
     document.getElementById('post_seo_keywords').value = '';
+    document.getElementById('post_meta_title').value = '';
+    document.getElementById('post_meta_description').value = '';
+    document.getElementById('post_slug').value = '';
     document.getElementById('post_created_at').value = '';
     document.getElementById('ai_image_prompt').value = '';
     document.getElementById('ai_generated_image').value = '';

@@ -1,0 +1,7 @@
+RewriteEngine On
+
+# Redireciona URLs antigas para o novo formato (já feito via PHP em post.php, mas mantemos conforme prompt)
+# RewriteRule ^post\.php$ - [L]
+
+# Rota para artigos do blog com slug
+RewriteRule ^blog/([a-z0-9\-]+)/?$ post-redirect.php?slug=$1 [L,QSA]

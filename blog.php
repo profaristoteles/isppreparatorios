@@ -293,7 +293,7 @@ function clean_excerpt($html, $length = 120) {
             <!-- Main Content Area -->
             <div>
                 <!-- Hero Post -->
-                <a href="post.php?id=<?= $hero_post['id'] ?>" class="blog-card hero-post">
+                <a href="/blog/<?= !empty($hero_post['slug']) ? $hero_post['slug'] : $hero_post['id'] ?>" class="blog-card hero-post">
                     <div class="blog-card-img-wrap">
                         <?php if($hero_post['cover_image']): ?>
                             <img src="uploads/<?= $hero_post['cover_image'] ?>" alt="<?= htmlspecialchars($hero_post['image_alt'] ?: $hero_post['title']) ?>">
@@ -315,7 +315,7 @@ function clean_excerpt($html, $length = 120) {
                 <!-- Grid of Recent Posts -->
                 <div class="recent-posts-grid">
                     <?php foreach($recent_posts as $p): ?>
-                        <a href="post.php?id=<?= $p['id'] ?>" class="blog-card recent-post">
+                        <a href="/blog/<?= !empty($p['slug']) ? $p['slug'] : $p['id'] ?>" class="blog-card recent-post">
                             <div class="blog-card-img-wrap">
                                 <?php if($p['cover_image']): ?>
                                     <img src="uploads/<?= $p['cover_image'] ?>" alt="<?= htmlspecialchars($p['image_alt'] ?: $p['title']) ?>">

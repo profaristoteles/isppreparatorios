@@ -26,10 +26,11 @@ foreach ($cursos as $c) {
 }
 
 // Posts do Blog
-$posts = $pdo->query("SELECT id FROM posts WHERE active=1 AND created_at <= NOW()")->fetchAll();
+$posts = $pdo->query("SELECT id, slug FROM posts WHERE active=1 AND created_at <= NOW()")->fetchAll();
 foreach ($posts as $p) {
     echo '<url>';
-    echo '<loc>' . $base_url . 'post.php?id=' . $p['id'] . '</loc>';
+    $urlPath = !empty($p['slug']) ? 'blog/' . $p['slug'] : 'post.php?id=' . $p['id'];
+    echo '<loc>' . $base_url . $urlPath . '</loc>';
     echo '<priority>0.6</priority>';
     echo '</url>';
 }
