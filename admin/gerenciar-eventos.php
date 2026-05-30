@@ -39,26 +39,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ext = strtolower(pathinfo($_FILES['thumbnail']['name'], PATHINFO_EXTENSION));
         if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
             $thumbnail = uniqid() . '.' . $ext;
-            move_uploaded_file($_FILES['thumbnail']['tmp_name'], '../uploads/' . $thumbnail);
+            if (!move_uploaded_file($_FILES['thumbnail']['tmp_name'], '../uploads/' . $thumbnail)) {
+                $_SESSION['erro'] = "Falha ao salvar a imagem na pasta uploads/. Verifique permissões.";
+                $thumbnail = '';
+            }
+        } else {
+            $_SESSION['erro'] = "Formato de imagem inválido.";
         }
+    } elseif (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] !== UPLOAD_ERR_NO_FILE) {
+        $_SESSION['erro'] = "Erro no upload da imagem: Código " . $_FILES['thumbnail']['error'] . " (Pode ser que a imagem seja muito pesada).";
     }
+    
+    $video_embed = $_POST['video_embed'] ?? '';
 
     try {
         if (!empty($_POST['id'])) {
             // Update
             if ($thumbnail) {
-                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, thumbnail=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
-                $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $_POST['id']]);
+        if (!empty($_POST['id'])) {
+            // Update
+            if ($thumbnail) {
+                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, thumbnail=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
+                $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed, $_POST['id']]);
             } else {
-                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
-                $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $slug, $meta_title, $meta_description, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
+                $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $slug, $meta_title, $meta_description, $video_embed, $_POST['id']]);
             }
-            $_SESSION['msg'] = "Evento atualizado com sucesso.";
+            if(!isset($_SESSION['erro'])) $_SESSION['msg'] = "Evento atualizado com sucesso.";
         } else {
             // Insert
-            $stmt = $pdo->prepare("INSERT INTO eventos (title, description, event_date, event_end_date, form_type, form_link, form_embed, active, thumbnail, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description]);
-            $_SESSION['msg'] = "Evento adicionado com sucesso.";
+            $stmt = $pdo->prepare("INSERT INTO eventos (title, description, event_date, event_end_date, form_type, form_link, form_embed, active, thumbnail, slug, meta_title, meta_description, video_embed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed]);
+            if(!isset($_SESSION['erro'])) $_SESSION['msg'] = "Evento adicionado com sucesso.";
         }
     } catch (\PDOException $e) {
         $_SESSION['erro'] = "Erro ao salvar no banco de dados: " . $e->getMessage();
@@ -125,6 +137,14 @@ require_once 'includes/header.php';
             <div class="form-group" id="field_form_embed" style="display: none;">
                 <label>Código Embed (Iframe HTML) <small style="color: #999;">- Cole o código gerado pelo seu CRM</small></label>
                 <textarea name="form_embed" id="evento_form_embed" class="form-control" rows="4" placeholder='<iframe src="..."></iframe>' style="font-family: monospace;"></textarea>
+            </div>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
+            <h3 style="margin-top: 0; color: var(--brand-orange); font-size: 1.1rem; margin-bottom: 1rem;">Vídeo (Opcional)</h3>
+            <div class="form-group">
+                <label>Embed do Vídeo (Iframe do YouTube/Vimeo) <small style="color: #999;">- Será exibido na página do evento</small></label>
+                <textarea name="video_embed" id="evento_video_embed" class="form-control" rows="3" placeholder='<iframe src="https://www.youtube.com/embed/..." ...></iframe>' style="font-family: monospace;"></textarea>
             </div>
         </div>
 
@@ -247,6 +267,7 @@ function editarEvento(evento) {
     document.getElementById('evento_slug').value = evento.slug || '';
     document.getElementById('evento_meta_title').value = evento.meta_title || '';
     document.getElementById('evento_meta_description').value = evento.meta_description || '';
+    document.getElementById('evento_video_embed').value = evento.video_embed || '';
     
     if (tinymce.get('evento_desc')) {
         tinymce.get('evento_desc').setContent(evento.description || '');
@@ -292,6 +313,7 @@ function resetForm() {
     document.getElementById('evento_slug').value = '';
     document.getElementById('evento_meta_title').value = '';
     document.getElementById('evento_meta_description').value = '';
+    document.getElementById('evento_video_embed').value = '';
     
     if (tinymce.get('evento_desc')) {
         tinymce.get('evento_desc').setContent('');

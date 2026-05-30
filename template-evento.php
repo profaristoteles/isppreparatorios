@@ -20,7 +20,7 @@ $is_future = strtotime($evento['event_date']) >= time();
         <div class="row align-items-center" style="display: flex; flex-wrap: wrap; gap: 2rem;">
             
             <!-- Detalhes do Evento -->
-            <div class="col-md-6 reveal" style="flex: 1; min-width: 300px;">
+            <div class="col-md-6 reveal" style="flex: 1; min-width: min(100%, 350px); text-align: center; padding: 1rem 0;">
                 <span class="hero-pre-title" style="margin-bottom: 1rem; display: inline-block;">
                     <?php if($is_future): ?>
                         🔥 PRÓXIMO EVENTO ISP
@@ -30,7 +30,7 @@ $is_future = strtotime($evento['event_date']) >= time();
                 </span>
                 <h1 style="font-size: clamp(2rem, 5vw, 3.5rem); margin-bottom: 1.5rem; line-height: 1.1;"><?= htmlspecialchars($evento['title']) ?></h1>
                 
-                <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; justify-content: center;">
                     <div style="background: rgba(255,165,0,0.1); border: 1px solid var(--brand-orange); padding: 0.8rem 1.2rem; border-radius: 8px; display: inline-block;">
                         <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--brand-orange); text-transform: uppercase; margin-bottom: 0.3rem;">Início</div>
                         <div style="font-weight: 700; font-size: 1.2rem;"><?= date('d/m/Y \à\s H:i', strtotime($evento['event_date'])) ?></div>
@@ -49,7 +49,7 @@ $is_future = strtotime($evento['event_date']) >= time();
             </div>
             
             <!-- Formulário ou Botão (Captação) -->
-            <div class="col-md-5 reveal" style="flex: 1; min-width: 300px;">
+            <div class="col-md-5 reveal" style="flex: 1; min-width: min(100%, 350px); max-width: 500px; margin: 0 auto;">
                 <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
                     
                     <?php if($evento['thumbnail']): ?>
@@ -81,7 +81,7 @@ $is_future = strtotime($evento['event_date']) >= time();
                         <?php elseif($evento['form_type'] === 'link' && !empty($evento['form_link'])): ?>
                             <!-- Botão Externo -->
                             <p style="text-align: center; color: var(--text-secondary); margin-bottom: 2rem;">
-                                Clique no botão abaixo para garantir sua vaga e receber todas as instruções pelo e-mail/WhatsApp.
+                                Clique no botão abaixo para garantir sua vaga e receber todas as instruções.
                             </p>
                             <a href="<?= htmlspecialchars($evento['form_link']) ?>" class="btn" style="display: block; text-align: center; font-size: 1.2rem; padding: 1rem; width: 100%;" target="_blank" rel="noopener noreferrer">
                                 Quero Participar!
@@ -96,5 +96,22 @@ $is_future = strtotime($evento['event_date']) >= time();
         </div>
     </div>
 </div>
+
+<?php if(!empty($evento['video_embed'])): ?>
+<!-- Seção de Vídeo -->
+<div style="background: #f8f9fa; padding: 4rem 5%;">
+    <div class="container" style="max-width: 900px; margin: 0 auto; text-align: center;">
+        <h2 style="color: #333; margin-bottom: 2rem; font-size: 2rem;">Transmissão do Evento</h2>
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <?php 
+                // Assegurar que o iframe ocupa 100% do container
+                $video_code = preg_replace('/width=["\'][0-9]+["\']/', 'width="100%"', $evento['video_embed']);
+                $video_code = preg_replace('/height=["\'][0-9]+["\']/', 'height="100%"', $video_code);
+                echo str_replace('<iframe', '<iframe style="position:absolute; top:0; left:0; width:100%; height:100%; border:none;"', $video_code);
+            ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php require_once 'includes/footer.php'; ?>
