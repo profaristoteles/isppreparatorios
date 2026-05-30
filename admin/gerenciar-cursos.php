@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = $_POST['price'] ?: 0;
     $duration = $_POST['duration'];
     $modality = $_POST['modality'] ?: 'Presencial e Online';
+    $active = isset($_POST['active']) ? 1 : 0;
     $description = $_POST['description'];
     $payment_link = $_POST['payment_link'];
     $info_extra = $_POST['info_extra'] ?? '';
@@ -47,17 +48,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_POST['id'])) {
             // Update
             if ($thumbnail) {
-                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
-                $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, active=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
+                $stmt->execute([$title, $price, $duration, $modality, $active, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
             } else {
-                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
-                $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, active=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
+                $stmt->execute([$title, $price, $duration, $modality, $active, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
             }
             $_SESSION['msg'] = "Curso atualizado.";
         } else {
             // Insert
-            $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, description, payment_link, info_extra, disciplinas, conteudo, status, thumbnail, image_alt, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description]);
+            $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, active, description, payment_link, info_extra, disciplinas, conteudo, status, thumbnail, image_alt, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $price, $duration, $modality, $active, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description]);
             $_SESSION['msg'] = "Curso adicionado.";
         }
     } catch (\PDOException $e) {
@@ -147,6 +148,14 @@ require_once 'includes/header.php';
                 <textarea name="meta_description" id="curso_meta_description" class="form-control" rows="2" placeholder="Resumo atrativo para os resultados de busca..."></textarea>
             </div>
         </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="active" id="curso_active" value="1" checked style="transform: scale(1.2); margin-right: 8px;"> 
+                <strong>Curso Ativo (Visível no site)</strong> - Desmarque para deixar como rascunho
+            </label>
+        </div>
+
         <button type="submit" class="btn">Salvar Curso</button>
         <button type="button" class="btn btn-warning" onclick="resetForm()">Novo</button>
     </form>
@@ -160,7 +169,8 @@ require_once 'includes/header.php';
                 <th>ID</th>
                 <th>Imagem</th>
                 <th>Título</th>
-                <th>Status</th>
+                <th>Status (Vagas)</th>
+                <th>Visibilidade</th>
                 <th>Preço</th>
                 <th>Ações</th>
             </tr>
@@ -180,6 +190,13 @@ require_once 'includes/header.php';
                         <span style="background: var(--brand-orange); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">Reserva</span>
                     <?php else: ?>
                         <span style="background: #28a745; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">Disponível</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if(isset($c['active']) && $c['active'] == 0): ?>
+                        <span style="background: #dc3545; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">Inativo (Rascunho)</span>
+                    <?php else: ?>
+                        <span style="background: #17a2b8; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">Publicado</span>
                     <?php endif; ?>
                 </td>
                 <td>R$ <?= number_format($c['price'], 2, ',', '.') ?></td>
@@ -214,6 +231,7 @@ function editarCurso(curso) {
     document.getElementById('curso_price').value = curso.price;
     document.getElementById('curso_duration').value = curso.duration;
     document.getElementById('curso_modality').value = curso.modality || 'Presencial e Online';
+    document.getElementById('curso_active').checked = curso.active != 0;
     document.getElementById('curso_payment_link').value = curso.payment_link || '';
     document.getElementById('curso_status').value = curso.status || 'Disponível';
     document.getElementById('curso_image_alt').value = curso.image_alt || '';
@@ -264,6 +282,7 @@ function resetForm() {
     document.getElementById('curso_price').value = '';
     document.getElementById('curso_duration').value = '';
     document.getElementById('curso_modality').value = 'Presencial e Online';
+    document.getElementById('curso_active').checked = true;
     document.getElementById('curso_payment_link').value = '';
     document.getElementById('curso_status').value = 'Disponível';
     document.getElementById('curso_image_alt').value = '';
