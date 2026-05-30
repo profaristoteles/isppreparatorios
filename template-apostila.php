@@ -371,7 +371,7 @@ require_once 'includes/header.php';
             <div class="apostila-cover-wrap">
                 <div class="apostila-cover">
                     <?php if (!empty($apostila['cover_image'])): ?>
-                        <img src="uploads/<?= htmlspecialchars($apostila['cover_image']) ?>" alt="<?= htmlspecialchars($coverAlt) ?>">
+                        <img src="/uploads/<?= htmlspecialchars($apostila['cover_image']) ?>" alt="<?= htmlspecialchars($coverAlt) ?>">
                     <?php else: ?>
                         <div style="aspect-ratio: 3/4; display: grid; place-items: center; color: var(--obsidian-text-dim);">Capa em breve</div>
                     <?php endif; ?>
@@ -440,7 +440,7 @@ require_once 'includes/header.php';
             <div class="preview-scroll">
                 <?php foreach ($previews as $img): ?>
                     <div class="preview-item">
-                        <img src="uploads/<?= htmlspecialchars($img) ?>" alt="Prévia do material">
+                        <img src="/uploads/<?= htmlspecialchars($img) ?>" alt="Prévia do material">
                     </div>
                 <?php endforeach; ?>
             </div>

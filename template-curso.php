@@ -51,7 +51,7 @@ function render_html_or_text($content) {
             <div style="flex: 1; min-width: 300px; display: flex; justify-content: center;">
                 <?php if($curso['thumbnail']): ?>
                     <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
-                        <img src="uploads/<?= $curso['thumbnail'] ?>" alt="<?= htmlspecialchars($curso['title']) ?>" style="width: 100%; max-width: 500px; max-height: 400px; object-fit: contain; border-radius: 8px;">
+                        <img src="/uploads/<?= $curso['thumbnail'] ?>" alt="<?= htmlspecialchars($curso['title']) ?>" style="width: 100%; max-width: 500px; max-height: 400px; object-fit: contain; border-radius: 8px;">
                     </div>
                 <?php else: ?>
                     <div style="width: 100%; max-width: 500px; height: 300px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">

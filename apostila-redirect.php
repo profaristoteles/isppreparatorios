@@ -1,7 +1,7 @@
 <?php
 require_once 'db_config.php';
 
-$slug = filter_input(INPUT_GET, 'slug', FILTER_SANITIZE_STRING);
+$slug = $_GET['slug'] ?? '';
 
 if (!$slug) {
     header("Location: /apostilas.php");
