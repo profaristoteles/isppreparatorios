@@ -17,10 +17,21 @@ foreach ($static_pages as $page) {
 }
 
 // Cursos
-$cursos = $pdo->query("SELECT id FROM cursos WHERE active=1")->fetchAll();
+$cursos = $pdo->query("SELECT id, slug FROM cursos WHERE active=1")->fetchAll();
 foreach ($cursos as $c) {
     echo '<url>';
-    echo '<loc>' . $base_url . 'curso-detalhes.php?id=' . $c['id'] . '</loc>';
+    $urlPath = !empty($c['slug']) ? 'curso/' . $c['slug'] : 'curso-detalhes.php?id=' . $c['id'];
+    echo '<loc>' . $base_url . $urlPath . '</loc>';
+    echo '<priority>0.7</priority>';
+    echo '</url>';
+}
+
+// Apostilas Internas
+$apostilas = $pdo->query("SELECT id, slug FROM apostilas WHERE active=1 AND is_internal=1")->fetchAll();
+foreach ($apostilas as $a) {
+    echo '<url>';
+    $urlPath = !empty($a['slug']) ? 'apostila/' . $a['slug'] : 'apostila-detalhes.php?id=' . $a['id'];
+    echo '<loc>' . $base_url . $urlPath . '</loc>';
     echo '<priority>0.7</priority>';
     echo '</url>';
 }

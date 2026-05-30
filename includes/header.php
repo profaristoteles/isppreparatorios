@@ -21,6 +21,8 @@ $tem_depoimentos = $pdo->query("SELECT count(*) FROM depoimentos WHERE active=1"
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php
+        $fallback_desc = !empty($site_config['site_description']) ? $site_config['site_description'] : "A melhor plataforma de estudos e cursos para você garantir sua aprovação. Estude com a ISP Preparatórios.";
+        $dynamic_desc = $dynamic_desc ?? $fallback_desc;
         $page_title = isset($dynamic_title) ? $dynamic_title . " | ISP Preparatórios" : "ISP Preparatórios | Elite - Concursos Públicos em Caxias, MA";
         $current_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
     ?>

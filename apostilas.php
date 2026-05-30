@@ -32,13 +32,11 @@ require_once 'includes/header.php';
                         <h3 style="font-size: 1.3rem; margin-bottom: 1rem; flex-grow: 1;"><?= htmlspecialchars($apo['title']) ?></h3>
                         
                         <div style="margin-top: auto; padding-top: 1.5rem; border-top: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                            <?php if ($apo['price'] > 0): ?>
-                            <span style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1.4rem; font-weight: 700; white-space: nowrap;">
-                                R$ <?= number_format($apo['price'], 2, ',', '.') ?>
-                            </span>
+                            <?php if($apo['price'] > 0): ?>
+                                <span style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1.2rem; font-weight: 700;">R$ <?= number_format($apo['price'], 2, ',', '.') ?></span>
                             <?php endif; ?>
                             <?php if($apo['is_internal']): ?>
-                                <a href="apostila-detalhes.php?id=<?= $apo['id'] ?>" class="btn" style="flex: 1; text-align: center; padding: 0.8rem 1rem; font-size: 0.8rem;">Saiba Mais</a>
+                                <a href="<?= !empty($apo['slug']) ? '/apostila/'.$apo['slug'] : 'apostila-detalhes.php?id='.$apo['id'] ?>" class="btn" style="flex: 1; text-align: center; padding: 0.8rem 1rem; font-size: 0.8rem;">Saiba Mais</a>
                             <?php else: ?>
                                 <a href="<?= htmlspecialchars($apo['payment_link']) ?>" class="btn" style="flex: 1; text-align: center; padding: 0.8rem 1rem; font-size: 0.8rem;" target="_blank">Comprar</a>
                             <?php endif; ?>

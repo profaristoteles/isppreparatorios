@@ -38,6 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $image_alt = $_POST['image_alt'] ?: '';
     $extra_sections = $_POST['extra_sections'] ?: '[]';
 
+    // SEO
+    $slug = $_POST['slug'] ?? '';
+    $meta_title = $_POST['meta_title'] ?? '';
+    $meta_description = $_POST['meta_description'] ?? '';
+
     $cover = '';
     if (isset($_FILES['cover_image']) && $_FILES['cover_image']['error'] === UPLOAD_ERR_OK) {
         $ext = strtolower(pathinfo($_FILES['cover_image']['name'], PATHINFO_EXTENSION));
@@ -68,8 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['id'])) {
         $id = $_POST['id'];
         
-        $sql = "UPDATE apostilas SET title=?, payment_link=?, active=?, price=?, subtitle=?, is_internal=?, topics=?, hero_btn_text=?, sec1_title=?, sec1_btn_text=?, sec2_title=?, sec3_title=?, sec3_text=?, sec3_bullets=?, sec3_btn_text=?, video_title=?, video_url=?, image_alt=?, extra_sections=?";
-        $params = [$title, $payment_link, $active, $price, $subtitle, $is_internal, $topics, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_text, $sec3_bullets, $sec3_btn_text, $video_title, $video_url, $image_alt, $extra_sections];
+        $sql = "UPDATE apostilas SET title=?, payment_link=?, active=?, price=?, subtitle=?, is_internal=?, topics=?, hero_btn_text=?, sec1_title=?, sec1_btn_text=?, sec2_title=?, sec3_title=?, sec3_text=?, sec3_bullets=?, sec3_btn_text=?, video_title=?, video_url=?, image_alt=?, extra_sections=?, slug=?, meta_title=?, meta_description=?";
+        $params = [$title, $payment_link, $active, $price, $subtitle, $is_internal, $topics, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_text, $sec3_bullets, $sec3_btn_text, $video_title, $video_url, $image_alt, $extra_sections, $slug, $meta_title, $meta_description];
         
         if ($cover) {
             $sql .= ", cover_image=?";
@@ -86,8 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
     } else {
-        $stmt = $pdo->prepare("INSERT INTO apostilas (title, payment_link, cover_image, active, price, subtitle, is_internal, topics, preview_images, hero_btn_text, sec1_title, sec1_btn_text, sec2_title, sec3_title, sec3_text, sec3_bullets, sec3_btn_text, video_title, video_url, image_alt, extra_sections) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $payment_link, $cover, $active, $price, $subtitle, $is_internal, $topics, $preview_str, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_text, $sec3_bullets, $sec3_btn_text, $video_title, $video_url, $image_alt, $extra_sections]);
+        $stmt = $pdo->prepare("INSERT INTO apostilas (title, payment_link, cover_image, active, price, subtitle, is_internal, topics, preview_images, hero_btn_text, sec1_title, sec1_btn_text, sec2_title, sec3_title, sec3_text, sec3_bullets, sec3_btn_text, video_title, video_url, image_alt, extra_sections, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $payment_link, $cover, $active, $price, $subtitle, $is_internal, $topics, $preview_str, $hero_btn_text, $sec1_title, $sec1_btn_text, $sec2_title, $sec3_title, $sec3_text, $sec3_bullets, $sec3_btn_text, $video_title, $video_url, $image_alt, $extra_sections, $slug, $meta_title, $meta_description]);
     }
     $_SESSION['msg'] = "Apostila salva com sucesso.";
     header("Location: gerenciar-apostilas.php");
@@ -253,6 +258,22 @@ require_once 'includes/header.php';
             </div>
         </div>
 
+        <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
+            <h3 style="margin-top: 0; color: var(--brand-orange); font-size: 1.1rem; margin-bottom: 1rem;">Configurações de SEO</h3>
+            <div class="form-group">
+                <label>Slug (URL Amigável) <small style="color: #999;">- Deixe em branco para gerar automaticamente baseado no título</small></label>
+                <input type="text" name="slug" id="apo_slug" class="form-control" placeholder="exemplo-de-apostila">
+            </div>
+            <div class="form-group">
+                <label>Meta Title <small style="color: #999;">- Título para o Google e Aba do Navegador (Opcional)</small></label>
+                <input type="text" name="meta_title" id="apo_meta_title" class="form-control" placeholder="Ex: Apostila de Educação Especial - ISP Preparatórios">
+            </div>
+            <div class="form-group">
+                <label>Meta Description <small style="color: #999;">- Resumo que aparece no Google (Opcional, max 160 caracteres)</small></label>
+                <textarea name="meta_description" id="apo_meta_description" class="form-control" rows="2" placeholder="Resumo atrativo para os resultados de busca..."></textarea>
+            </div>
+        </div>
+
         <div class="form-group">
             <label>
                 <input type="checkbox" name="active" id="apo_active" value="1" checked> Ativo (Visível na loja)
@@ -333,6 +354,10 @@ function editarApostila(a) {
     document.getElementById('apo_video_title').value = a.video_title || '';
     document.getElementById('apo_video_url').value = a.video_url || '';
     document.getElementById('apo_image_alt').value = a.image_alt || '';
+    
+    document.getElementById('apo_slug').value = a.slug || '';
+    document.getElementById('apo_meta_title').value = a.meta_title || '';
+    document.getElementById('apo_meta_description').value = a.meta_description || '';
 
     // Carregar Seções Extras
     currentSections = [];
@@ -344,6 +369,27 @@ function editarApostila(a) {
     toggleInternalFields();
     window.scrollTo(0,0);
 }
+
+function generateSlug(text) {
+    return text.toString().toLowerCase().trim()
+        .replace(/[áàãâä]/g, 'a')
+        .replace(/[éèêë]/g, 'e')
+        .replace(/[íìîï]/g, 'i')
+        .replace(/[óòõôö]/g, 'o')
+        .replace(/[úùûü]/g, 'u')
+        .replace(/[ç]/g, 'c')
+        .replace(/[ñ]/g, 'n')
+        .replace(/[\s\W-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+document.querySelector('form').addEventListener('submit', function(e) {
+    const titleInput = document.getElementById('apo_title');
+    const slugInput = document.getElementById('apo_slug');
+    if (!slugInput.value.trim() && titleInput.value.trim()) {
+        slugInput.value = generateSlug(titleInput.value);
+    }
+});
 
 function addExtraSection() {
     currentSections.push({ title: '', content: '' });
@@ -406,6 +452,10 @@ function resetForm() {
     document.getElementById('apo_video_title').value = '';
     document.getElementById('apo_video_url').value = '';
     document.getElementById('apo_image_alt').value = '';
+    
+    document.getElementById('apo_slug').value = '';
+    document.getElementById('apo_meta_title').value = '';
+    document.getElementById('apo_meta_description').value = '';
     
     currentSections = [];
     renderSections();

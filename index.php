@@ -124,12 +124,12 @@ $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id
                     <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; gap: 0.5rem; flex-wrap: wrap;">
                         <?php if($is_reserva): ?>
                             <span style="font-family: var(--font-mono); color: var(--brand-orange); font-size: 0.85rem; font-weight: 600;">Valores sob consulta</span>
-                            <a href="curso-detalhes.php?id=<?= $c['id'] ?>" class="btn" style="flex: 1; min-width: 100px; text-align: center; padding: 0.7rem 1rem; font-size: 0.8rem; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar</a>
+                            <a href="<?= !empty($c['slug']) ? '/curso/'.$c['slug'] : 'curso-detalhes.php?id='.$c['id'] ?>" class="btn" style="flex: 1; min-width: 100px; text-align: center; padding: 0.7rem 1rem; font-size: 0.8rem; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar</a>
                         <?php else: ?>
                             <?php if($c['price'] > 0): ?>
                                 <span style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1.2rem; font-weight: 700;">R$ <?= number_format($c['price'], 2, ',', '.') ?></span>
                             <?php endif; ?>
-                            <a href="curso-detalhes.php?id=<?= $c['id'] ?>" class="btn" style="flex: 1; min-width: 100px; text-align: center; padding: 0.7rem 1rem; font-size: 0.8rem;">Saiba Mais</a>
+                            <a href="<?= !empty($c['slug']) ? '/curso/'.$c['slug'] : 'curso-detalhes.php?id='.$c['id'] ?>" class="btn" style="flex: 1; min-width: 100px; text-align: center; padding: 0.7rem 1rem; font-size: 0.8rem;">Saiba Mais</a>
                         <?php endif; ?>
                     </div>
                 </div>

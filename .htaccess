@@ -5,3 +5,9 @@ RewriteEngine On
 
 # Rota para artigos do blog com slug
 RewriteRule ^blog/([a-z0-9\-]+)/?$ post-redirect.php?slug=$1 [L,QSA]
+
+# Rota para cursos com slug
+RewriteRule ^curso/([a-z0-9\-]+)/?$ curso-redirect.php?slug=$1 [L,QSA]
+
+# Rota para apostilas com slug
+RewriteRule ^apostila/([a-z0-9\-]+)/?$ apostila-redirect.php?slug=$1 [L,QSA]

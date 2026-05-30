@@ -17,9 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ai_groq_key = $_POST['ai_groq_key'] ?? '';
     $ai_openai_key = $_POST['ai_openai_key'] ?? '';
     $ai_openrouter_key = $_POST['ai_openrouter_key'] ?? '';
+    $site_description = $_POST['site_description'] ?? '';
 
-    $stmt = $pdo->prepare("UPDATE configuracoes SET theme_color_primary=?, theme_color_secondary=?, footer_text=?, phone=?, email=?, facebook=?, instagram=?, youtube=?, tiktok=?, ai_provider=?, ai_api_key=?, ai_groq_key=?, ai_openai_key=?, ai_openrouter_key=? WHERE id=1");
-    if($stmt->execute([$primary, $secondary, $footer, $phone, $email, $facebook, $instagram, $youtube, $tiktok, $ai_provider, $ai_api_key, $ai_groq_key, $ai_openai_key, $ai_openrouter_key])){
+    $stmt = $pdo->prepare("UPDATE configuracoes SET theme_color_primary=?, theme_color_secondary=?, footer_text=?, phone=?, email=?, facebook=?, instagram=?, youtube=?, tiktok=?, ai_provider=?, ai_api_key=?, ai_groq_key=?, ai_openai_key=?, ai_openrouter_key=?, site_description=? WHERE id=1");
+    if($stmt->execute([$primary, $secondary, $footer, $phone, $email, $facebook, $instagram, $youtube, $tiktok, $ai_provider, $ai_api_key, $ai_groq_key, $ai_openai_key, $ai_openrouter_key, $site_description])){
         $_SESSION['msg'] = "Configurações salvas com sucesso!";
     } else {
         $_SESSION['erro'] = "Erro ao salvar configurações.";
@@ -59,6 +60,11 @@ require_once 'includes/header.php';
         <div class="form-group">
             <label>Texto do Rodapé</label>
             <textarea name="footer_text" class="form-control" rows="3"><?= htmlspecialchars($config['footer_text']) ?></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Descrição Global do Site (SEO)</label>
+            <textarea name="site_description" class="form-control" rows="3" placeholder="Aparecerá quando você compartilhar a página inicial do site..."><?= htmlspecialchars($config['site_description'] ?? '') ?></textarea>
         </div>
 
         <div class="form-group">

@@ -28,6 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status = $_POST['status'] ?: 'Disponível';
     $image_alt = $_POST['image_alt'];
     
+    // SEO
+    $slug = $_POST['slug'] ?? '';
+    $meta_title = $_POST['meta_title'] ?? '';
+    $meta_description = $_POST['meta_description'] ?? '';
+    
     // Upload de Imagem
     $thumbnail = '';
     if (isset($_FILES['thumbnail']) && $_FILES['thumbnail']['error'] === UPLOAD_ERR_OK) {
@@ -42,17 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_POST['id'])) {
             // Update
             if ($thumbnail) {
-                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=? WHERE id=?");
-                $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
+                $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
             } else {
-                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=? WHERE id=?");
-                $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
+                $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
             }
             $_SESSION['msg'] = "Curso atualizado.";
         } else {
             // Insert
-            $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, description, payment_link, info_extra, disciplinas, conteudo, status, thumbnail, image_alt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt]);
+            $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, description, payment_link, info_extra, disciplinas, conteudo, status, thumbnail, image_alt, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $price, $duration, $modality, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description]);
             $_SESSION['msg'] = "Curso adicionado.";
         }
     } catch (\PDOException $e) {
@@ -126,6 +131,22 @@ require_once 'includes/header.php';
                 <input type="text" name="image_alt" id="curso_image_alt" class="form-control" placeholder="Ex: Capa do curso de Educação Especial">
             </div>
         </div>
+
+        <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
+            <h3 style="margin-top: 0; color: var(--brand-orange); font-size: 1.1rem; margin-bottom: 1rem;">Configurações de SEO</h3>
+            <div class="form-group">
+                <label>Slug (URL Amigável) <small style="color: #999;">- Deixe em branco para gerar automaticamente baseado no título</small></label>
+                <input type="text" name="slug" id="curso_slug" class="form-control" placeholder="exemplo-de-curso">
+            </div>
+            <div class="form-group">
+                <label>Meta Title <small style="color: #999;">- Título para o Google e Aba do Navegador (Opcional)</small></label>
+                <input type="text" name="meta_title" id="curso_meta_title" class="form-control" placeholder="Ex: Curso Completo de Educação Especial - ISP Preparatórios">
+            </div>
+            <div class="form-group">
+                <label>Meta Description <small style="color: #999;">- Resumo que aparece no Google (Opcional, max 160 caracteres)</small></label>
+                <textarea name="meta_description" id="curso_meta_description" class="form-control" rows="2" placeholder="Resumo atrativo para os resultados de busca..."></textarea>
+            </div>
+        </div>
         <button type="submit" class="btn">Salvar Curso</button>
         <button type="button" class="btn btn-warning" onclick="resetForm()">Novo</button>
     </form>
@@ -197,6 +218,10 @@ function editarCurso(curso) {
     document.getElementById('curso_status').value = curso.status || 'Disponível';
     document.getElementById('curso_image_alt').value = curso.image_alt || '';
     
+    document.getElementById('curso_slug').value = curso.slug || '';
+    document.getElementById('curso_meta_title').value = curso.meta_title || '';
+    document.getElementById('curso_meta_description').value = curso.meta_description || '';
+    
     const fields = [
         { id: 'curso_desc', content: curso.description }
     ];
@@ -212,6 +237,27 @@ function editarCurso(curso) {
     window.scrollTo(0,0);
 }
 
+function generateSlug(text) {
+    return text.toString().toLowerCase().trim()
+        .replace(/[áàãâä]/g, 'a')
+        .replace(/[éèêë]/g, 'e')
+        .replace(/[íìîï]/g, 'i')
+        .replace(/[óòõôö]/g, 'o')
+        .replace(/[úùûü]/g, 'u')
+        .replace(/[ç]/g, 'c')
+        .replace(/[ñ]/g, 'n')
+        .replace(/[\s\W-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+document.querySelector('form').addEventListener('submit', function(e) {
+    const titleInput = document.getElementById('curso_title');
+    const slugInput = document.getElementById('curso_slug');
+    if (!slugInput.value.trim() && titleInput.value.trim()) {
+        slugInput.value = generateSlug(titleInput.value);
+    }
+});
+
 function resetForm() {
     document.getElementById('curso_id').value = '';
     document.getElementById('curso_title').value = '';
@@ -221,6 +267,10 @@ function resetForm() {
     document.getElementById('curso_payment_link').value = '';
     document.getElementById('curso_status').value = 'Disponível';
     document.getElementById('curso_image_alt').value = '';
+    
+    document.getElementById('curso_slug').value = '';
+    document.getElementById('curso_meta_title').value = '';
+    document.getElementById('curso_meta_description').value = '';
     
     const fields = ['curso_desc'];
     fields.forEach(id => {
