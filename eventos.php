@@ -23,11 +23,11 @@ $eventos_passados = $stmt_passados->fetchAll();
         <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr)); margin-bottom: 4rem;">
             <?php foreach($eventos_futuros as $e): ?>
             <div class="feature-card reveal" style="display: flex; flex-direction: column; padding: 1.2rem; border: 1px solid var(--brand-orange); background: rgba(255,165,0,0.05);">
-                <div style="position: relative; margin-bottom: 1.2rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border);">
+                <div style="position: relative; margin-bottom: 1.2rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border); background: #111; display: flex; justify-content: center; align-items: center; min-height: 200px;">
                     <?php if($e['thumbnail']): ?>
-                        <img src="uploads/<?= $e['thumbnail'] ?>" alt="<?= htmlspecialchars($e['title']) ?>" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block;">
+                        <img src="uploads/<?= $e['thumbnail'] ?>" alt="<?= htmlspecialchars($e['title']) ?>" style="width: 100%; max-height: 350px; object-fit: cover; display: block;">
                     <?php else: ?>
-                        <div style="width: 100%; aspect-ratio: 16/9; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 100%; height: 200px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
                             <span style="color: var(--text-secondary);">Sem Capa</span>
                         </div>
                     <?php endif; ?>
@@ -55,11 +55,11 @@ $eventos_passados = $stmt_passados->fetchAll();
         <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));">
             <?php foreach($eventos_passados as $e): ?>
             <div class="feature-card reveal" style="display: flex; flex-direction: column; padding: 1rem; background: rgba(255,255,255,0.02);">
-                <div style="position: relative; margin-bottom: 1rem; border-radius: 6px; overflow: hidden; opacity: 0.8;">
+                <div style="position: relative; margin-bottom: 1rem; border-radius: 6px; overflow: hidden; opacity: 0.8; background: #111; display: flex; justify-content: center; align-items: center; min-height: 180px;">
                     <?php if($e['thumbnail']): ?>
-                        <img src="uploads/<?= $e['thumbnail'] ?>" alt="<?= htmlspecialchars($e['title']) ?>" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; filter: grayscale(50%);">
+                        <img src="uploads/<?= $e['thumbnail'] ?>" alt="<?= htmlspecialchars($e['title']) ?>" style="width: 100%; max-height: 300px; object-fit: cover; display: block; filter: grayscale(50%);">
                     <?php else: ?>
-                        <div style="width: 100%; aspect-ratio: 16/9; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 100%; height: 180px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
                             <span style="color: var(--text-secondary);">Sem Capa</span>
                         </div>
                     <?php endif; ?>

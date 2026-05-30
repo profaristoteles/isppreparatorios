@@ -32,16 +32,18 @@ $is_future = strtotime($evento['event_date']) >= time();
                 
                 <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
                     <div style="background: rgba(255,165,0,0.1); border: 1px solid var(--brand-orange); padding: 0.8rem 1.2rem; border-radius: 8px; display: inline-block;">
-                        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--brand-orange); text-transform: uppercase; margin-bottom: 0.3rem;">Data</div>
-                        <div style="font-weight: 700; font-size: 1.2rem;"><?= date('d/m/Y', strtotime($evento['event_date'])) ?></div>
+                        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--brand-orange); text-transform: uppercase; margin-bottom: 0.3rem;">Início</div>
+                        <div style="font-weight: 700; font-size: 1.2rem;"><?= date('d/m/Y \à\s H:i', strtotime($evento['event_date'])) ?></div>
                     </div>
+                    <?php if(!empty($evento['event_end_date'])): ?>
                     <div style="background: rgba(255,165,0,0.1); border: 1px solid var(--brand-orange); padding: 0.8rem 1.2rem; border-radius: 8px; display: inline-block;">
-                        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--brand-orange); text-transform: uppercase; margin-bottom: 0.3rem;">Horário</div>
-                        <div style="font-weight: 700; font-size: 1.2rem;"><?= date('H:i', strtotime($evento['event_date'])) ?></div>
+                        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--brand-orange); text-transform: uppercase; margin-bottom: 0.3rem;">Término</div>
+                        <div style="font-weight: 700; font-size: 1.2rem;"><?= date('d/m/Y \à\s H:i', strtotime($evento['event_end_date'])) ?></div>
                     </div>
+                    <?php endif; ?>
                 </div>
 
-                <div class="evento-description" style="font-size: 1.1rem; line-height: 1.6; color: var(--text-secondary); margin-bottom: 2rem;">
+                <div class="evento-description" style="font-size: 1.1rem; line-height: 1.6; color: rgba(255,255,255,0.9); margin-bottom: 2rem;">
                     <?= $evento['description'] ?>
                 </div>
             </div>
@@ -51,7 +53,9 @@ $is_future = strtotime($evento['event_date']) >= time();
                 <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
                     
                     <?php if($evento['thumbnail']): ?>
-                        <img src="/uploads/<?= $evento['thumbnail'] ?>" alt="<?= htmlspecialchars($evento['title']) ?>" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; border-bottom: 1px solid var(--glass-border);">
+                        <div style="background: #111; display: flex; justify-content: center; align-items: center; padding: 1rem; border-bottom: 1px solid var(--glass-border);">
+                            <img src="/uploads/<?= $evento['thumbnail'] ?>" alt="<?= htmlspecialchars($evento['title']) ?>" style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px;">
+                        </div>
                     <?php endif; ?>
                     
                     <div style="padding: 2rem;">

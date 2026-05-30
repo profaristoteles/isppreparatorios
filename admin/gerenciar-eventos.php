@@ -19,6 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = $_POST['title'];
     $description = $_POST['description'];
     $event_date = str_replace('T', ' ', $_POST['event_date']) . ':00'; // Formata datetime-local para MySQL DATETIME
+    
+    // Tratamento da data de término (opcional)
+    $event_end_date = !empty($_POST['event_end_date']) ? str_replace('T', ' ', $_POST['event_end_date']) . ':00' : null;
+    
     $form_type = $_POST['form_type'];
     $form_link = $_POST['form_link'] ?? '';
     $form_embed = $_POST['form_embed'] ?? '';
@@ -43,17 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_POST['id'])) {
             // Update
             if ($thumbnail) {
-                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, form_type=?, form_link=?, form_embed=?, active=?, thumbnail=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
-                $stmt->execute([$title, $description, $event_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, thumbnail=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
+                $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $_POST['id']]);
             } else {
-                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, form_type=?, form_link=?, form_embed=?, active=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
-                $stmt->execute([$title, $description, $event_date, $form_type, $form_link, $form_embed, $active, $slug, $meta_title, $meta_description, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
+                $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $slug, $meta_title, $meta_description, $_POST['id']]);
             }
             $_SESSION['msg'] = "Evento atualizado com sucesso.";
         } else {
             // Insert
-            $stmt = $pdo->prepare("INSERT INTO eventos (title, description, event_date, form_type, form_link, form_embed, active, thumbnail, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $description, $event_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description]);
+            $stmt = $pdo->prepare("INSERT INTO eventos (title, description, event_date, event_end_date, form_type, form_link, form_embed, active, thumbnail, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $description, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description]);
             $_SESSION['msg'] = "Evento adicionado com sucesso.";
         }
     } catch (\PDOException $e) {
@@ -81,14 +85,19 @@ require_once 'includes/header.php';
             <input type="text" name="title" id="evento_title" class="form-control" required placeholder="Ex: Aula Inaugural - Educação Especial">
         </div>
         
-        <div style="display:flex; gap:1rem;">
-            <div class="form-group" style="flex:1;">
-                <label>Data e Hora do Evento</label>
+        <div style="display:flex; gap:1rem; flex-wrap: wrap;">
+            <div class="form-group" style="flex:1; min-width: 200px;">
+                <label>Início do Evento <span style="color:red;">*</span></label>
                 <input type="datetime-local" name="event_date" id="evento_date" class="form-control" required>
             </div>
-            <div class="form-group" style="flex:1;">
+            <div class="form-group" style="flex:1; min-width: 200px;">
+                <label>Término do Evento <small style="color:#999;">(Opcional)</small></label>
+                <input type="datetime-local" name="event_end_date" id="evento_end_date" class="form-control">
+            </div>
+            <div class="form-group" style="flex:1; min-width: 200px;">
                 <label>Imagem de Capa (Thumbnail)</label>
                 <input type="file" name="thumbnail" class="form-control" accept="image/*">
+                <small style="color:#999;">Recomendado: Formato quadrado (1:1) ou banner vertical.</small>
             </div>
         </div>
 
@@ -223,6 +232,13 @@ function editarEvento(evento) {
         document.getElementById('evento_date').value = dateStr;
     }
     
+    if(evento.event_end_date) {
+        const endDateStr = evento.event_end_date.replace(' ', 'T').substring(0, 16);
+        document.getElementById('evento_end_date').value = endDateStr;
+    } else {
+        document.getElementById('evento_end_date').value = '';
+    }
+    
     document.getElementById('evento_form_type').value = evento.form_type || 'link';
     document.getElementById('evento_form_link').value = evento.form_link || '';
     document.getElementById('evento_form_embed').value = evento.form_embed || '';
@@ -267,6 +283,7 @@ function resetForm() {
     document.getElementById('evento_id').value = '';
     document.getElementById('evento_title').value = '';
     document.getElementById('evento_date').value = '';
+    document.getElementById('evento_end_date').value = '';
     document.getElementById('evento_form_type').value = 'link';
     document.getElementById('evento_form_link').value = '';
     document.getElementById('evento_form_embed').value = '';
