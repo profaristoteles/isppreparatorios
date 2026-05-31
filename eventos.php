@@ -29,11 +29,11 @@ $eventos_passados = $stmt_passados->fetchAll();
                     </span>
                 </div>
 
-                <div style="position: relative; margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.2); display: flex; justify-content: center; align-items: center; aspect-ratio: 1/1;">
+                <div style="position: relative; margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.4); padding: 1rem; text-align: center;">
                     <?php if($e['thumbnail']): ?>
-                        <img src="uploads/<?= $e['thumbnail'] ?>" alt="<?= htmlspecialchars($e['title']) ?>" style="max-width: 100%; max-height: 100%; object-fit: contain; display: block; border-radius: 8px;">
+                        <img src="uploads/<?= $e['thumbnail'] ?>" alt="<?= htmlspecialchars($e['title']) ?>" style="width: 100%; height: auto; object-fit: contain; display: block; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); margin: 0 auto; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                     <?php else: ?>
-                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;">
                             <span style="color: var(--text-secondary);">Sem Capa</span>
                         </div>
                     <?php endif; ?>
@@ -61,11 +61,11 @@ $eventos_passados = $stmt_passados->fetchAll();
                     </span>
                 </div>
 
-                <div style="position: relative; margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; opacity: 0.7; background: rgba(0,0,0,0.2); display: flex; justify-content: center; align-items: center; aspect-ratio: 1/1;">
+                <div style="position: relative; margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; opacity: 0.7; background: rgba(0,0,0,0.4); padding: 1rem; text-align: center;">
                     <?php if($e['thumbnail']): ?>
-                        <img src="uploads/<?= $e['thumbnail'] ?>" alt="<?= htmlspecialchars($e['title']) ?>" style="max-width: 100%; max-height: 100%; object-fit: contain; display: block; border-radius: 8px; filter: grayscale(50%);">
+                        <img src="uploads/<?= $e['thumbnail'] ?>" alt="<?= htmlspecialchars($e['title']) ?>" style="width: 100%; height: auto; object-fit: contain; display: block; border-radius: 8px; filter: grayscale(50%); box-shadow: 0 5px 15px rgba(0,0,0,0.5); margin: 0 auto; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                     <?php else: ?>
-                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;">
                             <span style="color: var(--text-secondary);">Sem Capa</span>
                         </div>
                     <?php endif; ?>
