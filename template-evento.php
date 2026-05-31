@@ -55,7 +55,39 @@ $is_future = strtotime($evento['event_date']) >= time();
                 <div class="evento-description" style="font-size: 1.15rem; line-height: 1.8; color: rgba(255,255,255,0.85); margin-bottom: 2rem;">
                     <?= $evento['description'] ?>
                 </div>
-            </div>
+
+                <!-- Botões de Compartilhamento -->
+                <?php
+                $share_protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+                $share_host = $_SERVER['HTTP_HOST'];
+                // Se rodando via linha de comando ou host vazio, fallback para dominio principal
+                if(empty($share_host) || $share_host === 'localhost') $share_host = 'isppreparatorios.com.br';
+                
+                $share_url = $share_protocol . $share_host . (!empty($evento['slug']) ? '/evento/'.$evento['slug'] : '/evento-detalhes.php?id='.$evento['id']);
+                $share_title = urlencode($evento['title']);
+                $whatsapp_text = urlencode("Confira este evento imperdível do ISP Preparatórios:\n*" . $evento['title'] . "*\n\nAcesse aqui: " . $share_url);
+                ?>
+                <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <h4 style="color: #fff; margin-bottom: 1.2rem; font-size: 1.1rem;">Compartilhe este evento:</h4>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <!-- WhatsApp -->
+                        <a href="https://api.whatsapp.com/send?text=<?= $whatsapp_text ?>" target="_blank" style="background: #25D366; color: #fff; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.124.551 4.195 1.597 6.015L.032 24l6.103-1.603a11.96 11.96 0 0 0 5.896 1.542h.005c6.645 0 12.03-5.385 12.03-12.031S18.676 0 12.031 0zm0 21.939h-.004a9.98 9.98 0 0 1-5.086-1.39l-.365-.216-3.784.993.999-3.69-.237-.377A9.957 9.957 0 0 1 2.052 12.03C2.052 6.525 6.526 2.05 12.03 2.05s9.978 4.474 9.978 9.98-4.473 9.98-9.978 9.98zm5.474-7.469c-.3-.15-1.774-.876-2.048-.976-.275-.101-.476-.15-.675.151-.201.3-.775.976-.95 1.176-.176.202-.351.226-.651.076-.301-.15-1.267-.467-2.414-1.493-.893-.799-1.496-1.787-1.672-2.088-.176-.301-.019-.464.131-.614.135-.135.301-.35.45-.526.151-.175.201-.3.301-.5.101-.2.051-.376-.025-.526-.075-.15-.675-1.626-.924-2.227-.243-.585-.488-.506-.674-.515-.176-.009-.376-.009-.576-.009s-.526.075-.801.376c-.275.301-1.05 1.026-1.05 2.5s1.076 2.88 1.226 3.08c.15.202 2.1 3.206 5.087 4.496.711.309 1.266.493 1.698.632.713.228 1.363.195 1.878.118.577-.086 1.774-.726 2.024-1.427.251-.7.251-1.301.176-1.427-.076-.126-.276-.201-.576-.35z"/></svg> WhatsApp
+                        </a>
+                        <!-- Facebook -->
+                        <a href="https://www.facebook.com/sharer/sharer.php?u=<?= $share_url ?>" target="_blank" style="background: #1877F2; color: #fff; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> Facebook
+                        </a>
+                        <!-- Twitter/X -->
+                        <a href="https://twitter.com/intent/tweet?url=<?= $share_url ?>&text=<?= $share_title ?>" target="_blank" style="background: #000; color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> X
+                        </a>
+                        <!-- Copy Link -->
+                        <button onclick="navigator.clipboard.writeText('<?= $share_url ?>').then(() => { let o=this.innerHTML; this.innerHTML='<svg width=\'20\' height=\'20\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><polyline points=\'20 6 9 17 4 12\'></polyline></svg> Copiado!'; setTimeout(()=>this.innerHTML=o,2000); })" style="background: rgba(255,255,255,0.1); color: #fff; padding: 10px 20px; border-radius: 8px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: var(--font-main); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copiar Link
+                        </button>
+                    </div>
+                </div>
 
             <!-- Coluna Direita: Formulário ou Capa Sticky -->
             <div class="reveal" style="flex: 1 1 350px; max-width: 500px; margin: 0 auto; width: 100%;">
