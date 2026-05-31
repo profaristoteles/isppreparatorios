@@ -63,9 +63,8 @@ $is_future = strtotime($evento['event_date']) >= time();
                     <div style="background: var(--obsidian-surface); border: 1px solid var(--glass-border); border-radius: 16px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.6);">
                         
                         <?php if($evento['thumbnail']): ?>
-                            <div style="position: relative; width: 100%; aspect-ratio: 16/9; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <img src="/uploads/<?= $evento['thumbnail'] ?>" alt="<?= htmlspecialchars($evento['title']) ?>" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.85; transition: opacity 0.3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.85">
-                                <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(3,4,94,0.9), transparent);"></div>
+                            <div style="position: relative; width: 100%; aspect-ratio: 1/1; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1.5rem;">
+                                <img src="/uploads/<?= $evento['thumbnail'] ?>" alt="<?= htmlspecialchars($evento['title']) ?>" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                             </div>
                         <?php endif; ?>
 
