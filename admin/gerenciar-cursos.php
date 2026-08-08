@@ -17,12 +17,15 @@ if (isset($_GET['del'])) {
 // Inserção / Edição
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = $_POST['title'];
+    $category = $_POST['category'] ?? '';
     $price = $_POST['price'] ?: 0;
     $duration = $_POST['duration'];
     $modality = $_POST['modality'] ?: 'Presencial e Online';
     $active = isset($_POST['active']) ? 1 : 0;
     $description = $_POST['description'];
+    $features = $_POST['features'] ?? '';
     $payment_link = $_POST['payment_link'];
+    $payment_methods = $_POST['payment_methods'] ?? '';
     $info_extra = $_POST['info_extra'] ?? '';
     $disciplinas = $_POST['disciplinas'] ?? '';
     $conteudo = $_POST['conteudo'] ?? '';
@@ -48,17 +51,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_POST['id'])) {
             // Update
             if ($thumbnail) {
-                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, active=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
-                $stmt->execute([$title, $price, $duration, $modality, $active, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE cursos SET title=?, category=?, price=?, duration=?, modality=?, active=?, description=?, features=?, payment_link=?, payment_methods=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
+                $stmt->execute([$title, $category, $price, $duration, $modality, $active, $description, $features, $payment_link, $payment_methods, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
             } else {
-                $stmt = $pdo->prepare("UPDATE cursos SET title=?, price=?, duration=?, modality=?, active=?, description=?, payment_link=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
-                $stmt->execute([$title, $price, $duration, $modality, $active, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE cursos SET title=?, category=?, price=?, duration=?, modality=?, active=?, description=?, features=?, payment_link=?, payment_methods=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
+                $stmt->execute([$title, $category, $price, $duration, $modality, $active, $description, $features, $payment_link, $payment_methods, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
             }
             $_SESSION['msg'] = "Curso atualizado.";
         } else {
             // Insert
-            $stmt = $pdo->prepare("INSERT INTO cursos (title, price, duration, modality, active, description, payment_link, info_extra, disciplinas, conteudo, status, thumbnail, image_alt, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $price, $duration, $modality, $active, $description, $payment_link, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description]);
+            $stmt = $pdo->prepare("INSERT INTO cursos (title, category, price, duration, modality, active, description, features, payment_link, payment_methods, info_extra, disciplinas, conteudo, status, thumbnail, image_alt, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $category, $price, $duration, $modality, $active, $description, $features, $payment_link, $payment_methods, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description]);
             $_SESSION['msg'] = "Curso adicionado.";
         }
     } catch (\PDOException $e) {
@@ -84,9 +87,15 @@ require_once 'includes/header.php';
     <h2>Adicionar / Editar Curso</h2>
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="id" id="curso_id">
-        <div class="form-group">
-            <label>Título</label>
-            <input type="text" name="title" id="curso_title" class="form-control" required>
+        <div style="display:flex; gap:1rem;">
+            <div class="form-group" style="flex:2;">
+                <label>Título do Curso</label>
+                <input type="text" name="title" id="curso_title" class="form-control" required>
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Subtítulo / Categoria <small style="color: #999;">(Opcional)</small></label>
+                <input type="text" name="category" id="curso_category" class="form-control" placeholder="Ex: Preparatório ENEM, Pós-Graduação">
+            </div>
         </div>
         <div style="display:flex; gap:1rem;">
             <div class="form-group" style="flex:1;">
@@ -122,6 +131,24 @@ require_once 'includes/header.php';
             <textarea name="description" id="curso_desc" class="form-control" rows="3"></textarea>
         </div>
 
+        <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
+            <h3 style="margin-top: 0; color: var(--brand-orange); font-size: 1.1rem; margin-bottom: 1rem;">O que Inclui &amp; Formas de Pagamento (Caixa de Venda)</h3>
+            <div class="form-group">
+                <label>O que inclui no Curso (Recursos na caixa de investimento) <small style="color: #999;">- Digite um item por linha</small></label>
+                <textarea name="features" id="curso_features" class="form-control" rows="4" placeholder="Acesso Imediato&#10;Material em PDF&#10;Simulados&#10;Suporte"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Formas de Pagamento Aceitas <small style="color: #999;">- Digite separando por vírgulas ou marque os atalhos abaixo</small></label>
+                <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom: 10px;">
+                    <label style="font-weight:normal; cursor:pointer; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);"><input type="checkbox" class="pm-chk" value="Cartão de Crédito" onchange="togglePaymentMethod('Cartão de Crédito', this.checked)"> 💳 Cartão de Crédito</label>
+                    <label style="font-weight:normal; cursor:pointer; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);"><input type="checkbox" class="pm-chk" value="Pix" onchange="togglePaymentMethod('Pix', this.checked)"> ⚡ Pix</label>
+                    <label style="font-weight:normal; cursor:pointer; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);"><input type="checkbox" class="pm-chk" value="Boleto Bancário" onchange="togglePaymentMethod('Boleto Bancário', this.checked)"> 📄 Boleto Bancário</label>
+                    <label style="font-weight:normal; cursor:pointer; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);"><input type="checkbox" class="pm-chk" value="Assinatura Recorrente" onchange="togglePaymentMethod('Assinatura Recorrente', this.checked)"> 🔄 Assinatura Recorrente</label>
+                </div>
+                <input type="text" name="payment_methods" id="curso_payment_methods" class="form-control" placeholder="Ex: Cartão de Crédito, Pix, Boleto Bancário, Assinatura Recorrente" oninput="syncCheckboxesFromInput()">
+            </div>
+        </div>
+
         <div style="display:flex; gap:1rem;">
             <div class="form-group" style="flex:1;">
                 <label>Imagem (Thumbnail)</label>
@@ -129,7 +156,7 @@ require_once 'includes/header.php';
             </div>
             <div class="form-group" style="flex:1;">
                 <label>Texto Alternativo da Imagem (SEO)</label>
-                <input type="text" name="image_alt" id="curso_image_alt" class="form-control" placeholder="Ex: Capa do curso de Educação Especial">
+                <input type="text" name="image_alt" id="curso_image_alt" class="form-control" placeholder="Ex: Capa do curso">
             </div>
         </div>
 
@@ -141,7 +168,7 @@ require_once 'includes/header.php';
             </div>
             <div class="form-group">
                 <label>Meta Title <small style="color: #999;">- Título para o Google e Aba do Navegador (Opcional)</small></label>
-                <input type="text" name="meta_title" id="curso_meta_title" class="form-control" placeholder="Ex: Curso Completo de Educação Especial - ISP Preparatórios">
+                <input type="text" name="meta_title" id="curso_meta_title" class="form-control" placeholder="Ex: Curso Completo - ISP Preparatórios">
             </div>
             <div class="form-group">
                 <label>Meta Description <small style="color: #999;">- Resumo que aparece no Google (Opcional, max 160 caracteres)</small></label>
@@ -225,14 +252,37 @@ tinymce.init({
     extended_valid_elements: "style[type|media|scoped]"
 });
 
+function togglePaymentMethod(method, checked) {
+    let input = document.getElementById('curso_payment_methods');
+    let current = input.value.split(',').map(s => s.trim()).filter(Boolean);
+    if (checked) {
+        if (!current.includes(method)) current.push(method);
+    } else {
+        current = current.filter(m => m !== method);
+    }
+    input.value = current.join(', ');
+}
+
+function syncCheckboxesFromInput() {
+    let input = document.getElementById('curso_payment_methods').value.toLowerCase();
+    document.querySelectorAll('.pm-chk').forEach(chk => {
+        chk.checked = input.includes(chk.value.toLowerCase());
+    });
+}
+
 function editarCurso(curso) {
     document.getElementById('curso_id').value = curso.id;
     document.getElementById('curso_title').value = curso.title;
+    document.getElementById('curso_category').value = curso.category || '';
     document.getElementById('curso_price').value = curso.price;
     document.getElementById('curso_duration').value = curso.duration;
     document.getElementById('curso_modality').value = curso.modality || 'Presencial e Online';
     document.getElementById('curso_active').checked = curso.active != 0;
+    document.getElementById('curso_features').value = curso.features || '';
     document.getElementById('curso_payment_link').value = curso.payment_link || '';
+    document.getElementById('curso_payment_methods').value = curso.payment_methods || '';
+    syncCheckboxesFromInput();
+
     document.getElementById('curso_status').value = curso.status || 'Disponível';
     document.getElementById('curso_image_alt').value = curso.image_alt || '';
     
@@ -279,11 +329,15 @@ document.querySelector('form').addEventListener('submit', function(e) {
 function resetForm() {
     document.getElementById('curso_id').value = '';
     document.getElementById('curso_title').value = '';
+    document.getElementById('curso_category').value = '';
     document.getElementById('curso_price').value = '';
     document.getElementById('curso_duration').value = '';
     document.getElementById('curso_modality').value = 'Presencial e Online';
     document.getElementById('curso_active').checked = true;
+    document.getElementById('curso_features').value = '';
     document.getElementById('curso_payment_link').value = '';
+    document.getElementById('curso_payment_methods').value = '';
+    syncCheckboxesFromInput();
     document.getElementById('curso_status').value = 'Disponível';
     document.getElementById('curso_image_alt').value = '';
     

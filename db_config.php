@@ -52,6 +52,22 @@ try {
     }
 } catch (Exception $e) { /* tabela pode nao existir ainda */ }
 
+// Auto-migration: campos configuráveis de cursos (categoria, recursos/inclusos, formas de pagamento)
+try {
+    $cursoCols = [
+        'category' => "ALTER TABLE cursos ADD COLUMN category VARCHAR(255) DEFAULT '' AFTER title",
+        'features' => "ALTER TABLE cursos ADD COLUMN features TEXT AFTER description",
+        'payment_methods' => "ALTER TABLE cursos ADD COLUMN payment_methods TEXT AFTER payment_link"
+    ];
+
+    foreach ($cursoCols as $column => $sql) {
+        $cols = $pdo->query("SHOW COLUMNS FROM cursos LIKE " . $pdo->quote($column))->fetchAll();
+        if (empty($cols)) {
+            $pdo->exec($sql);
+        }
+    }
+} catch (Exception $e) { /* tabela pode nao existir ainda */ }
+
 // Funções utilitárias globais
 function get_config($pdo) {
     $stmt = $pdo->query("SELECT * FROM configuracoes LIMIT 1");

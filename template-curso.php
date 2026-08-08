@@ -33,7 +33,9 @@ function render_html_or_text($content) {
     <section style="padding: 10rem 5% 4rem; background: radial-gradient(circle at top right, var(--prism-cyan) 0%, transparent 40%), radial-gradient(circle at bottom left, var(--prism-amber) 0%, transparent 40%); border-bottom: 1px solid var(--glass-border);">
         <div class="container" style="display: flex; flex-wrap: wrap; gap: 4rem; align-items: center;">
             <div style="flex: 1; min-width: 300px;">
-                <span style="font-family: var(--font-mono); color: var(--brand-orange); letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 1rem; display: block;">Educação Especial Inclusiva</span>
+                <?php if (!empty($curso['category'])): ?>
+                    <span style="font-family: var(--font-mono); color: var(--brand-orange); letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 1rem; display: block;"><?= htmlspecialchars($curso['category']) ?></span>
+                <?php endif; ?>
                 <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; margin-bottom: 1.5rem;"><?= htmlspecialchars($curso['title']) ?></h1>
                 
                 <div style="display: flex; gap: 2rem; margin-bottom: 2rem; color: rgba(255, 255, 255, 0.85); font-family: var(--font-mono); font-size: 0.9rem;">
@@ -92,24 +94,59 @@ function render_html_or_text($content) {
                     <?php endif; ?>
                     
                     <ul style="list-style: none; margin: 0 0 2rem 0; padding: 0; color: rgba(255, 255, 255, 0.85);">
-                        <li style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 10px;">
-                            <span style="color: #25D366;">✓</span> <?php echo $is_reserva ? "Prioridade de Matrícula" : "Acesso Imediato"; ?>
-                        </li>
-                        <li style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 10px;">
-                            <span style="color: #25D366;">✓</span> Material em PDF
-                        </li>
-                        <li style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 10px;">
-                            <span style="color: #25D366;">✓</span> Simulados
-                        </li>
-                        <li style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 10px;">
-                            <span style="color: #25D366;">✓</span> Suporte
-                        </li>
+                        <?php 
+                        if (!empty($curso['features'])) {
+                            $feature_items = preg_split('/\r\n|\r|\n/', trim($curso['features']));
+                            foreach ($feature_items as $f_item) {
+                                $f_item = trim($f_item);
+                                if ($f_item !== '') {
+                                    echo '<li style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 10px;">';
+                                    echo '<span style="color: #25D366;">✓</span> ' . htmlspecialchars($f_item);
+                                    echo '</li>';
+                                }
+                            }
+                        } else {
+                            $default_features = [
+                                $is_reserva ? "Prioridade de Matrícula" : "Acesso Imediato",
+                                "Material em PDF",
+                                "Simulados",
+                                "Suporte"
+                            ];
+                            foreach ($default_features as $f_item) {
+                                echo '<li style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 10px;">';
+                                echo '<span style="color: #25D366;">✓</span> ' . htmlspecialchars($f_item);
+                                echo '</li>';
+                            }
+                        }
+                        ?>
                     </ul>
 
                     <?php if($is_reserva): ?>
                         <a href="<?= htmlspecialchars($link_venda) ?>" <?= !empty($curso['payment_link']) ? 'target="_blank"' : '' ?> class="btn" style="width: 100%; font-size: 1rem; padding: 1.2rem; text-align: center; display: block; box-sizing: border-box; background: var(--brand-orange); border-color: var(--brand-orange);">Reservar Minha Vaga</a>
                     <?php else: ?>
                         <a href="<?= htmlspecialchars($link_venda) ?>" <?= !empty($curso['payment_link']) ? 'target="_blank"' : '' ?> class="btn" style="width: 100%; font-size: 1rem; padding: 1.2rem; text-align: center; display: block; box-sizing: border-box;">Garantir Minha Vaga</a>
+                    <?php endif; ?>
+
+                    <?php if (!empty($curso['payment_methods'])): ?>
+                        <div style="margin-top: 1.5rem; padding-top: 1.2rem; border-top: 1px solid var(--glass-border);">
+                            <span style="display: block; font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-mono);">Formas de Pagamento</span>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                                <?php 
+                                $pm_list = array_map('trim', explode(',', $curso['payment_methods']));
+                                foreach ($pm_list as $pm): 
+                                    if (empty($pm)) continue;
+                                    $icon = '💳';
+                                    $pm_lower = mb_strtolower($pm);
+                                    if (strpos($pm_lower, 'pix') !== false) $icon = '⚡';
+                                    elseif (strpos($pm_lower, 'boleto') !== false) $icon = '📄';
+                                    elseif (strpos($pm_lower, 'recorrente') !== false || strpos($pm_lower, 'assinatura') !== false) $icon = '🔄';
+                                ?>
+                                    <span style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.9); font-size: 0.8rem; padding: 0.35rem 0.65rem; border-radius: 6px; font-family: var(--font-mono); display: inline-flex; align-items: center; gap: 4px;">
+                                        <?= $icon ?> <?= htmlspecialchars($pm) ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     <?php endif; ?>
                     
                     <div style="text-align: center; margin-top: 1.5rem;">
