@@ -102,7 +102,7 @@ $is_future = strtotime($evento['event_date']) >= time();
                                     <?php if (!empty($lote_info['price_presencial'])): ?>
                                         <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,128,0,0.4); border-radius: 10px; padding: 1.2rem;">
                                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                                <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">🏫 Ingressos Presenciais</span>
+                                                <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">🏫 Presencial</span>
                                                 <span style="font-size: 1.4rem; font-weight: 700; color: var(--brand-orange); font-family: var(--font-mono);">
                                                     R$ <?= number_format($lote_info['price_presencial'], 2, ',', '.') ?>
                                                 </span>
@@ -111,7 +111,7 @@ $is_future = strtotime($evento['event_date']) >= time();
                                             $btn_link_pres = !empty($lote_info['link_presencial']) ? $lote_info['link_presencial'] : ($evento['form_link'] ?? '#');
                                             ?>
                                             <a href="<?= htmlspecialchars($btn_link_pres) ?>" target="_blank" class="btn" style="width: 100%; font-size: 0.95rem; padding: 0.8rem; text-align: center; display: block; box-sizing: border-box; background: var(--brand-orange); border-color: var(--brand-orange); margin-top: 0.5rem; text-decoration: none;">
-                                                Garantir Ingressos Presenciais
+                                                Garantir Vaga Presencial
                                             </a>
                                         </div>
                                     <?php endif; ?>
@@ -119,7 +119,7 @@ $is_future = strtotime($evento['event_date']) >= time();
                                     <?php if (!empty($lote_info['price_online'])): ?>
                                         <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(0,204,255,0.4); border-radius: 10px; padding: 1.2rem;">
                                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                                <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">💻 Transmissão Online</span>
+                                                <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">💻 Online</span>
                                                 <span style="font-size: 1.4rem; font-weight: 700; color: #00ccff; font-family: var(--font-mono);">
                                                     R$ <?= number_format($lote_info['price_online'], 2, ',', '.') ?>
                                                 </span>
@@ -128,7 +128,7 @@ $is_future = strtotime($evento['event_date']) >= time();
                                             $btn_link_onl = !empty($lote_info['link_online']) ? $lote_info['link_online'] : ($evento['form_link'] ?? '#');
                                             ?>
                                             <a href="<?= htmlspecialchars($btn_link_onl) ?>" target="_blank" class="btn" style="width: 100%; font-size: 0.95rem; padding: 0.8rem; text-align: center; display: block; box-sizing: border-box; background: transparent; border-color: #00ccff; color: #00ccff; margin-top: 0.5rem; text-decoration: none;">
-                                                Garantir Acesso Online
+                                                Garantir Vaga Online
                                             </a>
                                         </div>
                                     <?php endif; ?>

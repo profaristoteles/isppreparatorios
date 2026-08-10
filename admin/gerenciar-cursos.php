@@ -167,11 +167,11 @@ require_once 'includes/header.php';
         <div style="background: rgba(3, 4, 94, 0.4); padding: 1.5rem; border: 1px solid rgba(255,128,0,0.3); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
             <h3 style="margin-top: 0; color: var(--brand-orange); font-size: 1.1rem; margin-bottom: 1rem;">📍 Valoração &amp; Links por Modalidade (Presencial e Online)</h3>
             <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 1rem;">
-                Caso o curso possua preços ou links de checkout diferentes para a turma <strong>Presencial</strong> e para a turma <strong>Online</strong>, preencha os campos abaixo:
+                Caso o curso possua preços ou links de checkout diferentes para <strong>Presencial</strong> e <strong>Online</strong>, preencha os campos abaixo:
             </p>
             <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 250px; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
-                    <h4 style="color: #fff; margin: 0 0 0.8rem 0; font-size: 0.95rem;">🏫 Turma Presencial</h4>
+                    <h4 style="color: #fff; margin: 0 0 0.8rem 0; font-size: 0.95rem;">🏫 Presencial</h4>
                     <div class="form-group">
                         <label>Preço Presencial (R$)</label>
                         <input type="number" step="0.01" name="price_presencial" id="curso_price_presencial" class="form-control" placeholder="Ex: 450.00">
@@ -182,7 +182,7 @@ require_once 'includes/header.php';
                     </div>
                 </div>
                 <div style="flex: 1; min-width: 250px; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
-                    <h4 style="color: #fff; margin: 0 0 0.8rem 0; font-size: 0.95rem;">💻 Turma Online</h4>
+                    <h4 style="color: #fff; margin: 0 0 0.8rem 0; font-size: 0.95rem;">💻 Online</h4>
                     <div class="form-group">
                         <label>Preço Online (R$)</label>
                         <input type="number" step="0.01" name="price_online" id="curso_price_online" class="form-control" placeholder="Ex: 320.00">
@@ -196,13 +196,15 @@ require_once 'includes/header.php';
         </div>
 
         <!-- Seção: Lotes de Ingressos & Virada Automática de Data -->
-        <div style="background: rgba(255, 128, 0, 0.05); padding: 1.5rem; border: 1px solid var(--brand-orange); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
+        <div style="background: rgba(255, 128, 0, 0.08); padding: 1.5rem; border: 2px solid #ff8000; border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
                 <div>
-                    <h3 style="margin: 0; color: var(--brand-orange); font-size: 1.1rem;">🏷️ Lotes de Venda &amp; Virada Automática por Data</h3>
-                    <small style="color: #bbb;">Programe viradas automáticas de lote. O sistema trocará o lote ativo no exato momento programado.</small>
+                    <h3 style="margin: 0; color: #ff8000; font-size: 1.15rem; font-weight: 700;">🏷️ Lotes de Venda &amp; Virada Automática por Data</h3>
+                    <small style="color: #555; font-size: 0.85rem; display: block; margin-top: 2px;">Programe viradas automáticas de lote. O sistema trocará o lote ativo no exato momento programado.</small>
                 </div>
-                <button type="button" class="btn btn-sm" onclick="addLoteRow()" style="background: var(--brand-orange); border: none;">+ Adicionar Lote</button>
+                <button type="button" onclick="addLoteRow()" style="background: #ff8000 !important; color: #ffffff !important; font-weight: bold; border: none; padding: 10px 18px; border-radius: 6px; font-size: 0.95rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(255,128,0,0.4);">
+                    ➕ Adicionar Lote
+                </button>
             </div>
             
             <div id="lotes_container">
@@ -325,40 +327,71 @@ require_once 'includes/header.php';
 const lotesByCourse = <?= json_encode($lotes_by_course) ?>;
 let loteCounter = 0;
 
+function checkLotesEmptyState() {
+    const container = document.getElementById('lotes_container');
+    const items = container.querySelectorAll('.lote-row-item');
+    let emptyNotice = document.getElementById('lotes_empty_notice');
+    
+    if (items.length === 0) {
+        if (!emptyNotice) {
+            emptyNotice = document.createElement('div');
+            emptyNotice.id = 'lotes_empty_notice';
+            emptyNotice.style.cssText = 'background: rgba(255, 128, 0, 0.05); border: 2px dashed #ff8000; border-radius: 8px; padding: 1.5rem; text-align: center; margin-top: 0.5rem;';
+            emptyNotice.innerHTML = `
+                <p style="color: #444; margin: 0 0 1rem 0; font-size: 0.95rem; font-weight: 600;">
+                    💡 <strong>Nenhum lote programado no momento.</strong><br>
+                    Para ativar as viradas de lotes automáticas (ex: 1º Lote, 2º Lote...), clique no botão abaixo:
+                </p>
+                <button type="button" onclick="addLoteRow()" style="background: #ff8000 !important; color: #ffffff !important; font-weight: bold; border: none; padding: 10px 22px; border-radius: 6px; font-size: 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(255,128,0,0.3);">
+                    ➕ Cadastrar 1º Lote Agora
+                </button>
+            `;
+            container.appendChild(emptyNotice);
+        }
+    } else {
+        if (emptyNotice) {
+            emptyNotice.remove();
+        }
+    }
+}
+
 function addLoteRow(lote = {}) {
+    const emptyNotice = document.getElementById('lotes_empty_notice');
+    if (emptyNotice) emptyNotice.remove();
+
     loteCounter++;
     const container = document.getElementById('lotes_container');
     const div = document.createElement('div');
     div.className = 'lote-row-item';
-    div.style.cssText = 'background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; position: relative;';
+    div.style.cssText = 'background: #2b2b36; border: 1px solid rgba(255,128,0,0.4); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; position: relative; color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.15);';
 
     const dvirada = lote.data_virada ? lote.data_virada.replace(' ', 'T').substring(0, 16) : '';
 
     div.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
-            <strong style="color: var(--brand-orange); font-size: 0.95rem;">🏷️ Lote #${loteCounter}</strong>
-            <button type="button" onclick="this.closest('.lote-row-item').remove()" class="btn btn-sm btn-danger" style="padding: 2px 10px; font-size: 0.8rem;">Remover Lote</button>
+            <strong style="color: #ff8000; font-size: 1rem;">🏷️ Lote #${loteCounter}</strong>
+            <button type="button" onclick="this.closest('.lote-row-item').remove(); checkLotesEmptyState();" class="btn btn-sm btn-danger" style="padding: 4px 12px; font-size: 0.85rem; font-weight: bold;">✕ Remover Lote</button>
         </div>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <div class="form-group" style="flex: 2; min-width: 200px;">
-                <label style="font-size: 0.85rem;">Nome do Lote <span style="color:red;">*</span></label>
-                <input type="text" name="lote_name[]" class="form-control" placeholder="Ex: 1º Lote - Promocional" value="${lote.lote_name || ''}" required>
+                <label style="font-size: 0.85rem; color: #eee;">Nome do Lote <span style="color:red;">*</span></label>
+                <input type="text" name="lote_name[]" class="form-control" placeholder="Ex: 1º Lote - Promocional" value="${lote.lote_name || ''}" required style="background: #1f1f28; color: #fff; border: 1px solid #444;">
             </div>
             <div class="form-group" style="flex: 2; min-width: 220px;">
-                <label style="font-size: 0.85rem;">Data/Hora Limite de Virada <small style="color:#aaa;">(Encerra este lote)</small></label>
-                <input type="datetime-local" name="lote_data_virada[]" class="form-control" value="${dvirada}">
+                <label style="font-size: 0.85rem; color: #eee;">Data/Hora Limite de Virada <small style="color:#aaa;">(Encerra este lote)</small></label>
+                <input type="datetime-local" name="lote_data_virada[]" class="form-control" value="${dvirada}" style="background: #1f1f28; color: #fff; border: 1px solid #444;">
             </div>
         </div>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.8rem; border-radius: 6px;">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; background: rgba(0,0,0,0.25); padding: 0.8rem; border-radius: 6px;">
             <div style="flex: 1; min-width: 200px;">
-                <label style="font-size: 0.8rem; color: #ff9933;">🏫 Presencial (Preço & Link)</label>
-                <input type="number" step="0.01" name="lote_price_presencial[]" class="form-control" placeholder="R$ Presencial" value="${lote.price_presencial || ''}" style="margin-bottom: 5px;">
-                <input type="url" name="lote_link_presencial[]" class="form-control" placeholder="Link Checkout Presencial" value="${lote.link_presencial || ''}">
+                <label style="font-size: 0.85rem; color: #ff9933; font-weight: bold;">🏫 Presencial (Preço & Link)</label>
+                <input type="number" step="0.01" name="lote_price_presencial[]" class="form-control" placeholder="R$ Presencial" value="${lote.price_presencial || ''}" style="margin-bottom: 5px; background: #1f1f28; color: #fff; border: 1px solid #444;">
+                <input type="url" name="lote_link_presencial[]" class="form-control" placeholder="Link Checkout Presencial" value="${lote.link_presencial || ''}" style="background: #1f1f28; color: #fff; border: 1px solid #444;">
             </div>
             <div style="flex: 1; min-width: 200px;">
-                <label style="font-size: 0.8rem; color: #00ccff;">💻 Online (Preço & Link)</label>
-                <input type="number" step="0.01" name="lote_price_online[]" class="form-control" placeholder="R$ Online" value="${lote.price_online || ''}" style="margin-bottom: 5px;">
-                <input type="url" name="lote_link_online[]" class="form-control" placeholder="Link Checkout Online" value="${lote.link_online || ''}">
+                <label style="font-size: 0.85rem; color: #00ccff; font-weight: bold;">💻 Online (Preço & Link)</label>
+                <input type="number" step="0.01" name="lote_price_online[]" class="form-control" placeholder="R$ Online" value="${lote.price_online || ''}" style="margin-bottom: 5px; background: #1f1f28; color: #fff; border: 1px solid #444;">
+                <input type="url" name="lote_link_online[]" class="form-control" placeholder="Link Checkout Online" value="${lote.link_online || ''}" style="background: #1f1f28; color: #fff; border: 1px solid #444;">
             </div>
         </div>
     `;
@@ -440,6 +473,8 @@ function editarCurso(curso) {
         lotesByCourse[curso.id].forEach(lote => {
             addLoteRow(lote);
         });
+    } else {
+        checkLotesEmptyState();
     }
 
     window.scrollTo(0,0);
@@ -491,6 +526,7 @@ function resetForm() {
 
     document.getElementById('lotes_container').innerHTML = '';
     loteCounter = 0;
+    checkLotesEmptyState();
     
     const fields = ['curso_desc'];
     fields.forEach(id => {
@@ -501,6 +537,12 @@ function resetForm() {
         }
     });
 }
+
+// Inicializa a verificação de lotes vazios no carregamento inicial da página
+document.addEventListener('DOMContentLoaded', function() {
+    checkLotesEmptyState();
+});
+checkLotesEmptyState();
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
