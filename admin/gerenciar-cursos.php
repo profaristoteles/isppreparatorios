@@ -9,6 +9,7 @@ if (!is_dir('../uploads')) { mkdir('../uploads', 0777, true); }
 if (isset($_GET['del'])) {
     $id = (int)$_GET['del'];
     $pdo->query("DELETE FROM cursos WHERE id = $id");
+    $pdo->prepare("DELETE FROM lotes WHERE item_type = 'curso' AND item_id = ?")->execute([$id]);
     $_SESSION['msg'] = "Curso removido.";
     header("Location: gerenciar-cursos.php");
     exit;
@@ -32,6 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status = $_POST['status'] ?: 'Disponível';
     $image_alt = $_POST['image_alt'];
     
+    // Modalidades Presencial e Online
+    $price_presencial = !empty($_POST['price_presencial']) ? $_POST['price_presencial'] : null;
+    $link_presencial = $_POST['link_presencial'] ?? '';
+    $price_online = !empty($_POST['price_online']) ? $_POST['price_online'] : null;
+    $link_online = $_POST['link_online'] ?? '';
+
     // SEO
     $slug = $_POST['slug'] ?? '';
     $meta_title = $_POST['meta_title'] ?? '';
@@ -49,24 +56,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         if (!empty($_POST['id'])) {
+            $curso_id = (int)$_POST['id'];
             // Update
             if ($thumbnail) {
-                $stmt = $pdo->prepare("UPDATE cursos SET title=?, category=?, price=?, duration=?, modality=?, active=?, description=?, features=?, payment_link=?, payment_methods=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
-                $stmt->execute([$title, $category, $price, $duration, $modality, $active, $description, $features, $payment_link, $payment_methods, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE cursos SET title=?, category=?, price=?, price_presencial=?, link_presencial=?, price_online=?, link_online=?, duration=?, modality=?, active=?, description=?, features=?, payment_link=?, payment_methods=?, info_extra=?, disciplinas=?, conteudo=?, status=?, thumbnail=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
+                $stmt->execute([$title, $category, $price, $price_presencial, $link_presencial, $price_online, $link_online, $duration, $modality, $active, $description, $features, $payment_link, $payment_methods, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description, $curso_id]);
             } else {
-                $stmt = $pdo->prepare("UPDATE cursos SET title=?, category=?, price=?, duration=?, modality=?, active=?, description=?, features=?, payment_link=?, payment_methods=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
-                $stmt->execute([$title, $category, $price, $duration, $modality, $active, $description, $features, $payment_link, $payment_methods, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $slug, $meta_title, $meta_description, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE cursos SET title=?, category=?, price=?, price_presencial=?, link_presencial=?, price_online=?, link_online=?, duration=?, modality=?, active=?, description=?, features=?, payment_link=?, payment_methods=?, info_extra=?, disciplinas=?, conteudo=?, status=?, image_alt=?, slug=?, meta_title=?, meta_description=? WHERE id=?");
+                $stmt->execute([$title, $category, $price, $price_presencial, $link_presencial, $price_online, $link_online, $duration, $modality, $active, $description, $features, $payment_link, $payment_methods, $info_extra, $disciplinas, $conteudo, $status, $image_alt, $slug, $meta_title, $meta_description, $curso_id]);
             }
             $_SESSION['msg'] = "Curso atualizado.";
         } else {
             // Insert
-            $stmt = $pdo->prepare("INSERT INTO cursos (title, category, price, duration, modality, active, description, features, payment_link, payment_methods, info_extra, disciplinas, conteudo, status, thumbnail, image_alt, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $category, $price, $duration, $modality, $active, $description, $features, $payment_link, $payment_methods, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description]);
+            $stmt = $pdo->prepare("INSERT INTO cursos (title, category, price, price_presencial, link_presencial, price_online, link_online, duration, modality, active, description, features, payment_link, payment_methods, info_extra, disciplinas, conteudo, status, thumbnail, image_alt, slug, meta_title, meta_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $category, $price, $price_presencial, $link_presencial, $price_online, $link_online, $duration, $modality, $active, $description, $features, $payment_link, $payment_methods, $info_extra, $disciplinas, $conteudo, $status, $thumbnail, $image_alt, $slug, $meta_title, $meta_description]);
+            $curso_id = $pdo->lastInsertId();
             $_SESSION['msg'] = "Curso adicionado.";
+        }
+
+        // Salvar Lotes do Curso
+        $pdo->prepare("DELETE FROM lotes WHERE item_type = 'curso' AND item_id = ?")->execute([$curso_id]);
+        if (!empty($_POST['lote_name']) && is_array($_POST['lote_name'])) {
+            $stmtLote = $pdo->prepare("INSERT INTO lotes (item_type, item_id, lote_name, data_virada, price_presencial, link_presencial, price_online, link_online, price_geral, link_geral, order_index) VALUES ('curso', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            foreach ($_POST['lote_name'] as $idx => $lname) {
+                $lname = trim($lname);
+                if (empty($lname)) continue;
+                $dvirada = !empty($_POST['lote_data_virada'][$idx]) ? str_replace('T', ' ', $_POST['lote_data_virada'][$idx]) . ':00' : null;
+                $ppres = !empty($_POST['lote_price_presencial'][$idx]) ? $_POST['lote_price_presencial'][$idx] : null;
+                $lpres = $_POST['lote_link_presencial'][$idx] ?? '';
+                $ponl = !empty($_POST['lote_price_online'][$idx]) ? $_POST['lote_price_online'][$idx] : null;
+                $lonl = $_POST['lote_link_online'][$idx] ?? '';
+                $pgeral = !empty($_POST['lote_price_geral'][$idx]) ? $_POST['lote_price_geral'][$idx] : null;
+                $lgeral = $_POST['lote_link_geral'][$idx] ?? '';
+                $stmtLote->execute([$curso_id, $lname, $dvirada, $ppres, $lpres, $ponl, $lonl, $pgeral, $lgeral, $idx]);
+            }
         }
     } catch (\PDOException $e) {
         if (strpos($e->getMessage(), 'Data too long') !== false) {
-            $_SESSION['erro'] = "Erro ao salvar: O texto que você inseriu em um dos campos (ex: Título, Duração ou Modalidade) é muito longo e excedeu o limite máximo de caracteres.";
+            $_SESSION['erro'] = "Erro ao salvar: O texto que você inseriu em um dos campos é muito longo e excedeu o limite máximo de caracteres.";
         } else {
             $_SESSION['erro'] = "Erro no banco de dados: " . $e->getMessage();
         }
@@ -76,6 +103,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $cursos = $pdo->query("SELECT * FROM cursos ORDER BY id DESC")->fetchAll();
+
+// Carregar lotes de todos os cursos
+$lotes_by_course = [];
+try {
+    $stmtL = $pdo->query("SELECT * FROM lotes WHERE item_type = 'curso' ORDER BY order_index ASC, id ASC");
+    foreach ($stmtL->fetchAll() as $l) {
+        $lotes_by_course[$l['item_id']][] = $l;
+    }
+} catch (Exception $e) {}
 
 require_once 'includes/header.php';
 ?>
@@ -99,8 +135,8 @@ require_once 'includes/header.php';
         </div>
         <div style="display:flex; gap:1rem;">
             <div class="form-group" style="flex:1;">
-                <label>Preço (Opcional)</label>
-                <input type="number" step="0.01" name="price" id="curso_price" class="form-control">
+                <label>Preço Padrão (Opcional)</label>
+                <input type="number" step="0.01" name="price" id="curso_price" class="form-control" placeholder="0.00">
             </div>
             <div class="form-group" style="flex:1;">
                 <label>Duração (Ex: 120h)</label>
@@ -123,9 +159,57 @@ require_once 'includes/header.php';
             </div>
         </div>
         <div class="form-group">
-            <label>Link de Pagamento / Formulário de Reserva</label>
+            <label>Link Padrão de Pagamento / Formulário de Reserva</label>
             <input type="url" name="payment_link" id="curso_payment_link" class="form-control" placeholder="https://...">
         </div>
+
+        <!-- Seção: Modalidades Diferenciadas (Presencial vs Online) -->
+        <div style="background: rgba(3, 4, 94, 0.4); padding: 1.5rem; border: 1px solid rgba(255,128,0,0.3); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
+            <h3 style="margin-top: 0; color: var(--brand-orange); font-size: 1.1rem; margin-bottom: 1rem;">📍 Valoração &amp; Links por Modalidade (Presencial e Online)</h3>
+            <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 1rem;">
+                Caso o curso possua preços ou links de checkout diferentes para a turma <strong>Presencial</strong> e para a turma <strong>Online</strong>, preencha os campos abaixo:
+            </p>
+            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h4 style="color: #fff; margin: 0 0 0.8rem 0; font-size: 0.95rem;">🏫 Turma Presencial</h4>
+                    <div class="form-group">
+                        <label>Preço Presencial (R$)</label>
+                        <input type="number" step="0.01" name="price_presencial" id="curso_price_presencial" class="form-control" placeholder="Ex: 450.00">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Link de Checkout Presencial</label>
+                        <input type="url" name="link_presencial" id="curso_link_presencial" class="form-control" placeholder="https://...">
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 250px; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h4 style="color: #fff; margin: 0 0 0.8rem 0; font-size: 0.95rem;">💻 Turma Online</h4>
+                    <div class="form-group">
+                        <label>Preço Online (R$)</label>
+                        <input type="number" step="0.01" name="price_online" id="curso_price_online" class="form-control" placeholder="Ex: 320.00">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Link de Checkout Online</label>
+                        <input type="url" name="link_online" id="curso_link_online" class="form-control" placeholder="https://...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Lotes de Ingressos & Virada Automática de Data -->
+        <div style="background: rgba(255, 128, 0, 0.05); padding: 1.5rem; border: 1px solid var(--brand-orange); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0; color: var(--brand-orange); font-size: 1.1rem;">🏷️ Lotes de Venda &amp; Virada Automática por Data</h3>
+                    <small style="color: #bbb;">Programe viradas automáticas de lote. O sistema trocará o lote ativo no exato momento programado.</small>
+                </div>
+                <button type="button" class="btn btn-sm" onclick="addLoteRow()" style="background: var(--brand-orange); border: none;">+ Adicionar Lote</button>
+            </div>
+            
+            <div id="lotes_container">
+                <!-- Lotes injetados via JavaScript -->
+            </div>
+        </div>
+
         <div class="form-group">
             <label>Descrição (Sobre o Curso)</label>
             <textarea name="description" id="curso_desc" class="form-control" rows="3"></textarea>
@@ -238,6 +322,49 @@ require_once 'includes/header.php';
 </div>
 
 <script>
+const lotesByCourse = <?= json_encode($lotes_by_course) ?>;
+let loteCounter = 0;
+
+function addLoteRow(lote = {}) {
+    loteCounter++;
+    const container = document.getElementById('lotes_container');
+    const div = document.createElement('div');
+    div.className = 'lote-row-item';
+    div.style.cssText = 'background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; position: relative;';
+
+    const dvirada = lote.data_virada ? lote.data_virada.replace(' ', 'T').substring(0, 16) : '';
+
+    div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+            <strong style="color: var(--brand-orange); font-size: 0.95rem;">🏷️ Lote #${loteCounter}</strong>
+            <button type="button" onclick="this.closest('.lote-row-item').remove()" class="btn btn-sm btn-danger" style="padding: 2px 10px; font-size: 0.8rem;">Remover Lote</button>
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 2; min-width: 200px;">
+                <label style="font-size: 0.85rem;">Nome do Lote <span style="color:red;">*</span></label>
+                <input type="text" name="lote_name[]" class="form-control" placeholder="Ex: 1º Lote - Promocional" value="${lote.lote_name || ''}" required>
+            </div>
+            <div class="form-group" style="flex: 2; min-width: 220px;">
+                <label style="font-size: 0.85rem;">Data/Hora Limite de Virada <small style="color:#aaa;">(Encerra este lote)</small></label>
+                <input type="datetime-local" name="lote_data_virada[]" class="form-control" value="${dvirada}">
+            </div>
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.8rem; border-radius: 6px;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 0.8rem; color: #ff9933;">🏫 Presencial (Preço & Link)</label>
+                <input type="number" step="0.01" name="lote_price_presencial[]" class="form-control" placeholder="R$ Presencial" value="${lote.price_presencial || ''}" style="margin-bottom: 5px;">
+                <input type="url" name="lote_link_presencial[]" class="form-control" placeholder="Link Checkout Presencial" value="${lote.link_presencial || ''}">
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 0.8rem; color: #00ccff;">💻 Online (Preço & Link)</label>
+                <input type="number" step="0.01" name="lote_price_online[]" class="form-control" placeholder="R$ Online" value="${lote.price_online || ''}" style="margin-bottom: 5px;">
+                <input type="url" name="lote_link_online[]" class="form-control" placeholder="Link Checkout Online" value="${lote.link_online || ''}">
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
 // Inicializa o TinyMCE para os campos de texto do curso
 tinymce.init({
     selector: '#curso_desc',
@@ -274,7 +401,11 @@ function editarCurso(curso) {
     document.getElementById('curso_id').value = curso.id;
     document.getElementById('curso_title').value = curso.title;
     document.getElementById('curso_category').value = curso.category || '';
-    document.getElementById('curso_price').value = curso.price;
+    document.getElementById('curso_price').value = curso.price || '';
+    document.getElementById('curso_price_presencial').value = curso.price_presencial || '';
+    document.getElementById('curso_link_presencial').value = curso.link_presencial || '';
+    document.getElementById('curso_price_online').value = curso.price_online || '';
+    document.getElementById('curso_link_online').value = curso.link_online || '';
     document.getElementById('curso_duration').value = curso.duration;
     document.getElementById('curso_modality').value = curso.modality || 'Presencial e Online';
     document.getElementById('curso_active').checked = curso.active != 0;
@@ -301,6 +432,15 @@ function editarCurso(curso) {
             document.getElementById(f.id).value = f.content || '';
         }
     });
+
+    // Renderizar Lotes do Curso
+    document.getElementById('lotes_container').innerHTML = '';
+    loteCounter = 0;
+    if (lotesByCourse[curso.id] && lotesByCourse[curso.id].length > 0) {
+        lotesByCourse[curso.id].forEach(lote => {
+            addLoteRow(lote);
+        });
+    }
 
     window.scrollTo(0,0);
 }
@@ -331,6 +471,10 @@ function resetForm() {
     document.getElementById('curso_title').value = '';
     document.getElementById('curso_category').value = '';
     document.getElementById('curso_price').value = '';
+    document.getElementById('curso_price_presencial').value = '';
+    document.getElementById('curso_link_presencial').value = '';
+    document.getElementById('curso_price_online').value = '';
+    document.getElementById('curso_link_online').value = '';
     document.getElementById('curso_duration').value = '';
     document.getElementById('curso_modality').value = 'Presencial e Online';
     document.getElementById('curso_active').checked = true;
@@ -344,6 +488,9 @@ function resetForm() {
     document.getElementById('curso_slug').value = '';
     document.getElementById('curso_meta_title').value = '';
     document.getElementById('curso_meta_description').value = '';
+
+    document.getElementById('lotes_container').innerHTML = '';
+    loteCounter = 0;
     
     const fields = ['curso_desc'];
     fields.forEach(id => {

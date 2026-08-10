@@ -78,9 +78,29 @@ function render_html_or_text($content) {
             </div>
             
             <!-- Right: Investment Card -->
-            <?php $is_reserva = ($curso['status'] ?? 'Disponível') == 'Pegando Reserva'; ?>
-            <div style="flex: 1; min-width: 300px;">
-                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 12px; padding: 2.5rem; position: sticky; top: 120px;">
+            <?php 
+            $lote_info = get_active_lote_info($pdo, 'curso', $curso['id'], $curso);
+            $is_reserva = ($curso['status'] ?? 'Disponível') == 'Pegando Reserva'; 
+            
+            $has_modalities = (!empty($lote_info['price_presencial']) || !empty($lote_info['price_online']));
+            ?>
+            <div style="flex: 1; min-width: 320px;">
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2.5rem; position: sticky; top: 120px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+                    
+                    <?php if (!empty($lote_info['lote_name'])): ?>
+                        <!-- Badge do Lote Ativo -->
+                        <div style="background: rgba(255,128,0,0.12); border: 1px solid var(--brand-orange); border-radius: 8px; padding: 0.8rem 1rem; margin-bottom: 1.5rem; text-align: center;">
+                            <span style="color: var(--brand-orange); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; display: block;">
+                                🏷️ <?= htmlspecialchars($lote_info['lote_name']) ?> VIGENTE
+                            </span>
+                            <?php if (!empty($lote_info['data_virada'])): ?>
+                                <small style="color: rgba(255,255,255,0.8); font-size: 0.8rem; display: block; margin-top: 4px;">
+                                    ⏳ Virada de Lote em: <strong><?= date('d/m/Y \à\s H:i', strtotime($lote_info['data_virada'])) ?></strong>
+                                </small>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if($is_reserva): ?>
                         <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--brand-orange); text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">🚨 Reserva de Vagas</h3>
                         <div style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 2rem; line-height: 1.6; border-left: 3px solid var(--brand-orange); padding-left: 1rem;">
@@ -88,9 +108,54 @@ function render_html_or_text($content) {
                         </div>
                     <?php else: ?>
                         <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: rgba(255, 255, 255, 0.85);">Investimento</h3>
-                        <div style="font-size: 3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2rem; font-family: var(--font-mono);">
-                            <span style="font-size: 1.5rem; vertical-align: super;">R$</span> <?= number_format($curso['price'], 2, ',', '.') ?>
-                        </div>
+
+                        <?php if ($has_modalities): ?>
+                            <!-- Opções por Modalidade (Presencial e Online) -->
+                            <div style="display: flex; flex-direction: column; gap: 1.2rem; margin-bottom: 2rem;">
+                                <?php if (!empty($lote_info['price_presencial'])): ?>
+                                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,128,0,0.3); border-radius: 10px; padding: 1.2rem;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                            <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">🏫 Turma Presencial</span>
+                                            <span style="font-size: 1.4rem; font-weight: 700; color: var(--brand-orange); font-family: var(--font-mono);">
+                                                R$ <?= number_format($lote_info['price_presencial'], 2, ',', '.') ?>
+                                            </span>
+                                        </div>
+                                        <?php 
+                                        $btn_link_pres = !empty($lote_info['link_presencial']) ? $lote_info['link_presencial'] : $link_venda;
+                                        ?>
+                                        <a href="<?= htmlspecialchars($btn_link_pres) ?>" target="_blank" class="btn" style="width: 100%; font-size: 0.9rem; padding: 0.8rem; text-align: center; display: block; box-sizing: border-box; background: var(--brand-orange); border-color: var(--brand-orange); margin-top: 0.5rem;">
+                                            Garantir Vaga Presencial
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if (!empty($lote_info['price_online'])): ?>
+                                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(0,204,255,0.3); border-radius: 10px; padding: 1.2rem;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                            <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">💻 Turma Online</span>
+                                            <span style="font-size: 1.4rem; font-weight: 700; color: #00ccff; font-family: var(--font-mono);">
+                                                R$ <?= number_format($lote_info['price_online'], 2, ',', '.') ?>
+                                            </span>
+                                        </div>
+                                        <?php 
+                                        $btn_link_onl = !empty($lote_info['link_online']) ? $lote_info['link_online'] : $link_venda;
+                                        ?>
+                                        <a href="<?= htmlspecialchars($btn_link_onl) ?>" target="_blank" class="btn" style="width: 100%; font-size: 0.9rem; padding: 0.8rem; text-align: center; display: block; box-sizing: border-box; background: transparent; border-color: #00ccff; color: #00ccff; margin-top: 0.5rem;">
+                                            Garantir Vaga Online
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php else: ?>
+                            <!-- Valor Único Geral -->
+                            <?php 
+                            $final_price = !empty($lote_info['price_geral']) ? $lote_info['price_geral'] : $curso['price'];
+                            $final_link = !empty($lote_info['link_geral']) ? $lote_info['link_geral'] : $link_venda;
+                            ?>
+                            <div style="font-size: 3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2rem; font-family: var(--font-mono);">
+                                <span style="font-size: 1.5rem; vertical-align: super;">R$</span> <?= number_format($final_price, 2, ',', '.') ?>
+                            </div>
+                        <?php endif; ?>
                     <?php endif; ?>
                     
                     <ul style="list-style: none; margin: 0 0 2rem 0; padding: 0; color: rgba(255, 255, 255, 0.85);">
@@ -121,10 +186,12 @@ function render_html_or_text($content) {
                         ?>
                     </ul>
 
-                    <?php if($is_reserva): ?>
-                        <a href="<?= htmlspecialchars($link_venda) ?>" <?= !empty($curso['payment_link']) ? 'target="_blank"' : '' ?> class="btn" style="width: 100%; font-size: 1rem; padding: 1.2rem; text-align: center; display: block; box-sizing: border-box; background: var(--brand-orange); border-color: var(--brand-orange);">Reservar Minha Vaga</a>
-                    <?php else: ?>
-                        <a href="<?= htmlspecialchars($link_venda) ?>" <?= !empty($curso['payment_link']) ? 'target="_blank"' : '' ?> class="btn" style="width: 100%; font-size: 1rem; padding: 1.2rem; text-align: center; display: block; box-sizing: border-box;">Garantir Minha Vaga</a>
+                    <?php if(!$has_modalities): ?>
+                        <?php if($is_reserva): ?>
+                            <a href="<?= htmlspecialchars($link_venda) ?>" <?= !empty($curso['payment_link']) ? 'target="_blank"' : '' ?> class="btn" style="width: 100%; font-size: 1rem; padding: 1.2rem; text-align: center; display: block; box-sizing: border-box; background: var(--brand-orange); border-color: var(--brand-orange);">Reservar Minha Vaga</a>
+                        <?php else: ?>
+                            <a href="<?= htmlspecialchars($final_link) ?>" target="_blank" class="btn" style="width: 100%; font-size: 1rem; padding: 1.2rem; text-align: center; display: block; box-sizing: border-box;">Garantir Minha Vaga</a>
+                        <?php endif; ?>
                     <?php endif; ?>
 
                     <?php if (!empty($curso['payment_methods'])): ?>

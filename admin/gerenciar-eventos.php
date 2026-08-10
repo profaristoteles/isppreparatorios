@@ -9,6 +9,7 @@ if (!is_dir('../uploads')) { mkdir('../uploads', 0777, true); }
 if (isset($_GET['del'])) {
     $id = (int)$_GET['del'];
     $pdo->query("DELETE FROM eventos WHERE id = $id");
+    $pdo->prepare("DELETE FROM lotes WHERE item_type = 'evento' AND item_id = ?")->execute([$id]);
     $_SESSION['msg'] = "Evento removido.";
     header("Location: gerenciar-eventos.php");
     exit;
@@ -29,6 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form_embed = $_POST['form_embed'] ?? '';
     $active = isset($_POST['active']) ? 1 : 0;
     
+    // Valores e Links
+    $price = !empty($_POST['price']) ? $_POST['price'] : null;
+    $payment_link = $_POST['payment_link'] ?? '';
+    $price_presencial = !empty($_POST['price_presencial']) ? $_POST['price_presencial'] : null;
+    $link_presencial = $_POST['link_presencial'] ?? '';
+    $price_online = !empty($_POST['price_online']) ? $_POST['price_online'] : null;
+    $link_online = $_POST['link_online'] ?? '';
+
     // SEO
     $slug = $_POST['slug'] ?? '';
     $meta_title = $_POST['meta_title'] ?? '';
@@ -55,20 +64,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         if (!empty($_POST['id'])) {
+            $evento_id = (int)$_POST['id'];
             // Update
             if ($thumbnail) {
-                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, schedule=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, thumbnail=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
-                $stmt->execute([$title, $description, $schedule, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, schedule=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, price=?, payment_link=?, price_presencial=?, link_presencial=?, price_online=?, link_online=?, active=?, thumbnail=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
+                $stmt->execute([$title, $description, $schedule, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $price, $payment_link, $price_presencial, $link_presencial, $price_online, $link_online, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed, $evento_id]);
             } else {
-                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, schedule=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, active=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
-                $stmt->execute([$title, $description, $schedule, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $slug, $meta_title, $meta_description, $video_embed, $_POST['id']]);
+                $stmt = $pdo->prepare("UPDATE eventos SET title=?, description=?, schedule=?, event_date=?, event_end_date=?, form_type=?, form_link=?, form_embed=?, price=?, payment_link=?, price_presencial=?, link_presencial=?, price_online=?, link_online=?, active=?, slug=?, meta_title=?, meta_description=?, video_embed=? WHERE id=?");
+                $stmt->execute([$title, $description, $schedule, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $price, $payment_link, $price_presencial, $link_presencial, $price_online, $link_online, $active, $slug, $meta_title, $meta_description, $video_embed, $evento_id]);
             }
             if(!isset($_SESSION['erro'])) $_SESSION['msg'] = "Evento atualizado com sucesso.";
         } else {
             // Insert
-            $stmt = $pdo->prepare("INSERT INTO eventos (title, description, schedule, event_date, event_end_date, form_type, form_link, form_embed, active, thumbnail, slug, meta_title, meta_description, video_embed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $description, $schedule, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed]);
+            $stmt = $pdo->prepare("INSERT INTO eventos (title, description, schedule, event_date, event_end_date, form_type, form_link, form_embed, price, payment_link, price_presencial, link_presencial, price_online, link_online, active, thumbnail, slug, meta_title, meta_description, video_embed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$title, $description, $schedule, $event_date, $event_end_date, $form_type, $form_link, $form_embed, $price, $payment_link, $price_presencial, $link_presencial, $price_online, $link_online, $active, $thumbnail, $slug, $meta_title, $meta_description, $video_embed]);
+            $evento_id = $pdo->lastInsertId();
             if(!isset($_SESSION['erro'])) $_SESSION['msg'] = "Evento adicionado com sucesso.";
+        }
+
+        // Salvar Lotes do Evento
+        $pdo->prepare("DELETE FROM lotes WHERE item_type = 'evento' AND item_id = ?")->execute([$evento_id]);
+        if (!empty($_POST['lote_name']) && is_array($_POST['lote_name'])) {
+            $stmtLote = $pdo->prepare("INSERT INTO lotes (item_type, item_id, lote_name, data_virada, price_presencial, link_presencial, price_online, link_online, price_geral, link_geral, order_index) VALUES ('evento', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            foreach ($_POST['lote_name'] as $idx => $lname) {
+                $lname = trim($lname);
+                if (empty($lname)) continue;
+                $dvirada = !empty($_POST['lote_data_virada'][$idx]) ? str_replace('T', ' ', $_POST['lote_data_virada'][$idx]) . ':00' : null;
+                $ppres = !empty($_POST['lote_price_presencial'][$idx]) ? $_POST['lote_price_presencial'][$idx] : null;
+                $lpres = $_POST['lote_link_presencial'][$idx] ?? '';
+                $ponl = !empty($_POST['lote_price_online'][$idx]) ? $_POST['lote_price_online'][$idx] : null;
+                $lonl = $_POST['lote_link_online'][$idx] ?? '';
+                $pgeral = !empty($_POST['lote_price_geral'][$idx]) ? $_POST['lote_price_geral'][$idx] : null;
+                $lgeral = $_POST['lote_link_geral'][$idx] ?? '';
+                $stmtLote->execute([$evento_id, $lname, $dvirada, $ppres, $lpres, $ponl, $lonl, $pgeral, $lgeral, $idx]);
+            }
         }
     } catch (\PDOException $e) {
         $_SESSION['erro'] = "Erro ao salvar no banco de dados: " . $e->getMessage();
@@ -79,6 +108,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $eventos = $pdo->query("SELECT * FROM eventos ORDER BY event_date DESC")->fetchAll();
 
+// Carregar lotes de todos os eventos
+$lotes_by_event = [];
+try {
+    $stmtL = $pdo->query("SELECT * FROM lotes WHERE item_type = 'evento' ORDER BY order_index ASC, id ASC");
+    foreach ($stmtL->fetchAll() as $l) {
+        $lotes_by_event[$l['item_id']][] = $l;
+    }
+} catch (Exception $e) {}
+
 require_once 'includes/header.php';
 ?>
 
@@ -86,13 +124,13 @@ require_once 'includes/header.php';
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js" referrerpolicy="origin"></script>
 
 <div class="card">
-    <h2>Adicionar / Editar Evento</h2>
+    <h2>Adicionar / Editar Evento / Aulão</h2>
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="id" id="evento_id">
         
         <div class="form-group">
-            <label>Título do Evento</label>
-            <input type="text" name="title" id="evento_title" class="form-control" required placeholder="Ex: Aula Inaugural - Educação Especial">
+            <label>Título do Evento / Aulão</label>
+            <input type="text" name="title" id="evento_title" class="form-control" required placeholder="Ex: Aulão de Véspera - PM & Polícia Civil">
         </div>
         
         <div style="display:flex; gap:1rem; flex-wrap: wrap;">
@@ -108,6 +146,53 @@ require_once 'includes/header.php';
                 <label>Imagem de Capa (Thumbnail)</label>
                 <input type="file" name="thumbnail" class="form-control" accept="image/*">
                 <small style="color:#999;">Recomendado: Formato quadrado (1:1) ou banner vertical.</small>
+            </div>
+        </div>
+
+        <!-- Seção: Modalidades Diferenciadas de Aulão (Presencial e Online) -->
+        <div style="background: rgba(3, 4, 94, 0.4); padding: 1.5rem; border: 1px solid rgba(255,128,0,0.3); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
+            <h3 style="margin-top: 0; color: var(--brand-orange); font-size: 1.1rem; margin-bottom: 1rem;">📍 Valoração &amp; Links por Modalidade (Presencial vs Online)</h3>
+            <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 1rem;">
+                Caso o Aulão/Evento seja vendido separadamente nas modalidades <strong>Presencial</strong> e <strong>Online</strong>, preencha os valores e links abaixo:
+            </p>
+            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h4 style="color: #fff; margin: 0 0 0.8rem 0; font-size: 0.95rem;">🏫 Ingressos Presenciais</h4>
+                    <div class="form-group">
+                        <label>Preço Presencial (R$)</label>
+                        <input type="number" step="0.01" name="price_presencial" id="evento_price_presencial" class="form-control" placeholder="Ex: 80.00">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Link de Inscrição Presencial</label>
+                        <input type="url" name="link_presencial" id="evento_link_presencial" class="form-control" placeholder="https://...">
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 250px; background: rgba(255,255,255,0.03); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h4 style="color: #fff; margin: 0 0 0.8rem 0; font-size: 0.95rem;">💻 Transmissão Online / Live</h4>
+                    <div class="form-group">
+                        <label>Preço Online (R$)</label>
+                        <input type="number" step="0.01" name="price_online" id="evento_price_online" class="form-control" placeholder="Ex: 49.90">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Link de Inscrição Online</label>
+                        <input type="url" name="link_online" id="evento_link_online" class="form-control" placeholder="https://...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Lotes de Ingressos & Virada Automática de Data para Aulões/Eventos -->
+        <div style="background: rgba(255, 128, 0, 0.05); padding: 1.5rem; border: 1px solid var(--brand-orange); border-radius: 8px; margin-top: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0; color: var(--brand-orange); font-size: 1.1rem;">🏷️ Lotes de Venda do Aulão &amp; Virada Automática por Data</h3>
+                    <small style="color: #bbb;">Configure 1º Lote, 2º Lote e 3º Lote com data e hora limite para a virada automática de lote!</small>
+                </div>
+                <button type="button" class="btn btn-sm" onclick="addLoteRow()" style="background: var(--brand-orange); border: none;">+ Adicionar Lote</button>
+            </div>
+            
+            <div id="lotes_container">
+                <!-- Lotes injetados via JavaScript -->
             </div>
         </div>
 
@@ -221,6 +306,49 @@ require_once 'includes/header.php';
 </div>
 
 <script>
+const lotesByEvent = <?= json_encode($lotes_by_event) ?>;
+let loteCounter = 0;
+
+function addLoteRow(lote = {}) {
+    loteCounter++;
+    const container = document.getElementById('lotes_container');
+    const div = document.createElement('div');
+    div.className = 'lote-row-item';
+    div.style.cssText = 'background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; position: relative;';
+
+    const dvirada = lote.data_virada ? lote.data_virada.replace(' ', 'T').substring(0, 16) : '';
+
+    div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+            <strong style="color: var(--brand-orange); font-size: 0.95rem;">🏷️ Lote #${loteCounter}</strong>
+            <button type="button" onclick="this.closest('.lote-row-item').remove()" class="btn btn-sm btn-danger" style="padding: 2px 10px; font-size: 0.8rem;">Remover Lote</button>
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 2; min-width: 200px;">
+                <label style="font-size: 0.85rem;">Nome do Lote <span style="color:red;">*</span></label>
+                <input type="text" name="lote_name[]" class="form-control" placeholder="Ex: 1º Lote - Ingressos Antecipados" value="${lote.lote_name || ''}" required>
+            </div>
+            <div class="form-group" style="flex: 2; min-width: 220px;">
+                <label style="font-size: 0.85rem;">Data/Hora Limite de Virada <small style="color:#aaa;">(Encerra este lote)</small></label>
+                <input type="datetime-local" name="lote_data_virada[]" class="form-control" value="${dvirada}">
+            </div>
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; background: rgba(255,255,255,0.02); padding: 0.8rem; border-radius: 6px;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 0.8rem; color: #ff9933;">🏫 Presencial (Preço & Link)</label>
+                <input type="number" step="0.01" name="lote_price_presencial[]" class="form-control" placeholder="R$ Presencial" value="${lote.price_presencial || ''}" style="margin-bottom: 5px;">
+                <input type="url" name="lote_link_presencial[]" class="form-control" placeholder="Link Checkout Presencial" value="${lote.link_presencial || ''}">
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 0.8rem; color: #00ccff;">💻 Online (Preço & Link)</label>
+                <input type="number" step="0.01" name="lote_price_online[]" class="form-control" placeholder="R$ Online" value="${lote.price_online || ''}" style="margin-bottom: 5px;">
+                <input type="url" name="lote_link_online[]" class="form-control" placeholder="Link Checkout Online" value="${lote.link_online || ''}">
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
 // Toggle dos campos de CRM
 function toggleFormFields() {
     const type = document.getElementById('evento_form_type').value;
@@ -262,6 +390,11 @@ function editarEvento(evento) {
         document.getElementById('evento_end_date').value = '';
     }
     
+    document.getElementById('evento_price_presencial').value = evento.price_presencial || '';
+    document.getElementById('evento_link_presencial').value = evento.link_presencial || '';
+    document.getElementById('evento_price_online').value = evento.price_online || '';
+    document.getElementById('evento_link_online').value = evento.link_online || '';
+
     document.getElementById('evento_form_type').value = evento.form_type || 'link';
     document.getElementById('evento_form_link').value = evento.form_link || '';
     document.getElementById('evento_form_embed').value = evento.form_embed || '';
@@ -282,6 +415,15 @@ function editarEvento(evento) {
         tinymce.get('evento_schedule').setContent(evento.schedule || '');
     } else {
         document.getElementById('evento_schedule').value = evento.schedule || '';
+    }
+
+    // Renderizar Lotes do Evento
+    document.getElementById('lotes_container').innerHTML = '';
+    loteCounter = 0;
+    if (lotesByEvent[evento.id] && lotesByEvent[evento.id].length > 0) {
+        lotesByEvent[evento.id].forEach(lote => {
+            addLoteRow(lote);
+        });
     }
     
     toggleFormFields();
@@ -314,6 +456,10 @@ function resetForm() {
     document.getElementById('evento_title').value = '';
     document.getElementById('evento_date').value = '';
     document.getElementById('evento_end_date').value = '';
+    document.getElementById('evento_price_presencial').value = '';
+    document.getElementById('evento_link_presencial').value = '';
+    document.getElementById('evento_price_online').value = '';
+    document.getElementById('evento_link_online').value = '';
     document.getElementById('evento_form_type').value = 'link';
     document.getElementById('evento_form_link').value = '';
     document.getElementById('evento_form_embed').value = '';
@@ -323,6 +469,9 @@ function resetForm() {
     document.getElementById('evento_meta_title').value = '';
     document.getElementById('evento_meta_description').value = '';
     document.getElementById('evento_video_embed').value = '';
+
+    document.getElementById('lotes_container').innerHTML = '';
+    loteCounter = 0;
     
     if (tinymce.get('evento_desc')) {
         tinymce.get('evento_desc').setContent('');

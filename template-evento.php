@@ -69,15 +69,71 @@ $is_future = strtotime($evento['event_date']) >= time();
                         <?php endif; ?>
 
                         <div style="padding: 2.5rem 2rem;">
+                            <?php 
+                            $lote_info = get_active_lote_info($pdo, 'evento', $evento['id'], $evento);
+                            $has_modalities = (!empty($lote_info['price_presencial']) || !empty($lote_info['price_online']));
+                            ?>
+
+                            <?php if (!empty($lote_info['lote_name'])): ?>
+                                <!-- Badge do Lote Ativo do Aulão -->
+                                <div style="background: rgba(255,128,0,0.15); border: 1px solid var(--brand-orange); border-radius: 8px; padding: 0.8rem 1rem; margin-bottom: 1.5rem; text-align: center;">
+                                    <span style="color: var(--brand-orange); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; display: block;">
+                                        🏷️ <?= htmlspecialchars($lote_info['lote_name']) ?> VIGENTE
+                                    </span>
+                                    <?php if (!empty($lote_info['data_virada'])): ?>
+                                        <small style="color: rgba(255,255,255,0.8); font-size: 0.8rem; display: block; margin-top: 4px;">
+                                            ⏳ Virada de Lote em: <strong><?= date('d/m/Y \à\s H:i', strtotime($lote_info['data_virada'])) ?></strong>
+                                        </small>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+
                             <h3 style="text-align: center; margin-bottom: 1.5rem; color: #fff; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.5px;">
                                 <?php if($is_future): ?>
-                                    Garanta sua Vaga Agora
+                                    Garanta sua Vaga no Aulão
                                 <?php else: ?>
                                     Acessar Conteúdo do Evento
                                 <?php endif; ?>
                             </h3>
                             
-                            <?php if($evento['form_type'] === 'embed' && !empty($evento['form_embed'])): ?>
+                            <?php if ($has_modalities): ?>
+                                <!-- Opções por Modalidade (Presencial e Online) no Evento/Aulão -->
+                                <div style="display: flex; flex-direction: column; gap: 1.2rem; margin-bottom: 2rem;">
+                                    <?php if (!empty($lote_info['price_presencial'])): ?>
+                                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,128,0,0.4); border-radius: 10px; padding: 1.2rem;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                                <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">🏫 Ingressos Presenciais</span>
+                                                <span style="font-size: 1.4rem; font-weight: 700; color: var(--brand-orange); font-family: var(--font-mono);">
+                                                    R$ <?= number_format($lote_info['price_presencial'], 2, ',', '.') ?>
+                                                </span>
+                                            </div>
+                                            <?php 
+                                            $btn_link_pres = !empty($lote_info['link_presencial']) ? $lote_info['link_presencial'] : ($evento['form_link'] ?? '#');
+                                            ?>
+                                            <a href="<?= htmlspecialchars($btn_link_pres) ?>" target="_blank" class="btn" style="width: 100%; font-size: 0.95rem; padding: 0.8rem; text-align: center; display: block; box-sizing: border-box; background: var(--brand-orange); border-color: var(--brand-orange); margin-top: 0.5rem; text-decoration: none;">
+                                                Garantir Ingressos Presenciais
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($lote_info['price_online'])): ?>
+                                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(0,204,255,0.4); border-radius: 10px; padding: 1.2rem;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                                <span style="font-weight: 700; color: #fff; font-size: 0.95rem;">💻 Transmissão Online</span>
+                                                <span style="font-size: 1.4rem; font-weight: 700; color: #00ccff; font-family: var(--font-mono);">
+                                                    R$ <?= number_format($lote_info['price_online'], 2, ',', '.') ?>
+                                                </span>
+                                            </div>
+                                            <?php 
+                                            $btn_link_onl = !empty($lote_info['link_online']) ? $lote_info['link_online'] : ($evento['form_link'] ?? '#');
+                                            ?>
+                                            <a href="<?= htmlspecialchars($btn_link_onl) ?>" target="_blank" class="btn" style="width: 100%; font-size: 0.95rem; padding: 0.8rem; text-align: center; display: block; box-sizing: border-box; background: transparent; border-color: #00ccff; color: #00ccff; margin-top: 0.5rem; text-decoration: none;">
+                                                Garantir Acesso Online
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php elseif($evento['form_type'] === 'embed' && !empty($evento['form_embed'])): ?>
                                 <!-- Código Embutido do CRM com max-width para celular -->
                                 <div class="crm-form-embed" style="width: 100%; overflow: hidden; position: relative;">
                                     <?= $evento['form_embed'] ?>
@@ -97,12 +153,13 @@ $is_future = strtotime($evento['event_date']) >= time();
                                     .crm-form-embed button, .crm-form-embed input[type="submit"] { background: var(--brand-orange); color: #fff; border: none; padding: 14px 20px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; }
                                     .crm-form-embed button:hover, .crm-form-embed input[type="submit"]:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255,128,0,0.3); background: #ff9933; color: #000; }
                                 </style>
-                            <?php elseif($evento['form_type'] === 'link' && !empty($evento['form_link'])): ?>
+                            <?php elseif($evento['form_type'] === 'link' && (!empty($evento['form_link']) || !empty($lote_info['link_geral']))): ?>
                                 <!-- Botão Externo -->
+                                <?php $evt_link = !empty($lote_info['link_geral']) ? $lote_info['link_geral'] : $evento['form_link']; ?>
                                 <p style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 2rem; line-height: 1.6;">
                                     Clique no botão abaixo para concluir sua inscrição e receber todas as instruções de acesso.
                                 </p>
-                                <a href="<?= htmlspecialchars($evento['form_link']) ?>" class="btn" style="display: block; width: 100%; text-align: center; font-size: 1.1rem; padding: 1.2rem; border-radius: 8px;" target="_blank" rel="noopener noreferrer">
+                                <a href="<?= htmlspecialchars($evt_link) ?>" class="btn" style="display: block; width: 100%; text-align: center; font-size: 1.1rem; padding: 1.2rem; border-radius: 8px;" target="_blank" rel="noopener noreferrer">
                                     Quero Participar!
                                 </a>
                             <?php else: ?>
