@@ -227,6 +227,12 @@ Retorne ESTRITAMENTE um JSON com as chaves:
     $htmlContent = $aiData['html_content'];
     $imagePrompt = $aiData['image_prompt'] ?? 'education contest study books student maranhao';
 
+    // Truncar campos para respeitar limites do banco
+    $title = safe_substr($title, 0, 250);
+    $metaTitle = safe_substr($metaTitle, 0, 490);
+    $metaDesc = safe_substr($metaDesc, 0, 490);
+    $keywords = safe_substr($keywords, 0, 490);
+
     // Gerar Slug amigável
     $slugText = strtr(strtolower($title), [
         'á'=>'a','à'=>'a','ã'=>'a','â'=>'a','ä'=>'a',

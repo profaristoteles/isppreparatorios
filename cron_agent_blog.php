@@ -191,6 +191,12 @@ $keywords = $aiData['seo_keywords'] ?? 'concurso, maranhao, professores';
 $htmlContent = $aiData['html_content'];
 $imagePrompt = $aiData['image_prompt'] ?? 'education study books classroom';
 
+// Truncar campos para respeitar limites do banco
+$title = safe_substr($title, 0, 250);
+$metaTitle = safe_substr($metaTitle, 0, 490);
+$metaDesc = safe_substr($metaDesc, 0, 490);
+$keywords = safe_substr($keywords, 0, 490);
+
 // Slug
 $slugText = strtr(strtolower($title), ['á'=>'a','à'=>'a','ã'=>'a','â'=>'a','é'=>'e','ê'=>'e','í'=>'i','ó'=>'o','õ'=>'o','ô'=>'o','ú'=>'u','ç'=>'c']);
 $slug = preg_replace('/[\s-]+/', '-', trim(preg_replace('/[^a-z0-9\s-]/', '', $slugText)));
