@@ -19,46 +19,70 @@ function safe_substr($str, $start, $length) {
 }
 
 function extract_article_payload($rawText, $fallbackTopic) {
-    // 1. Tentar JSON direto
-    $json = json_decode($rawText, true);
+    if (empty(trim($rawText))) return null;
+
+    $text = trim($rawText);
+    
+    // Remove delimitadores de código markdown ```json ou ```html se houver
+    $cleanedText = preg_replace('/^```(?:json|html)?\s*|\s*```$/i', '', $text);
+    $cleanedText = trim($cleanedText);
+
+    // 1. Tentar json_decode normal
+    $json = json_decode($cleanedText, true);
+
+    // 2. Se falhar, tentar sanitizar caracteres de controle (quebras de linha não escapadas dentro de strings JSON)
+    if (!is_array($json)) {
+        $sanitized = preg_replace_callback('/"([^"\\\\]*|\\\\.)*"/s', function($m) {
+            return str_replace(["\r\n", "\r", "\n", "\t"], ["\\n", "\\n", "\\n", "\\t"], $m[0]);
+        }, $cleanedText);
+        $json = json_decode($sanitized, true);
+    }
+
+    // 3. Se json_decode funcionou e encontrou html_content
     if (is_array($json) && !empty($json['html_content'])) {
+        $html = $json['html_content'];
+        // Limpar qualquer prefixo ou sufixo JSON acidental dentro de html_content
+        $html = preg_replace('/^\s*\{?\s*"html_content"\s*:\s*"/i', '', $html);
+        $html = preg_replace('/"\s*\}\s*$/', '', $html);
+        $json['html_content'] = trim($html);
         return $json;
     }
 
-    // 2. Tentar bloco JSON ```json ... ```
-    if (preg_match('/```(?:json)?\s*(\{[\s\S]*?\})\s*```/i', $rawText, $m)) {
-        $json = json_decode($m[1], true);
-        if (is_array($json) && !empty($json['html_content'])) {
-            return $json;
-        }
+    // 4. Fallback por Regex: Extrair os campos diretamente do texto sem depender de json_decode
+    $extractedTitle = $fallbackTopic;
+    if (preg_match('/"title"\s*:\s*"([^"]+)"/i', $cleanedText, $mTitle)) {
+        $extractedTitle = stripslashes($mTitle[1]);
     }
 
-    // 3. Tentar JSON regex do primeiro { até o último }
-    if (preg_match('/\{[\s\S]*\}/', $rawText, $m)) {
-        $json = json_decode($m[0], true);
-        if (is_array($json) && !empty($json['html_content'])) {
-            return $json;
-        }
+    $htmlContent = '';
+    if (preg_match('/"html_content"\s*:\s*"(.*?)"\s*\}\s*$/s', $cleanedText, $mHtml)) {
+        $htmlContent = stripslashes($mHtml[1]);
+    } elseif (preg_match('/"html_content"\s*:\s*"(.*)/s', $cleanedText, $mHtml)) {
+        $htmlContent = preg_replace('/"\s*\}\s*$/', '', $mHtml[1]);
+        $htmlContent = stripslashes($htmlContent);
     }
 
-    // 4. Fallback Robusto: Se a IA retornou HTML direto
-    $cleanHtml = preg_replace('/^```(?:html)?\s*|\s*```$/i', '', trim($rawText));
-    if (strlen($cleanHtml) > 100) {
-        $title = $fallbackTopic;
-        if (preg_match('/<h[12][^>]*>(.*?)<\/h[12]>/i', $cleanHtml, $mTitle)) {
-            $title = strip_tags($mTitle[1]);
-        }
+    // Se ainda assim o htmlContent contiver JSON inicial ou rótulos json {
+    if (empty($htmlContent) && (strpos($cleanedText, '<') !== false)) {
+        $htmlContent = preg_replace('/^(?:json)?\s*\{[\s\S]*?"html_content"\s*:\s*"/i', '', $cleanedText);
+        $htmlContent = preg_replace('/"\s*\}\s*$/', '', $htmlContent);
+    }
 
-        $resumo = safe_substr(trim(preg_replace('/\s+/', ' ', strip_tags($cleanHtml))), 0, 155) . '...';
+    // Limpeza rigorosa final anti-vazamento de estrutura JSON
+    $htmlContent = preg_replace('/^\s*json\s*\{[\s\S]*?"html_content"\s*:\s*"/i', '', $htmlContent);
+    $htmlContent = preg_replace('/^\s*\{[\s\S]*?"html_content"\s*:\s*"/i', '', $htmlContent);
+    $htmlContent = trim($htmlContent);
 
+    if (!empty($htmlContent) && strlen($htmlContent) > 50) {
+        $resumo = safe_substr(trim(preg_replace('/\s+/', ' ', strip_tags($htmlContent))), 0, 155) . '...';
         return [
-            'title' => $title,
+            'title' => $extractedTitle,
             'category' => 'Concursos',
-            'meta_title' => $title,
+            'meta_title' => safe_substr($extractedTitle, 0, 70),
             'meta_description' => $resumo,
             'seo_keywords' => 'concurso, edital, professores, maranhão',
-            'image_prompt' => 'education contest study books classroom',
-            'html_content' => $cleanHtml
+            'image_prompt' => 'edital verticalizado mapa de estudos concurso publico',
+            'html_content' => $htmlContent
         ];
     }
 
@@ -256,7 +280,7 @@ $coverFilename = 'agent_cron_' . uniqid() . '.jpg';
 $uploadDir = __DIR__ . '/uploads/';
 if (!file_exists($uploadDir)) { @mkdir($uploadDir, 0777, true); }
 
-$finalImgPrompt = trim($imagePrompt) . " editorial photography, brazilian municipal city hall building facade background, study notebook desk with books, golden hour light, high quality, 8k, no faces";
+$finalImgPrompt = "3d graphic illustration of public exam edital verticalizado study map, checklist notebook, pen, study strategy diagram, glowing blue and orange lighting, high quality 8k render, no human faces";
 $imgUrl = "https://image.pollinations.ai/prompt/" . urlencode($finalImgPrompt) . "?width=800&height=500&nologo=true";
 $chImg = curl_init($imgUrl);
 curl_setopt_array($chImg, [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_TIMEOUT => 20, CURLOPT_SSL_VERIFYPEER => false]);

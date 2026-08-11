@@ -59,6 +59,10 @@ require_once 'includes/header.php';
     word-wrap: break-word;
     word-break: break-word;
 }
+.post-content * {
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+}
 .post-content h2, .post-content h3, .post-content h4 {
     font-family: 'Sora', sans-serif;
     color: #03045e;
@@ -121,10 +125,15 @@ require_once 'includes/header.php';
 .sec-title { font-family: 'Sora', sans-serif; font-size: 1.25rem; font-weight: 700; color: #03045e; padding-bottom: 8px; border-bottom: 2px solid #ff8000; margin: 2.5rem 0 1.5rem; display: flex; align-items: center; gap: 10px; }
 .sec-num { background: #ff8000; color: #fff; font-size: 0.8rem; width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .subsec { font-family: 'Sora', sans-serif; font-size: 0.9rem; font-weight: 700; color: #03045e; background: #e8f0fe; border-left: 3px solid #0077b6; padding: 8px 14px; border-radius: 0 6px 6px 0; margin: 1.5rem 0 1rem; }
-.box { border-radius: 8px; padding: 16px; margin: 1.5rem 0; font-size: 0.9rem; display: flex; gap: 12px; align-items: flex-start; }
+.box { border-radius: 8px; padding: 16px; margin: 1.5rem 0; font-size: 0.9rem; display: flex; gap: 12px; align-items: flex-start; flex-direction: column; }
 .box.info { background: #e8f0fe; border-left: 4px solid #0077b6; color: #03045e; }
 .box.tip { background: #eafaf1; border-left: 4px solid #1a7a4a; color: #145a32; }
 .box.warn { background: #fff8e1; border-left: 4px solid #f59e0b; color: #78350f; }
+
+.post-cta-box { background: linear-gradient(135deg, #03045e, #0b1340); color: #fff; border-radius: 12px; padding: 2.2rem 2rem; text-align: center; margin: 2.5rem 0; border: 1px solid rgba(0,210,255,0.3); box-shadow: 0 10px 30px rgba(3,4,94,0.2); }
+.post-cta-box h3 { color: #ff8000 !important; font-size: 1.35rem; margin-top: 0 !important; margin-bottom: 0.6rem !important; font-family: 'Sora', sans-serif; }
+.post-cta-box p { color: #e0e0e0 !important; margin-bottom: 1.4rem !important; font-size: 0.98rem; }
+.post-cta-box .btn { background: #ff8000; color: #fff !important; font-weight: 700; padding: 0.85rem 2.2rem; border-radius: 6px; text-decoration: none; display: inline-block; box-shadow: 0 4px 15px rgba(255,128,0,0.4); }
 
 .etapas-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin: 1.5rem 0; }
 .etapa-card { background: #f8f9fa; border: 1px solid #dee2e6; border-top: 3px solid #ff8000; border-radius: 8px; padding: 16px; }

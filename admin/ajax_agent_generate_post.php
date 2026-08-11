@@ -16,46 +16,70 @@ function safe_substr($str, $start, $length) {
 }
 
 function extract_article_payload($rawText, $fallbackTopic) {
-    // 1. Tentar JSON direto
-    $json = json_decode($rawText, true);
+    if (empty(trim($rawText))) return null;
+
+    $text = trim($rawText);
+    
+    // Remove delimitadores de código markdown ```json ou ```html se houver
+    $cleanedText = preg_replace('/^```(?:json|html)?\s*|\s*```$/i', '', $text);
+    $cleanedText = trim($cleanedText);
+
+    // 1. Tentar json_decode normal
+    $json = json_decode($cleanedText, true);
+
+    // 2. Se falhar, tentar sanitizar caracteres de controle (quebras de linha não escapadas dentro de strings JSON)
+    if (!is_array($json)) {
+        $sanitized = preg_replace_callback('/"([^"\\\\]*|\\\\.)*"/s', function($m) {
+            return str_replace(["\r\n", "\r", "\n", "\t"], ["\\n", "\\n", "\\n", "\\t"], $m[0]);
+        }, $cleanedText);
+        $json = json_decode($sanitized, true);
+    }
+
+    // 3. Se json_decode funcionou e encontrou html_content
     if (is_array($json) && !empty($json['html_content'])) {
+        $html = $json['html_content'];
+        // Limpar qualquer prefixo ou sufixo JSON acidental dentro de html_content
+        $html = preg_replace('/^\s*\{?\s*"html_content"\s*:\s*"/i', '', $html);
+        $html = preg_replace('/"\s*\}\s*$/', '', $html);
+        $json['html_content'] = trim($html);
         return $json;
     }
 
-    // 2. Tentar bloco JSON ```json ... ```
-    if (preg_match('/```(?:json)?\s*(\{[\s\S]*?\})\s*```/i', $rawText, $m)) {
-        $json = json_decode($m[1], true);
-        if (is_array($json) && !empty($json['html_content'])) {
-            return $json;
-        }
+    // 4. Fallback por Regex: Extrair os campos diretamente do texto sem depender de json_decode
+    $extractedTitle = $fallbackTopic;
+    if (preg_match('/"title"\s*:\s*"([^"]+)"/i', $cleanedText, $mTitle)) {
+        $extractedTitle = stripslashes($mTitle[1]);
     }
 
-    // 3. Tentar JSON regex do primeiro { até o último }
-    if (preg_match('/\{[\s\S]*\}/', $rawText, $m)) {
-        $json = json_decode($m[0], true);
-        if (is_array($json) && !empty($json['html_content'])) {
-            return $json;
-        }
+    $htmlContent = '';
+    if (preg_match('/"html_content"\s*:\s*"(.*?)"\s*\}\s*$/s', $cleanedText, $mHtml)) {
+        $htmlContent = stripslashes($mHtml[1]);
+    } elseif (preg_match('/"html_content"\s*:\s*"(.*)/s', $cleanedText, $mHtml)) {
+        $htmlContent = preg_replace('/"\s*\}\s*$/', '', $mHtml[1]);
+        $htmlContent = stripslashes($htmlContent);
     }
 
-    // 4. Fallback Robusto: Se a IA retornou HTML direto
-    $cleanHtml = preg_replace('/^```(?:html)?\s*|\s*```$/i', '', trim($rawText));
-    if (strlen($cleanHtml) > 100) {
-        $title = $fallbackTopic;
-        if (preg_match('/<h[12][^>]*>(.*?)<\/h[12]>/i', $cleanHtml, $mTitle)) {
-            $title = strip_tags($mTitle[1]);
-        }
+    // Se ainda assim o htmlContent contiver JSON inicial ou rótulos json {
+    if (empty($htmlContent) && (strpos($cleanedText, '<') !== false)) {
+        $htmlContent = preg_replace('/^(?:json)?\s*\{[\s\S]*?"html_content"\s*:\s*"/i', '', $cleanedText);
+        $htmlContent = preg_replace('/"\s*\}\s*$/', '', $htmlContent);
+    }
 
-        $resumo = safe_substr(trim(preg_replace('/\s+/', ' ', strip_tags($cleanHtml))), 0, 155) . '...';
+    // Limpeza rigorosa final anti-vazamento de estrutura JSON
+    $htmlContent = preg_replace('/^\s*json\s*\{[\s\S]*?"html_content"\s*:\s*"/i', '', $htmlContent);
+    $htmlContent = preg_replace('/^\s*\{[\s\S]*?"html_content"\s*:\s*"/i', '', $htmlContent);
+    $htmlContent = trim($htmlContent);
 
+    if (!empty($htmlContent) && strlen($htmlContent) > 50) {
+        $resumo = safe_substr(trim(preg_replace('/\s+/', ' ', strip_tags($htmlContent))), 0, 155) . '...';
         return [
-            'title' => $title,
+            'title' => $extractedTitle,
             'category' => 'Concursos',
-            'meta_title' => $title,
+            'meta_title' => safe_substr($extractedTitle, 0, 70),
             'meta_description' => $resumo,
             'seo_keywords' => 'concurso, edital, professores, maranhão',
-            'image_prompt' => 'education contest study books classroom',
-            'html_content' => $cleanHtml
+            'image_prompt' => 'edital verticalizado mapa de estudos concurso publico',
+            'html_content' => $htmlContent
         ];
     }
 
@@ -168,19 +192,32 @@ try {
     }
 
     // 2. Engenharia de Prompt Especializada com Diagramação Profissional HTML
-    $systemInstruction = "Você é o Redator Oficial do ISP Preparatórios. Escreva um artigo de blog sobre o concurso indicado, otimizado para SEO e com diagramação HTML profissional.
+    $systemInstruction = "Você é o Redator Oficial do ISP Preparatórios. Escreva um artigo de blog completo sobre o concurso indicado, otimizado para SEO e com diagramação HTML profissional impecável.
 
-ATENÇÃO CRÍTICA SOBRE O TEMA:
-O artigo DEVE ser OBRIGATORIAMENTE sobre o município/órgão especificado: \"$articleTopic\". É estritamente proibido mudar de cidade ou inventar outro município.
+DIRETRIZES DE FORMATAÇÃO E DIAGRAMAÇÃO HTML:
+1. No 'html_content', escreva APENAS o código HTML limpo do corpo do artigo. É ESTRITAMENTE PROIBIDO incluir a palavra 'json', chaves {}, ou aspas do formato JSON dentro do 'html_content'.
+2. PROIBIÇÃO DE TEXTO VERTICAL: Escreva todos os textos, títulos e tabelas de forma horizontal normal. NUNCA crie células de tabela ou blocos com letras empilhadas verticalmente (ex: NUNCA faça letras uma embaixo da outra).
+3. ESTRUTURA VISUAL OBRIGATÓRIA NO HTML:
+   - Títulos de Seção: <div class=\"sec-title\"><span class=\"sec-num\">1</span> <h2>1. Resumo e Visão Geral do Edital</h2></div>
+   - Subtítulos: <div class=\"subsec\">Principais Informações do Concurso</div>
+   - Dica do Professor: <div class=\"box tip\"><strong>💡 Dica de Estudos:</strong> Conteúdo da dica...</div>
+   - Informações Relevantes: <div class=\"box info\"><strong>ℹ️ Informações Importantes:</strong> Conteúdo em texto fluido...</div>
+   - Tabelas Responsivas: <div class=\"table-wrap\"><table class=\"table\"><thead><tr><th>Cargo</th><th>Vagas</th><th>Remuneração</th></tr></thead><tbody><tr><td class=\"b\">Nome do Cargo</td><td class=\"c\">01</td><td>R$ 3.500,00</td></tr></tbody></table></div>
+   - Caixa de Chamada (CTA) ao final: <div class=\"post-cta-box\"><h3>Quer garantir a sua aprovação neste concurso?</h3><p>Estude com o ISP Preparatórios!</p><a href=\"/cursos.php\" class=\"btn\">Conhecer Nossos Cursos</a></div>
 
-Retorne ESTRITAMENTE um JSON com as chaves:
-1. \"title\": Título Oficial do Post (Ex: Guia de Estudos e Análise do Concurso Público da Prefeitura de...)
-2. \"category\": Concursos
-3. \"meta_title\": Meta Title SEO (máx 70 caracteres)
-4. \"meta_description\": Resumo SEO de 150 caracteres
-5. \"seo_keywords\": Palavras-chave separadas por vírgula
-6. \"image_prompt\": Prompt em inglês descritivo para foto da capa (Ex: \"editorial photography of a classic Brazilian municipal city hall building, open notebook with pen and test paper on wooden desk, warm golden hour lighting, 8k\"). ATENÇÃO: NUNCA crie retratos de pessoas ou rostos isolados.
-7. \"html_content\": Conteúdo HTML completo do artigo com div.sec-title, div.subsec, div.box.tip, div.box.info, div.table-wrap com table e div.post-cta-box";
+TEMA DO ARTIGO:
+O artigo DEVE ser OBRIGATORIAMENTE sobre o município/órgão especificado: \"$articleTopic\". É estritamente proibido trocar de cidade.
+
+Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
+{
+  \"title\": \"Título Oficial do Post\",
+  \"category\": \"Concursos\",
+  \"meta_title\": \"Meta Title SEO (máx 70 caracteres)\",
+  \"meta_description\": \"Resumo SEO de 150 caracteres\",
+  \"seo_keywords\": \"Palavras-chave separadas por vírgula\",
+  \"image_prompt\": \"edital verticalizado mapa de estudos concurso publico\",
+  \"html_content\": \"<div class=\\\"sec-title\\\">...</div>...\"
+}";
 
     $userMessage = "Tema Solicitado: $articleTopic\n" . ($contestInfo ? "\n$contestInfo\n" : "");
 
@@ -367,7 +404,7 @@ Retorne ESTRITAMENTE um JSON com as chaves:
         @mkdir($uploadDir, 0777, true);
     }
 
-    $finalImgPrompt = trim($imagePrompt) . " editorial photography, brazilian municipal city hall building facade background, study notebook desk with books, golden hour light, high quality, 8k, no faces";
+    $finalImgPrompt = "3d graphic illustration of public exam edital verticalizado study map, checklist notebook, pen, study strategy diagram, glowing blue and orange lighting, high quality 8k render, no human faces";
     $imgUrl = "https://image.pollinations.ai/prompt/" . urlencode($finalImgPrompt) . "?width=800&height=500&nologo=true";
     
     $chImg = curl_init($imgUrl);
