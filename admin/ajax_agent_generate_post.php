@@ -97,11 +97,44 @@ try {
         exit;
     }
 
-    // 1. Coletar dados base conforme o modo
+    // 1. Coletar dados base conforme o modo e o prompt do usuário
     $contestInfo = "";
     $articleTopic = "";
 
-    if ($mode === 'pci_contest') {
+    if (!empty($customPrompt) && strlen($customPrompt) > 2) {
+        // Se o usuário digitou uma cidade ou tema específico (ex: "humberto de campos" ou "concurso prefeitura de humberto de campos ma")
+        $mcpRes = PciMcpClient::pesquisarConcursos($customPrompt, $uf);
+        $items = $mcpRes['data'] ?? [];
+
+        if (empty($items)) {
+            // Tentar extrair nome de cidade limpo
+            $cidadeLimpa = trim(preg_replace('/(concurso|prefeitura|pública|da|de|do|ma|sp|rj|pi|ce|ba|se|al|pe|pb|rn)/i', '', $customPrompt));
+            if (!empty($cidadeLimpa) && strlen($cidadeLimpa) >= 3) {
+                $mcpResCidade = PciMcpClient::buscarPorCidade($cidadeLimpa);
+                $items = $mcpResCidade['data'] ?? [];
+            }
+        }
+
+        if (!empty($items)) {
+            // Encontrou edital cadastrado no PCI para o termo solicitado
+            $featured = $items[0];
+            $tituloConcurso = $featured['titulo'] ?? $customPrompt;
+            $vagasSalario = $featured['vagas_salario'] ?? 'Vagas a definir no edital';
+            $cargos = !empty($featured['cargos']) ? implode(', ', $featured['cargos']) : ($featured['cargos_resumo'] ?? 'Educação e Administração');
+            $escolaridade = $featured['formacao'] ?? 'Fundamental / Médio / Superior';
+            $linkEdital = $featured['noticia']['link'] ?? 'https://www.pciconcursos.com.br';
+            $dias = $featured['datas']['dias_restantes'] ?? 'Em breve / Previsto';
+
+            $articleTopic = "Análise e Guia de Estudos do $tituloConcurso ($uf)";
+            $contestInfo = "Dados Oficiais do Edital no PCI Concursos:\n- Órgão: $tituloConcurso ($uf)\n- Vagas e Remuneração: $vagasSalario\n- Cargos: $cargos\n- Escolaridade: $escolaridade\n- Prazo de Inscrição: $dias\n- Link do Edital Oficial: $linkEdital";
+        } else {
+            // Se o edital específico não foi encontrado no PCI no momento,
+            // NUNCA carregar outra cidade aleatória! Usar ESTRITAMENTE o município solicitado pelo usuário.
+            $articleTopic = "Guia de Estudos e Análise do Concurso Público da " . ucwords(mb_strtolower($customPrompt, 'UTF-8'));
+            $contestInfo = "O artigo DEVE ser ESTRITAMENTE sobre: " . $customPrompt . ".\nFoque na preparação completa para este município ($uf), detalhando disciplinas essenciais (Português, LDB, Conhecimentos Pedagógicos e Específicos), dicas de estudos por bancas organizadoras regionais e orientações para os candidatos.";
+        }
+    } elseif ($mode === 'pci_contest') {
+        // Se nenhum prompt específico foi digitado, buscar edital geral de destaque na PCI para o estado
         $mcpRes = PciMcpClient::buscarPorCargo('professor', $uf);
         if (empty($mcpRes['data'])) {
             $mcpRes = PciMcpClient::pesquisarConcursos('concurso', $uf);
@@ -125,7 +158,7 @@ try {
     } elseif ($mode === 'education_topic') {
         $topicsList = [
             "Como Gabaritar a LDB (Lei de Diretrizes e Bases) em Concursos da Educação",
-            "5 Conteúdo Pedagógicos que Mais Caem nas Provas de Professores",
+            "5 Conteúdos Pedagógicos que Mais Caem nas Provas de Professores",
             "Português para Concursos Públicos: Principais Pegadinhas da Banca",
             "Planejamento de Aula e Avaliação Escolar: Guia de Revisão Rápida"
         ];
@@ -137,16 +170,19 @@ try {
     // 2. Engenharia de Prompt Especializada com Diagramação Profissional HTML
     $systemInstruction = "Você é o Redator Oficial do ISP Preparatórios. Escreva um artigo de blog sobre o concurso indicado, otimizado para SEO e com diagramação HTML profissional.
 
+ATENÇÃO CRÍTICA SOBRE O TEMA:
+O artigo DEVE ser OBRIGATORIAMENTE sobre o município/órgão especificado: \"$articleTopic\". É estritamente proibido mudar de cidade ou inventar outro município.
+
 Retorne ESTRITAMENTE um JSON com as chaves:
-1. \"title\": Título do Post
+1. \"title\": Título Oficial do Post (Ex: Guia de Estudos e Análise do Concurso Público da Prefeitura de...)
 2. \"category\": Concursos
-3. \"meta_title\": Meta Title SEO
-4. \"meta_description\": Resumo de 150 caracteres
-5. \"seo_keywords\": Palavras-chave
-6. \"image_prompt\": Prompt em inglês para foto da capa
+3. \"meta_title\": Meta Title SEO (máx 70 caracteres)
+4. \"meta_description\": Resumo SEO de 150 caracteres
+5. \"seo_keywords\": Palavras-chave separadas por vírgula
+6. \"image_prompt\": Prompt em inglês descritivo para foto da capa (Ex: \"editorial photography of a classic Brazilian municipal city hall building, open notebook with pen and test paper on wooden desk, warm golden hour lighting, 8k\"). ATENÇÃO: NUNCA crie retratos de pessoas ou rostos isolados.
 7. \"html_content\": Conteúdo HTML completo do artigo com div.sec-title, div.subsec, div.box.tip, div.box.info, div.table-wrap com table e div.post-cta-box";
 
-    $userMessage = "Tema do Artigo: $articleTopic\n" . ($contestInfo ? "\n$contestInfo\n" : "") . ($customPrompt ? "\nInstruções extras do Admin: $customPrompt" : "");
+    $userMessage = "Tema Solicitado: $articleTopic\n" . ($contestInfo ? "\n$contestInfo\n" : "");
 
     // 3. Executar chamada de API conforme o Provedor de IA
     $jsonRaw = '';
@@ -331,7 +367,8 @@ Retorne ESTRITAMENTE um JSON com as chaves:
         @mkdir($uploadDir, 0777, true);
     }
 
-    $imgUrl = "https://image.pollinations.ai/prompt/" . urlencode($imagePrompt . " high quality education study classroom portrait") . "?width=800&height=500&nologo=true";
+    $finalImgPrompt = trim($imagePrompt) . " editorial photography, brazilian municipal city hall building facade background, study notebook desk with books, golden hour light, high quality, 8k, no faces";
+    $imgUrl = "https://image.pollinations.ai/prompt/" . urlencode($finalImgPrompt) . "?width=800&height=500&nologo=true";
     
     $chImg = curl_init($imgUrl);
     curl_setopt_array($chImg, [

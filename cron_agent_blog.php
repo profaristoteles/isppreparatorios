@@ -256,7 +256,8 @@ $coverFilename = 'agent_cron_' . uniqid() . '.jpg';
 $uploadDir = __DIR__ . '/uploads/';
 if (!file_exists($uploadDir)) { @mkdir($uploadDir, 0777, true); }
 
-$imgUrl = "https://image.pollinations.ai/prompt/" . urlencode($imagePrompt . " high quality education study classroom portrait") . "?width=800&height=500&nologo=true";
+$finalImgPrompt = trim($imagePrompt) . " editorial photography, brazilian municipal city hall building facade background, study notebook desk with books, golden hour light, high quality, 8k, no faces";
+$imgUrl = "https://image.pollinations.ai/prompt/" . urlencode($finalImgPrompt) . "?width=800&height=500&nologo=true";
 $chImg = curl_init($imgUrl);
 curl_setopt_array($chImg, [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_TIMEOUT => 20, CURLOPT_SSL_VERIFYPEER => false]);
 $imgData = curl_exec($chImg);

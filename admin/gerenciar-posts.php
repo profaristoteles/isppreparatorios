@@ -138,11 +138,16 @@ function runAiBlogAgent() {
     const progressMsg = document.getElementById('agent-progress-msg');
     
     progressBox.style.display = 'block';
-    progressMsg.innerHTML = '⚡ <strong>Agente IA Ativo:</strong> Consultando PCI Concursos e redigindo artigo com diagramação HTML... (Aguarde alguns segundos)';
+    progressMsg.innerHTML = '⚡ <strong>Agente IA Ativo:</strong> Pesquisando edital e redigindo artigo com diagramação HTML... (Aguarde alguns segundos)';
 
     let uf = 'MA';
     if (promptInput.length === 2) {
         uf = promptInput.toUpperCase();
+    } else {
+        const ufMatch = promptInput.match(/\b(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b/i);
+        if (ufMatch) {
+            uf = ufMatch[1].toUpperCase();
+        }
     }
 
     fetch('ajax_agent_generate_post.php', {
