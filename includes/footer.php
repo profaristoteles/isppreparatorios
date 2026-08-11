@@ -284,6 +284,8 @@ $site_config = $site_config ?? get_config($pdo);
     })();
     </script>
     <!-- Chat Widget -->
+    <?php if(empty($hide_leadconnector_chat)): ?>
     <script src="https://widgets.leadconnectorhq.com/loader.js" data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js" data-widget-id="69efcc19f4f51d2b46569198"></script>
+    <?php endif; ?>
 </body>
 </html>

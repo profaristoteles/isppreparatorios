@@ -33,11 +33,28 @@ $totalEncontrados = $mcpResult['meta']['total'] ?? count($concursos);
 
 $dynamic_title = "Editais de Concursos em $uf - ISP Preparatórios & PCI Concursos";
 $dynamic_desc = "Consultas oficiais em tempo real de concursos públicos e seletivos via PCI Concursos (MCP), vagas, salários e prazos.";
+
+// Ocultar o Chat Widget do LeadConnector nesta página para dar destaque ao Assistente de Editais
+$hide_leadconnector_chat = true;
+
 require_once 'includes/header.php';
 ?>
 
 <!-- Estilos Customizados da Central de Editais PCI & Assistente de IA -->
 <style>
+/* Ocultar obrigatoriamente o chat global do LeadConnector nesta página */
+#lc_chat_layout,
+[id*="chat-widget"],
+iframe[src*="leadconnectorhq"],
+iframe[src*="widgets.leadconnectorhq"],
+div[class*="chat-widget"],
+div[id*="lc_chat"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 .editais-hero {
     text-align: center;
     padding: 3rem 1rem 2rem;
@@ -68,9 +85,9 @@ require_once 'includes/header.php';
     }
 }
 .filter-input {
-    background-color: #060b26;
-    border: 1px solid rgba(0, 210, 255, 0.3);
-    color: #ffffff;
+    background-color: #060b26 !important;
+    border: 1px solid rgba(0, 210, 255, 0.3) !important;
+    color: #ffffff !important;
     border-radius: 8px;
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
@@ -79,8 +96,8 @@ require_once 'includes/header.php';
     color-scheme: dark;
 }
 select.filter-input {
-    background-color: #060b26;
-    color: #ffffff;
+    background-color: #060b26 !important;
+    color: #ffffff !important;
     color-scheme: dark;
     cursor: pointer;
 }
@@ -91,7 +108,7 @@ select.filter-input option {
 }
 .filter-input:focus {
     outline: none;
-    border-color: var(--brand-orange);
+    border-color: var(--brand-orange) !important;
     box-shadow: 0 0 10px rgba(255, 128, 0, 0.4);
 }
 .concurso-card {
@@ -165,55 +182,63 @@ select.filter-input option {
     border-radius: 12px;
 }
 
-/* Link da fonte PCI Concursos */
-.source-link {
-    color: var(--brand-orange);
-    text-decoration: none;
-    font-weight: 600;
-    transition: color 0.2s;
+/* Links da fonte PCI Concursos & MCP (Cores Vibrantes e Legíveis) */
+.source-link-pci {
+    color: var(--brand-orange) !important;
+    font-weight: 700 !important;
+    text-decoration: underline !important;
+    transition: opacity 0.2s;
 }
-.source-link:hover {
-    color: var(--prism-cyan);
-    text-decoration: underline;
+.source-link-pci:hover {
+    opacity: 0.85;
+}
+.source-link-mcp {
+    color: var(--prism-cyan) !important;
+    font-weight: 700 !important;
+    text-decoration: underline !important;
+    transition: opacity 0.2s;
+}
+.source-link-mcp:hover {
+    opacity: 0.85;
 }
 
 /* WIDGET DO ASSISTENTE DE IA */
 #ai-chat-btn {
     position: fixed;
-    bottom: 25px;
-    right: 25px;
+    bottom: 30px;
+    right: 30px;
     background: linear-gradient(135deg, var(--brand-orange), #ff5500);
-    color: #fff;
+    color: #ffffff !important;
     border: none;
     border-radius: 50px;
-    padding: 0.85rem 1.4rem;
+    padding: 0.9rem 1.5rem;
     font-weight: 700;
     font-size: 0.95rem;
-    box-shadow: 0 8px 25px rgba(255, 85, 0, 0.5);
+    box-shadow: 0 10px 30px rgba(255, 85, 0, 0.6);
     cursor: pointer;
-    z-index: 9999;
+    z-index: 999999;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.65rem;
     transition: transform 0.25s, box-shadow 0.25s;
 }
 #ai-chat-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 12px 30px rgba(255, 85, 0, 0.7);
+    transform: scale(1.06);
+    box-shadow: 0 14px 35px rgba(255, 85, 0, 0.8);
 }
 #ai-chat-modal {
     position: fixed;
-    bottom: 90px;
-    right: 25px;
-    width: 380px;
+    bottom: 95px;
+    right: 30px;
+    width: 390px;
     max-width: calc(100vw - 40px);
-    height: 520px;
-    background: rgba(8, 12, 32, 0.96);
+    height: 530px;
+    background: rgba(8, 12, 32, 0.97);
     border: 1px solid var(--prism-cyan);
     border-radius: 18px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.9);
     backdrop-filter: blur(15px);
-    z-index: 9998;
+    z-index: 999998;
     display: none;
     flex-direction: column;
     overflow: hidden;
@@ -265,7 +290,7 @@ select.filter-input option {
 }
 .chat-input-area {
     padding: 0.75rem 1rem;
-    background: rgba(2, 4, 15, 0.9);
+    background: rgba(2, 4, 15, 0.95);
     border-top: 1px solid var(--glass-border);
     display: flex;
     gap: 0.5rem;
@@ -306,8 +331,8 @@ select.filter-input option {
         <h1 style="font-weight: 800; margin-top: 0.5rem;">Concursos em <span style="color: var(--brand-orange);"><?= htmlspecialchars($uf) ?></span></h1>
         <p style="color: var(--text-secondary); max-width: 680px; margin: 0.75rem auto 0; font-size: 1.05rem;">
             Consultas oficiais atualizadas em tempo real via 
-            <a href="https://www.pciconcursos.com.br" target="_blank" rel="noopener" class="source-link">PCI Concursos</a> 
-            (<a href="https://www.pciconcursos.com.br/mcp-e-gpt" target="_blank" rel="noopener" class="source-link" style="color: var(--prism-cyan);">Servidor MCP</a>). 
+            <a href="https://www.pciconcursos.com.br" target="_blank" rel="noopener" class="source-link-pci">PCI Concursos</a> 
+            (<a href="https://www.pciconcursos.com.br/mcp-e-gpt" target="_blank" rel="noopener" class="source-link-mcp">Servidor MCP</a>). 
             Fique por dentro das inscrições abertas, vagas, salários e prazos.
         </p>
     </div>
@@ -477,11 +502,11 @@ select.filter-input option {
         </div>
     </div>
 
-    <!-- Nota da fonte PCI Concursos com link oficial -->
+    <!-- Nota da fonte PCI Concursos com links oficiais -->
     <p style="text-align: center; color: #888; font-size: 0.8rem; margin-top: 2.5rem;">
         Dados integrados e sincronizados oficialmente via 
-        <a href="https://www.pciconcursos.com.br" target="_blank" rel="noopener" class="source-link">PCI Concursos</a> 
-        / <a href="https://www.pciconcursos.com.br/mcp-e-gpt" target="_blank" rel="noopener" class="source-link" style="color: var(--prism-cyan);">Servidor PCI MCP</a>.
+        <a href="https://www.pciconcursos.com.br" target="_blank" rel="noopener" class="source-link-pci">PCI Concursos</a> 
+        / <a href="https://www.pciconcursos.com.br/mcp-e-gpt" target="_blank" rel="noopener" class="source-link-mcp">Servidor PCI MCP</a>.
     </p>
 
 </div>
