@@ -150,12 +150,18 @@ Retorne ESTRITAMENTE um JSON com as chaves:
 
     // 3. Executar chamada de API conforme o Provedor de IA
     $jsonRaw = '';
+    $debugInfo = '';
 
     if ($provider === 'gemini') {
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' . $apiKey;
         $payload = json_encode([
             "contents" => [
                 ["parts" => [["text" => $systemInstruction . "\n\n" . $userMessage]]]
+            ],
+            "generationConfig" => [
+                "responseMimeType" => "application/json",
+                "temperature" => 0.7,
+                "maxOutputTokens" => 8192
             ]
         ]);
 
@@ -165,13 +171,56 @@ Retorne ESTRITAMENTE um JSON com as chaves:
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $payload,
             CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_TIMEOUT => 45,
+            CURLOPT_TIMEOUT => 120,
+            CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_SSL_VERIFYPEER => false
         ]);
         $res = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($res === false || !empty($curlError)) {
+            echo json_encode([
+                'success' => false,
+                'error' => "Erro de conexão com a API Gemini: $curlError"
+            ]);
+            exit;
+        }
 
         $parsed = json_decode($res, true);
-        $jsonRaw = $parsed['candidates'][0]['content']['parts'][0]['text'] ?? '';
+
+        // Verificar erros da API
+        if (isset($parsed['error'])) {
+            $errMsg = $parsed['error']['message'] ?? json_encode($parsed['error']);
+            echo json_encode([
+                'success' => false,
+                'error' => "Erro da API Gemini (HTTP $httpCode): $errMsg"
+            ]);
+            exit;
+        }
+
+        // Verificar bloqueio por segurança
+        $finishReason = $parsed['candidates'][0]['finishReason'] ?? '';
+        if ($finishReason === 'SAFETY') {
+            echo json_encode([
+                'success' => false,
+                'error' => 'A IA bloqueou a resposta por filtro de segurança. Tente reformular o tema.'
+            ]);
+            exit;
+        }
+
+        // Extrair texto — suporte a modelos com thinking (múltiplas parts)
+        $parts = $parsed['candidates'][0]['content']['parts'] ?? [];
+        $jsonRaw = '';
+        foreach ($parts as $part) {
+            if (isset($part['text'])) {
+                $jsonRaw .= $part['text'];
+            }
+        }
+
+        $debugInfo = "Provider: gemini | HTTP: $httpCode | FinishReason: $finishReason | Parts: " . count($parts);
+
     } else {
         // Groq / OpenAI / OpenRouter
         $endpoints = [
@@ -179,7 +228,12 @@ Retorne ESTRITAMENTE um JSON com as chaves:
             'openai' => ['url' => 'https://api.openai.com/v1/chat/completions', 'model' => 'gpt-4o-mini'],
             'openrouter' => ['url' => 'https://openrouter.ai/api/v1/chat/completions', 'model' => 'meta-llama/llama-3.3-70b-instruct']
         ];
-        $ep = $endpoints[$provider];
+        $ep = $endpoints[$provider] ?? null;
+
+        if (!$ep) {
+            echo json_encode(['success' => false, 'error' => "Provedor '$provider' não reconhecido."]);
+            exit;
+        }
 
         $payload = json_encode([
             "model" => $ep['model'],
@@ -187,7 +241,8 @@ Retorne ESTRITAMENTE um JSON com as chaves:
                 ["role" => "system", "content" => $systemInstruction],
                 ["role" => "user", "content" => $userMessage]
             ],
-            "temperature" => 0.5
+            "temperature" => 0.5,
+            "max_tokens" => 8192
         ]);
 
         $ch = curl_init($ep['url']);
@@ -199,22 +254,47 @@ Retorne ESTRITAMENTE um JSON com as chaves:
                 'Content-Type: application/json',
                 "Authorization: Bearer $apiKey"
             ],
-            CURLOPT_TIMEOUT => 45,
+            CURLOPT_TIMEOUT => 120,
+            CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_SSL_VERIFYPEER => false
         ]);
         $res = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($res === false || !empty($curlError)) {
+            echo json_encode([
+                'success' => false,
+                'error' => "Erro de conexão com a API ($provider): $curlError"
+            ]);
+            exit;
+        }
 
         $parsed = json_decode($res, true);
+
+        // Verificar erros da API
+        if (isset($parsed['error'])) {
+            $errMsg = is_array($parsed['error']) ? ($parsed['error']['message'] ?? json_encode($parsed['error'])) : $parsed['error'];
+            echo json_encode([
+                'success' => false,
+                'error' => "Erro da API $provider (HTTP $httpCode): $errMsg"
+            ]);
+            exit;
+        }
+
         $jsonRaw = $parsed['choices'][0]['message']['content'] ?? '';
+        $debugInfo = "Provider: $provider | HTTP: $httpCode | Model: " . $ep['model'];
     }
 
     // 4. Extrair e validar dados do JSON ou HTML retornado pela IA
     $aiData = extract_article_payload($jsonRaw, $articleTopic);
 
     if (empty($aiData) || empty($aiData['html_content'])) {
+        $rawPreview = mb_substr($jsonRaw, 0, 500);
         echo json_encode([
             'success' => false,
-            'error' => 'Falha ao processar a resposta da IA. Resposta bruta: ' . substr($jsonRaw, 0, 300)
+            'error' => "Falha ao processar a resposta da IA. [$debugInfo] Resposta bruta: $rawPreview"
         ]);
         exit;
     }

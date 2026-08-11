@@ -126,9 +126,14 @@ $userMessage = "Tema: $articleTopic\n$contestInfo";
 $jsonRaw = '';
 
 if ($provider === 'gemini') {
-    $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
+    $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' . $apiKey;
     $payload = json_encode([
-        "contents" => [["parts" => [["text" => $systemInstruction . "\n\n" . $userMessage]]]]
+        "contents" => [["parts" => [["text" => $systemInstruction . "\n\n" . $userMessage]]]],
+        "generationConfig" => [
+            "responseMimeType" => "application/json",
+            "temperature" => 0.7,
+            "maxOutputTokens" => 8192
+        ]
     ]);
 
     $ch = curl_init($url);
@@ -137,13 +142,41 @@ if ($provider === 'gemini') {
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $payload,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_TIMEOUT => 45,
+        CURLOPT_TIMEOUT => 120,
+        CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_SSL_VERIFYPEER => false
     ]);
     $res = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($res === false || !empty($curlError)) {
+        echo "[" . date('Y-m-d H:i:s') . "] ERRO cURL Gemini: $curlError\n";
+        exit(1);
+    }
 
     $parsed = json_decode($res, true);
-    $jsonRaw = $parsed['candidates'][0]['content']['parts'][0]['text'] ?? '';
+
+    if (isset($parsed['error'])) {
+        echo "[" . date('Y-m-d H:i:s') . "] ERRO API Gemini (HTTP $httpCode): " . ($parsed['error']['message'] ?? json_encode($parsed['error'])) . "\n";
+        exit(1);
+    }
+
+    $finishReason = $parsed['candidates'][0]['finishReason'] ?? '';
+    if ($finishReason === 'SAFETY') {
+        echo "[" . date('Y-m-d H:i:s') . "] ERRO: Resposta bloqueada por filtro de segurança.\n";
+        exit(1);
+    }
+
+    // Suporte a modelos com thinking (múltiplas parts)
+    $parts = $parsed['candidates'][0]['content']['parts'] ?? [];
+    $jsonRaw = '';
+    foreach ($parts as $part) {
+        if (isset($part['text'])) {
+            $jsonRaw .= $part['text'];
+        }
+    }
 } else {
     $endpoints = [
         'groq' => ['url' => 'https://api.groq.com/openai/v1/chat/completions', 'model' => 'llama-3.3-70b-versatile'],
@@ -158,7 +191,8 @@ if ($provider === 'gemini') {
             ["role" => "system", "content" => $systemInstruction],
             ["role" => "user", "content" => $userMessage]
         ],
-        "temperature" => 0.5
+        "temperature" => 0.5,
+        "max_tokens" => 8192
     ]);
 
     $ch = curl_init($ep['url']);
@@ -167,19 +201,35 @@ if ($provider === 'gemini') {
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $payload,
         CURLOPT_HTTPHEADER => ['Content-Type: application/json', "Authorization: Bearer $apiKey"],
-        CURLOPT_TIMEOUT => 45,
+        CURLOPT_TIMEOUT => 120,
+        CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_SSL_VERIFYPEER => false
     ]);
     $res = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($res === false || !empty($curlError)) {
+        echo "[" . date('Y-m-d H:i:s') . "] ERRO cURL $provider: $curlError\n";
+        exit(1);
+    }
 
     $parsed = json_decode($res, true);
+
+    if (isset($parsed['error'])) {
+        $errMsg = is_array($parsed['error']) ? ($parsed['error']['message'] ?? json_encode($parsed['error'])) : $parsed['error'];
+        echo "[" . date('Y-m-d H:i:s') . "] ERRO API $provider (HTTP $httpCode): $errMsg\n";
+        exit(1);
+    }
+
     $jsonRaw = $parsed['choices'][0]['message']['content'] ?? '';
 }
 
 $aiData = extract_article_payload($jsonRaw, $articleTopic);
 
 if (empty($aiData) || empty($aiData['html_content'])) {
-    echo "[" . date('Y-m-d H:i:s') . "] ERRO ao obter resposta da IA. Resposta: " . substr($jsonRaw, 0, 300) . "\n";
+    echo "[" . date('Y-m-d H:i:s') . "] ERRO ao obter resposta da IA. Resposta: " . mb_substr($jsonRaw, 0, 500) . "\n";
     exit(1);
 }
 

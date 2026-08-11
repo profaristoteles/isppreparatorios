@@ -45,16 +45,19 @@ try {
     $system_instruction = "Você é um redator especialista em concursos públicos da área da educação no Brasil. Escreva o artigo completo formatado em HTML nativo (use tags <h2>, <p>, <ul>, <strong>). Não use formatação markdown de código, retorne apenas o HTML limpo, pronto para ser inserido em um editor de texto rico.";
     $user_message = "Tema sugerido pelo administrador: " . $prompt;
 
-    // Montar URL, payload e headers conforme o provedor
+    // Montar URL, payload conforme o provedor e executar via cURL
+    $url = '';
+    $payload = '';
+    $authHeader = '';
+
     switch ($provider) {
         case 'gemini':
-            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
+            $url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' . $apiKey;
             $payload = json_encode([
                 "contents" => [
                     ["parts" => [["text" => $system_instruction . "\n\n" . $user_message]]]
                 ]
             ]);
-            $headers = "Content-Type: application/json\r\n";
             break;
 
         case 'groq':
@@ -68,7 +71,7 @@ try {
                 "max_tokens" => 4096,
                 "temperature" => 0.7
             ]);
-            $headers = "Content-Type: application/json\r\nAuthorization: Bearer $apiKey\r\n";
+            $authHeader = "Authorization: Bearer $apiKey";
             break;
 
         case 'openai':
@@ -82,7 +85,7 @@ try {
                 "max_tokens" => 4096,
                 "temperature" => 0.7
             ]);
-            $headers = "Content-Type: application/json\r\nAuthorization: Bearer $apiKey\r\n";
+            $authHeader = "Authorization: Bearer $apiKey";
             break;
 
         case 'openrouter':
@@ -96,7 +99,7 @@ try {
                 "max_tokens" => 4096,
                 "temperature" => 0.7
             ]);
-            $headers = "Content-Type: application/json\r\nAuthorization: Bearer $apiKey\r\nHTTP-Referer: http://localhost:8000\r\n";
+            $authHeader = "Authorization: Bearer $apiKey";
             break;
 
         default:
@@ -104,26 +107,29 @@ try {
             exit;
     }
 
-    // Fazer a requisição HTTP
-    $options = [
-        'http' => [
-            'method'  => 'POST',
-            'header'  => $headers,
-            'content' => $payload,
-            'timeout' => 60,
-            'ignore_errors' => true
-        ],
-        'ssl' => [
-            'verify_peer' => false,
-            'verify_peer_name' => false
-        ]
-    ];
+    // Executar requisição via cURL
+    $headers = ['Content-Type: application/json'];
+    if (!empty($authHeader)) {
+        $headers[] = $authHeader;
+    }
 
-    $context = stream_context_create($options);
-    $response = file_get_contents($url, false, $context);
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_TIMEOUT => 120,
+        CURLOPT_CONNECTTIMEOUT => 15,
+        CURLOPT_SSL_VERIFYPEER => false
+    ]);
+    $response = curl_exec($ch);
+    $curlError = curl_error($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
 
-    if ($response === false) {
-        echo json_encode(['error' => 'Falha na conexão com a API. Verifique sua conexão com a internet e a chave de API.']);
+    if ($response === false || !empty($curlError)) {
+        echo json_encode(['error' => "Erro de conexão com a API ($provider): $curlError"]);
         exit;
     }
 
@@ -135,10 +141,24 @@ try {
     if ($provider === 'gemini') {
         // Verificar erros da API do Gemini
         if (isset($result['error'])) {
-            echo json_encode(['error' => 'Erro da API: ' . ($result['error']['message'] ?? 'Desconhecido')]);
+            echo json_encode(['error' => 'Erro da API Gemini: ' . ($result['error']['message'] ?? json_encode($result['error']))]);
             exit;
         }
-        $generated_html = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
+
+        // Verificar bloqueio por segurança
+        $finishReason = $result['candidates'][0]['finishReason'] ?? '';
+        if ($finishReason === 'SAFETY') {
+            echo json_encode(['error' => 'A IA bloqueou a resposta por filtro de segurança. Tente reformular o tema.']);
+            exit;
+        }
+
+        // Suporte a modelos com thinking (múltiplas parts)
+        $parts = $result['candidates'][0]['content']['parts'] ?? [];
+        foreach ($parts as $part) {
+            if (isset($part['text'])) {
+                $generated_html .= $part['text'];
+            }
+        }
     } else {
         // Formato OpenAI-compatible (Groq, OpenAI, OpenRouter)
         if (isset($result['error'])) {
@@ -150,7 +170,7 @@ try {
     }
 
     if (empty($generated_html)) {
-        echo json_encode(['error' => 'A IA não retornou um conteúdo válido. Tente reformular o prompt.']);
+        echo json_encode(['error' => 'A IA não retornou um conteúdo válido. Tente reformular o prompt. (HTTP ' . $httpCode . ')']);
         exit;
     }
 
