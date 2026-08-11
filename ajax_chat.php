@@ -23,7 +23,7 @@ if (empty($message)) {
 
 $msgLower = safe_lower($message);
 
-// Identificar se especificou algum estado (UF) na mensagem
+// Extrair estado (UF) mencionado na mensagem se houver
 $ufsList = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 foreach ($ufsList as $sigla) {
     if (preg_match('/\b' . strtolower($sigla) . '\b/i', $message) || preg_match('/no ' . strtolower($sigla) . '\b/i', $message)) {
@@ -32,61 +32,125 @@ foreach ($ufsList as $sigla) {
     }
 }
 
-// Analisar intenção
+// 1. Obter dados relevantes via PCI MCP
 $concursosData = [];
-$intentType = 'pesquisa';
+$cidade = '';
+$isCidade = false;
 
-if (strpos($msgLower, 'são luís') !== false || strpos($msgLower, 'sao luis') !== false || strpos($msgLower, 'imperatriz') !== false || strpos($msgLower, 'caxias') !== false) {
-    // Cidade específica
-    $cidade = (strpos($msgLower, 'imperatriz') !== false) ? 'Imperatriz' : ((strpos($msgLower, 'caxias') !== false) ? 'Caxias' : 'São Luís');
-    $mcpRes = PciMcpClient::buscarPorCidade($cidade);
-    $concursosData = $mcpRes['data'] ?? [];
-    $intentType = "cidade ($cidade)";
-} elseif (strpos($msgLower, 'profess') !== false || strpos($msgLower, 'educaç') !== false || strpos($msgLower, 'pedagog') !== false) {
-    // Professores / Educação
-    $cargo = (strpos($msgLower, 'pedagog') !== false) ? 'pedagogo' : 'professor';
-    $mcpRes = PciMcpClient::buscarPorCargo($cargo, $uf);
-    $concursosData = $mcpRes['data'] ?? [];
-    $intentType = "cargo de $cargo em $uf";
-} else {
-    // Pesquisa geral com palavras chaves extraídas
-    $cleanQuery = preg_replace('/(quais|quais os|tem|concurso|concursos|aberto|abertos|para|de|em|no|na)\b/i', '', $message);
-    $cleanQuery = trim(preg_replace('/\s+/', ' ', $cleanQuery));
-    
-    if (empty($cleanQuery)) {
-        $cleanQuery = 'concurso';
-    }
-
-    $mcpRes = PciMcpClient::pesquisarConcursos($cleanQuery, $uf);
-    $concursosData = $mcpRes['data'] ?? [];
-    $intentType = "busca por '$cleanQuery' em $uf";
+if (strpos($msgLower, 'são luís') !== false || strpos($msgLower, 'sao luis') !== false) {
+    $cidade = 'São Luís';
+    $isCidade = true;
+} elseif (strpos($msgLower, 'imperatriz') !== false) {
+    $cidade = 'Imperatriz';
+    $isCidade = true;
+} elseif (strpos($msgLower, 'caxias') !== false) {
+    $cidade = 'Caxias';
+    $isCidade = true;
 }
 
-// Montar resposta amigável do assistente
-if (empty($concursosData)) {
-    $reply = "Não encontrei concursos com inscrições abertas para **$intentType** no momento no banco da **PCI Concursos**.\n\nVocê pode tentar pesquisar por outro estado ou cargo (ex: *Professor no MA*, *Concursos em SP*).";
+if ($isCidade) {
+    $mcpRes = PciMcpClient::buscarPorCidade($cidade);
+    $concursosData = $mcpRes['data'] ?? [];
 } else {
-    $total = count($concursosData);
-    $reply = "Localizei **$total concurso(s)** com inscrições abertas via **PCI Concursos** para $intentType:\n\n";
+    // Limpar termos de parada para buscar o órgão ou cargo exato mencionado pelo usuário
+    $queryTerm = preg_replace('/(quais|quais os|quais as|qual|tem|concurso|concursos|aberto|abertos|para|de|em|no|na|que|dia|é|a|prova|edital|quando|quanto|salario|vagas|inscrição|inscrições|requisitos)\b/i', '', $message);
+    $queryTerm = trim(preg_replace('/\s+/', ' ', $queryTerm));
 
-    foreach (array_slice($concursosData, 0, 4) as $idx => $item) {
-        $num = $idx + 1;
-        $titulo = $item['titulo'] ?? 'Concurso';
-        $vagas = $item['vagas_salario'] ?? 'Vagas não especificadas';
-        $dias = $item['datas']['dias_restantes'] ?? null;
-        $link = $item['noticia']['link'] ?? 'https://www.pciconcursos.com.br';
-
-        $prazotxt = ($dias !== null) ? " ($dias dia(s) restante(s))" : "";
-
-        $reply .= "$num. **$titulo**\n";
-        $reply .= "   • **Vagas/Salário**: $vagas\n";
-        if (!empty($item['cargos_resumo'])) {
-            $reply .= "   • **Cargos**: {$item['cargos_resumo']}\n";
-        }
-        $reply .= "   • [Ver Edital Oficial no PCI Concursos]($link)\n\n";
+    if (!empty($queryTerm) && strlen($queryTerm) >= 3) {
+        $mcpRes = PciMcpClient::pesquisarConcursos($queryTerm, $uf);
+        $concursosData = $mcpRes['data'] ?? [];
     }
 
-    $reply .= "💡 *Dica: Você pode se preparar para qualquer um destes concursos com a equipe do ISP Preparatórios!*";
+    if (empty($concursosData)) {
+        if (strpos($msgLower, 'profess') !== false || strpos($msgLower, 'educaç') !== false || strpos($msgLower, 'pedagog') !== false) {
+            $mcpRes = PciMcpClient::buscarPorCargo('professor', $uf);
+        } else {
+            $mcpRes = PciMcpClient::pesquisarConcursos($queryTerm ?: 'concurso', $uf);
+        }
+        $concursosData = $mcpRes['data'] ?? [];
+    }
+}
+
+// 2. Analisar o tipo de pergunta do usuário para resposta inteligente
+$isPerguntaData = (strpos($msgLower, 'prova') !== false || strpos($msgLower, 'quando') !== false || strpos($msgLower, 'data') !== false || strpos($msgLower, 'dia') !== false || strpos($msgLower, 'prazo') !== false || strpos($msgLower, 'inscriç') !== false);
+$isPerguntaSalario = (strpos($msgLower, 'salário') !== false || strpos($msgLower, 'salario') !== false || strpos($msgLower, 'quanto ganha') !== false || strpos($msgLower, 'remuneraç') !== false || strpos($msgLower, 'vagas') !== false);
+$isPerguntaCargos = (strpos($msgLower, 'cargos') !== false || strpos($msgLower, 'vaga') !== false || strpos($msgLower, 'funç') !== false || strpos($msgLower, 'quais os cargos') !== false);
+
+// 3. Gerar a resposta personalizada
+if (empty($concursosData)) {
+    $reply = "Não encontrei concursos abertos no banco da **PCI Concursos** para a sua busca em **$uf**.\n\nVocê pode consultar outros estados ou tentar buscar por termos como *'Professor'*, *'São Luís'*, ou *'Prefeitura'*.";
+} else {
+    $itemPrincipal = $concursosData[0];
+    $titulo = $itemPrincipal['titulo'] ?? 'Concurso Público';
+    $vagasSalario = $itemPrincipal['vagas_salario'] ?? 'Consultar edital';
+    $formacao = $itemPrincipal['formacao'] ?? 'Diversos níveis';
+    $dias = $itemPrincipal['datas']['dias_restantes'] ?? null;
+    $fimInscricoes = $itemPrincipal['datas']['fim'] ?? null;
+    $link = $itemPrincipal['noticia']['link'] ?? 'https://www.pciconcursos.com.br';
+    $cargos = $itemPrincipal['cargos'] ?? [];
+
+    if ($isPerguntaData) {
+        $reply = "📅 **Datas e Prazos — $titulo**\n\n";
+        if ($fimInscricoes) {
+            $dateFormatted = date('d/m/Y', strtotime($fimInscricoes));
+            $reply .= "• **Encerramento das Inscrições**: **$dateFormatted**";
+            if ($dias !== null) {
+                if ($dias == 0) {
+                    $reply .= " ⚠️ *(Último dia de inscrições!)*\n";
+                } else {
+                    $reply .= " *($dias dia(s) restante(s))*\n";
+                }
+            } else {
+                $reply .= "\n";
+            }
+        } else {
+            $reply .= "• **Status**: Inscrições Abertas\n";
+        }
+        $reply .= "• **Data da Prova Objetiva**: O cronograma detalhado das provas objetivas e de títulos é publicado diretamente no edital do órgão.\n\n";
+        $reply .= "👉 [Clique aqui para abrir o Edital Completo na PCI Concursos]($link)\n\n";
+        $reply .= "💡 *Se prepare com o ISP Preparatórios para gabaritar esta prova!*";
+    } elseif ($isPerguntaSalario) {
+        $reply = "💰 **Vagas e Remuneração — $titulo**\n\n";
+        $reply .= "• **Oportunidades**: **$vagasSalario**\n";
+        $reply .= "• **Escolaridade Exigida**: $formacao\n\n";
+        if (!empty($itemPrincipal['cargos_resumo'])) {
+            $reply .= "• **Resumo de Cargos**: {$itemPrincipal['cargos_resumo']}\n\n";
+        }
+        $reply .= "👉 [Ver Detalhes do Edital no PCI Concursos]($link)";
+    } elseif ($isPerguntaCargos && !empty($cargos)) {
+        $reply = "📋 **Lista de Cargos Oferecidos — $titulo**\n\n";
+        $reply .= "O edital oferece vagas para os seguintes cargos:\n";
+        foreach (array_slice($cargos, 0, 8) as $cg) {
+            $reply .= "• " . trim($cg) . "\n";
+        }
+        if (count($cargos) > 8) {
+            $diff = count($cargos) - 8;
+            $reply .= "• *...e mais $diff cargo(s).*\n";
+        }
+        $reply .= "\n• **Vagas/Salário**: $vagasSalario\n";
+        $reply .= "👉 [Ver Edital Oficial no PCI Concursos]($link)";
+    } else {
+        // Resposta geral estruturada e limpa
+        $total = count($concursosData);
+        $reply = "Localizei **$total concurso(s)** com inscrições abertas no PCI Concursos para **$titulo**:\n\n";
+
+        foreach (array_slice($concursosData, 0, 3) as $idx => $c) {
+            $t = $c['titulo'] ?? 'Concurso';
+            $v = $c['vagas_salario'] ?? 'Consulte o edital';
+            $d = $c['datas']['dias_restantes'] ?? null;
+            $l = $c['noticia']['link'] ?? 'https://www.pciconcursos.com.br';
+            $prazotxt = ($d !== null) ? " ($d dia(s) restante(s))" : "";
+
+            $reply .= "🔹 **$t**\n";
+            $reply .= "   • **Vagas & Salário**: $v\n";
+            if (!empty($c['cargos_resumo'])) {
+                $reply .= "   • **Cargos**: {$c['cargos_resumo']}\n";
+            }
+            $reply .= "   • [Ver Notícia/Edital Oficial]($l)\n\n";
+        }
+
+        $reply .= "💡 *Dica: Fale com a equipe do ISP Preparatórios para adquirir os melhores materiais preparatórios para este concurso!*";
+    }
 }
 
 echo json_encode([

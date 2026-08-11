@@ -269,10 +269,10 @@ select.filter-input option {
     font-size: 0.88rem;
 }
 .chat-msg {
-    max-width: 85%;
+    max-width: 88%;
     padding: 0.75rem 1rem;
     border-radius: 12px;
-    line-height: 1.45;
+    line-height: 1.5;
 }
 .chat-msg.bot {
     background: rgba(255, 255, 255, 0.07);
@@ -294,19 +294,43 @@ select.filter-input option {
     border-top: 1px solid var(--glass-border);
     display: flex;
     gap: 0.5rem;
+    align-items: center;
 }
 .chat-input {
     flex: 1;
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     color: #fff;
     padding: 0.6rem 0.85rem;
     border-radius: 8px;
     font-size: 0.88rem;
+    height: 38px;
+    min-width: 0;
 }
 .chat-input:focus {
     outline: none;
     border-color: var(--brand-orange);
+}
+#chat-send-btn {
+    background: linear-gradient(135deg, var(--brand-orange), #ff5500) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0 1rem !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.9rem !important;
+    flex-shrink: 0 !important;
+    height: 38px !important;
+    width: auto !important;
+    min-width: 44px !important;
+    box-shadow: 0 4px 12px rgba(255, 85, 0, 0.4) !important;
+    transition: opacity 0.2s !important;
+}
+#chat-send-btn:hover {
+    opacity: 0.9 !important;
 }
 .chip-btn {
     background: rgba(0, 210, 255, 0.1);
@@ -527,25 +551,25 @@ select.filter-input option {
                 <span style="color: #2ecc71; font-size: 0.72rem;">● Conectado ao PCI MCP API</span>
             </div>
         </div>
-        <button onclick="toggleAiChat()" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.1rem;">&times;</button>
+        <button onclick="toggleAiChat()" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2rem;">&times;</button>
     </div>
 
     <div class="chat-body" id="chat-messages">
         <div class="chat-msg bot">
             Olá! Sou o **Assistente de Editais do ISP Preparatórios**. 🤖<br><br>
-            Pergunte sobre qualquer concurso ou cargo (ex: *"Professores no MA"*, *"Concursos em São Luís"*, *"Vagas em SP"*).
+            Pergunte qualquer coisa sobre editais, como: *"Que dia é a prova de Humberto de Campos?"*, *"Quais os cargos em São Luís?"*, *"Salários no IFMA"*.
         </div>
         
         <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem;">
+            <button class="chip-btn" onclick="sendChip('Humberto de Campos que dia é a prova?')">📅 Prova Humberto de Campos</button>
             <button class="chip-btn" onclick="sendChip('Concursos de Professor no MA')">🎓 Professor no MA</button>
             <button class="chip-btn" onclick="sendChip('O que tem aberto em São Luís?')">📍 São Luís</button>
-            <button class="chip-btn" onclick="sendChip('Concursos com maiores salários em SP')">💰 Salários SP</button>
         </div>
     </div>
 
     <div class="chat-input-area">
-        <input type="text" id="chat-input" class="chat-input" placeholder="Pergunte sobre um cargo ou cidade..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-        <button onclick="sendChatMessage()" class="btn" style="padding: 0.5rem 0.9rem; font-size: 0.85rem;">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Pergunte sobre um concurso, prova ou vaga..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+        <button id="chat-send-btn" onclick="sendChatMessage()">
             <i class="fas fa-paper-plane"></i>
         </button>
     </div>
@@ -569,7 +593,7 @@ function formatMarkdown(text) {
     return text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: var(--brand-orange); text-decoration: underline;">$1</a>')
+        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: var(--brand-orange); font-weight: bold; text-decoration: underline;">$1</a>')
         .replace(/\n/g, '<br>');
 }
 
