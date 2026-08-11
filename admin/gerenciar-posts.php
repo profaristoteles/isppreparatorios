@@ -74,6 +74,104 @@ require_once 'includes/header.php';
 <!-- TinyMCE CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js" referrerpolicy="origin"></script>
 
+<!-- CARD DO AGENTE IA DE BLOG -->
+<div class="card" style="background: linear-gradient(135deg, #03045e, #0b1340); color: #fff; margin-bottom: 2rem; border: 1px solid rgba(0, 210, 255, 0.4); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h3 style="margin: 0; color: #ff8000; display: flex; align-items: center; gap: 0.6rem; font-size: 1.3rem;">
+            🤖 Agente Redator IA — Blog Autônomo
+        </h3>
+        <span style="background: rgba(0,210,255,0.2); color: #00d2ff; padding: 0.35rem 0.9rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">
+            Diagramação Profissional HTML
+        </span>
+    </div>
+    
+    <p style="color: #ccc; font-size: 0.92rem; margin-bottom: 1.2rem; line-height: 1.5;">
+        Gere artigos de blog completos em tempo real baseados nos últimos editais da <strong>PCI Concursos (MCP)</strong> ou em temas educacionais, com tabelas de vagas, caixas de alerta, badges e capas por IA.
+    </p>
+
+    <div style="display: grid; grid-template-columns: 1.5fr 1fr 120px auto; gap: 1rem; align-items: flex-end;">
+        <div>
+            <label style="color: #aaa; font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">MODO DE GERAÇÃO</label>
+            <select id="agent-mode" class="form-control" style="background: #02041b; color: #fff; border-color: rgba(0,210,255,0.3);">
+                <option value="pci_contest">📌 Análise de Edital PCI Concursos (Maranhão / Professores)</option>
+                <option value="education_topic">📚 Artigo Educacional (LDB, Português, Pedagogia)</option>
+                <option value="custom_prompt">✍️ Tema Personalizado</option>
+            </select>
+        </div>
+
+        <div>
+            <label style="color: #aaa; font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">ESTADO (UF) / TEMA LIVRE</label>
+            <input type="text" id="agent-prompt" class="form-control" placeholder="Ex: MA ou digite o tema desejado..." style="background: #02041b; color: #fff; border-color: rgba(0,210,255,0.3);">
+        </div>
+
+        <div>
+            <label style="color: #aaa; font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">STATUS</label>
+            <select id="agent-status" class="form-control" style="background: #02041b; color: #fff; border-color: rgba(0,210,255,0.3);">
+                <option value="rascunho">Rascunho</option>
+                <option value="publicado">Publicado</option>
+            </select>
+        </div>
+
+        <div>
+            <button type="button" onclick="runAiBlogAgent()" class="btn" style="padding: 0.75rem 1.4rem; white-space: nowrap; background: linear-gradient(135deg, #ff8000, #ff5500); border: none; font-weight: 700;">
+                ⚡ GERAR POST AGORA
+            </button>
+        </div>
+    </div>
+
+    <!-- Feedback / Progress Container -->
+    <div id="agent-progress-box" style="display: none; margin-top: 1.2rem; background: rgba(0,0,0,0.4); padding: 1rem 1.25rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div id="agent-spinner" style="width: 24px; height: 24px; border: 3px solid rgba(255,128,0,0.3); border-top-color: #ff8000; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+            <span id="agent-progress-msg" style="color: #fff; font-size: 0.92rem; font-weight: 500;">Iniciando o Agente IA...</span>
+        </div>
+    </div>
+</div>
+
+<script>
+function runAiBlogAgent() {
+    const mode = document.getElementById('agent-mode').value;
+    const promptInput = document.getElementById('agent-prompt').value.trim();
+    const status = document.getElementById('agent-status').value;
+    
+    const progressBox = document.getElementById('agent-progress-box');
+    const progressMsg = document.getElementById('agent-progress-msg');
+    
+    progressBox.style.display = 'block';
+    progressMsg.innerHTML = '⚡ <strong>Agente IA Ativo:</strong> Consultando PCI Concursos e redigindo artigo com diagramação HTML... (Aguarde alguns segundos)';
+
+    let uf = 'MA';
+    if (promptInput.length === 2) {
+        uf = promptInput.toUpperCase();
+    }
+
+    fetch('ajax_agent_generate_post.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            mode: mode,
+            prompt: promptInput,
+            status: status,
+            uf: uf
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            progressMsg.innerHTML = `✅ <strong>Sucesso!</strong> ${data.message} Recarregando a página...`;
+            setTimeout(() => {
+                window.location.reload();
+            }, 1800);
+        } else {
+            progressMsg.innerHTML = `❌ <strong>Erro:</strong> ${data.error || 'Falha ao gerar o artigo.'}`;
+        }
+    })
+    .catch(err => {
+        progressMsg.innerHTML = `❌ <strong>Erro de conexão:</strong> Não foi possível se comunicar com o Agente IA.`;
+    });
+}
+</script>
+
 <div class="card">
     <h2>Gerenciar Blog (Artigos)</h2>
     <form method="POST" enctype="multipart/form-data">
@@ -220,14 +318,7 @@ require_once 'includes/header.php';
                 ?>
             </td>
             <td>
-                <!-- Pass content securely -->
-                <button class="btn" onclick='editarPost(<?= htmlspecialchars(json_encode([
-                    "id" => $p["id"],
-                    "title" => $p["title"],
-                    "category" => $p["category"],
-                    "content" => $p["content"],
-                    "image_alt" => $p["image_alt"],
-                <button class="btn" onclick="editarPost(<?= htmlspecialchars(json_encode($p), ENT_QUOTES, 'UTF-8') ?>)">Editar</button>
+                <button type="button" class="btn" onclick="editarPost(<?= htmlspecialchars(json_encode($p), ENT_QUOTES, 'UTF-8') ?>)">Editar</button>
                 <a href="?del=<?= $p['id'] ?>" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</a>
             </td>
         </tr>

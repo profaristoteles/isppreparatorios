@@ -548,3 +548,159 @@ footer a:hover {
 .section-padding {
     padding: 4rem 5%;
 }
+
+/* --- DIAGRAMAÇÃO PROFISSIONAL EM HTML PARA O BLOG --- */
+.post-content h2 {
+    color: #ffffff;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-top: 2.2rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--brand-orange);
+    padding-left: 0.85rem;
+    line-height: 1.35;
+}
+
+.post-content h3 {
+    color: #00d2ff;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-top: 1.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.post-content p {
+    color: #e0e0e0;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    margin-bottom: 1.25rem;
+}
+
+.post-content strong {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Callouts / Caixas de Destaque */
+.post-callout {
+    background: rgba(13, 18, 45, 0.9);
+    border-left: 4px solid var(--brand-orange);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    border-top: 1px solid var(--glass-border);
+    border-right: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--glass-border);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.post-callout.info {
+    border-left-color: #00d2ff;
+    background: rgba(0, 210, 255, 0.05);
+}
+
+.post-callout.warning {
+    border-left-color: #e74c3c;
+    background: rgba(231, 76, 60, 0.08);
+}
+
+.post-callout.success {
+    border-left-color: #2ecc71;
+    background: rgba(46, 204, 113, 0.08);
+}
+
+.post-callout h4 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Tabelas Estilizadas do Blog */
+.post-table-wrapper {
+    overflow-x: auto;
+    margin: 1.75rem 0;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.post-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    background: rgba(8, 12, 32, 0.8);
+    text-align: left;
+}
+
+.post-table th {
+    background: rgba(3, 4, 94, 0.9);
+    color: var(--brand-orange);
+    font-weight: 700;
+    padding: 0.85rem 1rem;
+    border-bottom: 2px solid var(--glass-border);
+    text-transform: uppercase;
+    font-size: 0.82rem;
+    letter-spacing: 0.5px;
+}
+
+.post-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #ddd;
+}
+
+.post-table tr:hover td {
+    background: rgba(255, 128, 0, 0.05);
+}
+
+/* Badges e Pílulas */
+.post-badge {
+    display: inline-block;
+    background: rgba(255, 128, 0, 0.15);
+    color: var(--brand-orange);
+    border: 1px solid rgba(255, 128, 0, 0.3);
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-right: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Listas customizadas */
+.post-content ul, .post-content ol {
+    margin: 1.25rem 0 1.5rem 1.5rem;
+    color: #ddd;
+}
+
+.post-content li {
+    margin-bottom: 0.6rem;
+    line-height: 1.65;
+}
+
+/* Banner CTA de Conversão ISP */
+.post-cta-box {
+    background: linear-gradient(135deg, rgba(3, 4, 94, 0.8), rgba(10, 14, 35, 0.95));
+    border: 1px solid var(--prism-cyan);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2.5rem 0;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 210, 255, 0.15);
+}
+
+.post-cta-box h3 {
+    color: #ffffff;
+    font-size: 1.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.post-cta-box p {
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+    margin-bottom: 1.5rem;
+}
+

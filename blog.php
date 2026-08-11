@@ -21,8 +21,9 @@ function clean_excerpt($html, $length = 120) {
     // Remove extra whitespace
     $clean = trim(preg_replace('/\s+/', ' ', $clean));
     
-    if (mb_strlen($clean) > $length) {
-        return mb_substr($clean, 0, $length) . '...';
+    $len = function_exists('mb_strlen') ? mb_strlen($clean, 'UTF-8') : strlen($clean);
+    if ($len > $length) {
+        return (function_exists('mb_substr') ? mb_substr($clean, 0, $length, 'UTF-8') : substr($clean, 0, $length)) . '...';
     }
     return $clean;
 }
