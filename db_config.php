@@ -31,7 +31,27 @@ try {
     
     $colsSeo = $pdo->query("SHOW COLUMNS FROM posts LIKE 'seo_keywords'")->fetchAll();
     if (empty($colsSeo)) {
-        $pdo->exec("ALTER TABLE posts ADD COLUMN seo_keywords VARCHAR(255) DEFAULT '' AFTER status");
+        $pdo->exec("ALTER TABLE posts ADD COLUMN seo_keywords VARCHAR(500) DEFAULT '' AFTER status");
+    }
+} catch (Exception $e) { /* tabela pode não existir ainda */ }
+
+// Auto-migration: colunas SEO de posts (meta_title, meta_description, slug, image_alt)
+// Garante que existam E tenham tamanho suficiente (VARCHAR 500)
+try {
+    $seoPostCols = [
+        'meta_title' => "VARCHAR(500) DEFAULT ''",
+        'meta_description' => "VARCHAR(500) DEFAULT ''",
+        'slug' => "VARCHAR(500) DEFAULT ''",
+        'image_alt' => "VARCHAR(500) DEFAULT ''"
+    ];
+    foreach ($seoPostCols as $col => $tipo) {
+        $exists = $pdo->query("SHOW COLUMNS FROM posts LIKE " . $pdo->quote($col))->fetchAll();
+        if (empty($exists)) {
+            $pdo->exec("ALTER TABLE posts ADD COLUMN $col $tipo");
+        } else {
+            // Expandir coluna se necessário (de VARCHAR(70)/VARCHAR(160) para VARCHAR(500))
+            $pdo->exec("ALTER TABLE posts MODIFY COLUMN $col $tipo");
+        }
     }
 } catch (Exception $e) { /* tabela pode não existir ainda */ }
 
