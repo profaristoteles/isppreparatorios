@@ -31,19 +31,19 @@ if (!empty($cidade)) {
 $concursos = $mcpResult['data'] ?? [];
 $totalEncontrados = $mcpResult['meta']['total'] ?? count($concursos);
 
-$dynamic_title = "Editais de Concursos em $uf - ISP Preparatórios";
-$dynamic_desc = "Acompanhe os concursos públicos e seletivos abertos em $uf com dados oficiais da PCI Concursos, prazos, vagas e cargos.";
+$dynamic_title = "Editais de Concursos em $uf - ISP Preparatórios & PCI Concursos";
+$dynamic_desc = "Consultas oficiais em tempo real de concursos públicos e seletivos via PCI Concursos (MCP), vagas, salários e prazos.";
 require_once 'includes/header.php';
 ?>
 
-<!-- Estilos Customizados da Central de Editais PCI -->
+<!-- Estilos Customizados da Central de Editais PCI & Assistente de IA -->
 <style>
 .editais-hero {
     text-align: center;
     padding: 3rem 1rem 2rem;
 }
 .filter-card {
-    background: rgba(13, 17, 38, 0.7);
+    background: rgba(13, 17, 38, 0.85);
     border: 1px solid var(--glass-border);
     border-radius: 16px;
     padding: 1.75rem;
@@ -53,7 +53,7 @@ require_once 'includes/header.php';
 }
 .filter-grid {
     display: grid;
-    grid-template-columns: 120px 1fr 1fr auto;
+    grid-template-columns: 140px 1fr 1fr auto;
     gap: 1rem;
     align-items: center;
 }
@@ -68,14 +68,26 @@ require_once 'includes/header.php';
     }
 }
 .filter-input {
-    background: rgba(2, 2, 40, 0.8);
+    background-color: #060b26;
     border: 1px solid rgba(0, 210, 255, 0.3);
-    color: #fff;
+    color: #ffffff;
     border-radius: 8px;
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
     width: 100%;
     transition: border-color 0.3s, box-shadow 0.3s;
+    color-scheme: dark;
+}
+select.filter-input {
+    background-color: #060b26;
+    color: #ffffff;
+    color-scheme: dark;
+    cursor: pointer;
+}
+select.filter-input option {
+    background-color: #080e30 !important;
+    color: #ffffff !important;
+    padding: 10px;
 }
 .filter-input:focus {
     outline: none;
@@ -152,21 +164,138 @@ require_once 'includes/header.php';
     padding: 0.25rem 0.65rem;
     border-radius: 12px;
 }
-.loading-spinner {
+
+/* Link da fonte PCI Concursos */
+.source-link {
+    color: var(--brand-orange);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+.source-link:hover {
+    color: var(--prism-cyan);
+    text-decoration: underline;
+}
+
+/* WIDGET DO ASSISTENTE DE IA */
+#ai-chat-btn {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: linear-gradient(135deg, var(--brand-orange), #ff5500);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 0.85rem 1.4rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 8px 25px rgba(255, 85, 0, 0.5);
+    cursor: pointer;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+#ai-chat-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 30px rgba(255, 85, 0, 0.7);
+}
+#ai-chat-modal {
+    position: fixed;
+    bottom: 90px;
+    right: 25px;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    height: 520px;
+    background: rgba(8, 12, 32, 0.96);
+    border: 1px solid var(--prism-cyan);
+    border-radius: 18px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(15px);
+    z-index: 9998;
     display: none;
-    text-align: center;
-    padding: 3rem;
+    flex-direction: column;
+    overflow: hidden;
 }
-.spinner-ring {
-    width: 45px;
-    height: 45px;
-    border: 4px solid rgba(255, 128, 0, 0.2);
-    border-top-color: var(--brand-orange);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 1rem;
+#ai-chat-modal.active {
+    display: flex;
+    animation: fadeInUp 0.3s ease;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.chat-header {
+    background: linear-gradient(135deg, #03045e, #001845);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--glass-border);
+}
+.chat-body {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    font-size: 0.88rem;
+}
+.chat-msg {
+    max-width: 85%;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    line-height: 1.45;
+}
+.chat-msg.bot {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(0, 210, 255, 0.2);
+    color: #eee;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+}
+.chat-msg.user {
+    background: linear-gradient(135deg, var(--brand-orange), #e65c00);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+    font-weight: 500;
+}
+.chat-input-area {
+    padding: 0.75rem 1rem;
+    background: rgba(2, 4, 15, 0.9);
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    gap: 0.5rem;
+}
+.chat-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+}
+.chat-input:focus {
+    outline: none;
+    border-color: var(--brand-orange);
+}
+.chip-btn {
+    background: rgba(0, 210, 255, 0.1);
+    border: 1px solid rgba(0, 210, 255, 0.3);
+    color: #00d2ff;
+    padding: 0.3rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.chip-btn:hover {
+    background: rgba(0, 210, 255, 0.25);
+}
 </style>
 
 <div class="container section-padding" style="margin-top: 4rem;">
@@ -175,8 +304,10 @@ require_once 'includes/header.php';
     <div class="editais-hero reveal">
         <span class="hero-pre-title">CENTRAL DE EDITAIS & CONCURSOS</span>
         <h1 style="font-weight: 800; margin-top: 0.5rem;">Concursos em <span style="color: var(--brand-orange);"><?= htmlspecialchars($uf) ?></span></h1>
-        <p style="color: var(--text-secondary); max-width: 650px; margin: 0.75rem auto 0; font-size: 1.05rem;">
-            Consultas oficiais atualizadas em tempo real via <strong>PCI Concursos</strong>.
+        <p style="color: var(--text-secondary); max-width: 680px; margin: 0.75rem auto 0; font-size: 1.05rem;">
+            Consultas oficiais atualizadas em tempo real via 
+            <a href="https://www.pciconcursos.com.br" target="_blank" rel="noopener" class="source-link">PCI Concursos</a> 
+            (<a href="https://www.pciconcursos.com.br/mcp-e-gpt" target="_blank" rel="noopener" class="source-link" style="color: var(--prism-cyan);">Servidor MCP</a>). 
             Fique por dentro das inscrições abertas, vagas, salários e prazos.
         </p>
     </div>
@@ -188,7 +319,7 @@ require_once 'includes/header.php';
                 
                 <!-- Estado UF -->
                 <div>
-                    <label style="color: #aaa; font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">ESTADO</label>
+                    <label style="color: #aaa; font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">ESTADO (UF)</label>
                     <select name="uf" class="filter-input" onchange="this.form.submit()">
                         <?php foreach($allowed_ufs as $sigla): ?>
                             <option value="<?= $sigla ?>" <?= $uf == $sigla ? 'selected' : '' ?>><?= $sigla ?></option>
@@ -231,12 +362,6 @@ require_once 'includes/header.php';
         </form>
     </div>
 
-    <!-- Indicador de Carregamento AJAX -->
-    <div id="loading-indicator" class="loading-spinner">
-        <div class="spinner-ring"></div>
-        <p style="color: var(--brand-orange); font-weight: 600; letter-spacing: 1px;">CONSULTANDO PCI CONCURSOS...</p>
-    </div>
-
     <!-- Lista de Concursos (Grid) -->
     <div id="editais-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.5rem;">
         
@@ -253,7 +378,7 @@ require_once 'includes/header.php';
             <?php foreach($concursos as $c): 
                 $diasRestantes = $c['datas']['dias_restantes'] ?? null;
                 $isUrgent = ($diasRestantes !== null && $diasRestantes <= 5);
-                $noticiaLink = $c['noticia']['link'] ?? '#';
+                $noticiaLink = $c['noticia']['link'] ?? 'https://www.pciconcursos.com.br';
                 $cargosList = $c['cargos'] ?? [];
                 if (empty($cargosList) && !empty($c['cargos_resumo'])) {
                     $cargosList = explode(',', $c['cargos_resumo']);
@@ -325,10 +450,10 @@ require_once 'includes/header.php';
                     <!-- Botões de Ação do Card -->
                     <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; align-items: center;">
                         <a href="<?= htmlspecialchars($noticiaLink) ?>" target="_blank" rel="noopener" class="btn btn-outline" style="flex: 1; font-size: 0.8rem; padding: 0.65rem 0.5rem; text-align: center;">
-                            <i class="fas fa-external-link-alt" style="margin-right: 0.3rem;"></i> VER EDITAL
+                            <i class="fas fa-external-link-alt" style="margin-right: 0.3rem;"></i> PCI CONCURSOS
                         </a>
                         <a href="cursos.php" class="btn" style="flex: 1; font-size: 0.8rem; padding: 0.65rem 0.5rem; text-align: center; background: linear-gradient(135deg, var(--brand-orange), #ff6600);">
-                            PREPARAR-SE <i class="fas fa-arrow-right" style="margin-left: 0.3rem;"></i>
+                            ESTUDAR NO ISP <i class="fas fa-arrow-right" style="margin-left: 0.3rem;"></i>
                         </a>
                     </div>
 
@@ -346,16 +471,123 @@ require_once 'includes/header.php';
         </p>
         <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
             <a href="cursos.php" class="btn" style="padding: 0.85rem 2rem;">Ver Nossos Cursos</a>
-            <a href="https://wa.me/5598988000000" target="_blank" class="btn btn-outline" style="padding: 0.85rem 2rem; border-color: #2ecc71; color: #2ecc71;">
-                <i class="fab fa-whatsapp" style="margin-right: 0.4rem;"></i> Falar no WhatsApp
+            <a href="https://chatgpt.com/g/g-69ee13e7398c81918b0bf96b2dc17a15-pci-concursos" target="_blank" rel="noopener" class="btn btn-outline" style="padding: 0.85rem 1.5rem; border-color: #10a37f; color: #10a37f;">
+                <i class="fas fa-robot" style="margin-right: 0.4rem;"></i> Abrir GPT da PCI Concursos
             </a>
         </div>
     </div>
 
-    <p style="text-align: center; color: #666; font-size: 0.78rem; margin-top: 2.5rem;">
-        Dados integrados diretamente via servidor <strong>PCI Concursos (MCP API)</strong>. Atualizado em tempo real.
+    <!-- Nota da fonte PCI Concursos com link oficial -->
+    <p style="text-align: center; color: #888; font-size: 0.8rem; margin-top: 2.5rem;">
+        Dados integrados e sincronizados oficialmente via 
+        <a href="https://www.pciconcursos.com.br" target="_blank" rel="noopener" class="source-link">PCI Concursos</a> 
+        / <a href="https://www.pciconcursos.com.br/mcp-e-gpt" target="_blank" rel="noopener" class="source-link" style="color: var(--prism-cyan);">Servidor PCI MCP</a>.
     </p>
 
 </div>
+
+<!-- BOTÃO DO ASSISTENTE DE IA -->
+<button id="ai-chat-btn" onclick="toggleAiChat()">
+    <i class="fas fa-robot" style="font-size: 1.2rem;"></i>
+    <span>Assistente de IA</span>
+</button>
+
+<!-- MODAL DO CHAT DA IA -->
+<div id="ai-chat-modal">
+    <div class="chat-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <i class="fas fa-robot" style="color: var(--brand-orange); font-size: 1.2rem;"></i>
+            <div>
+                <strong style="color: #fff; font-size: 0.95rem; display: block;">Assistente ISP & PCI</strong>
+                <span style="color: #2ecc71; font-size: 0.72rem;">● Conectado ao PCI MCP API</span>
+            </div>
+        </div>
+        <button onclick="toggleAiChat()" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.1rem;">&times;</button>
+    </div>
+
+    <div class="chat-body" id="chat-messages">
+        <div class="chat-msg bot">
+            Olá! Sou o **Assistente de Editais do ISP Preparatórios**. 🤖<br><br>
+            Pergunte sobre qualquer concurso ou cargo (ex: *"Professores no MA"*, *"Concursos em São Luís"*, *"Vagas em SP"*).
+        </div>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem;">
+            <button class="chip-btn" onclick="sendChip('Concursos de Professor no MA')">🎓 Professor no MA</button>
+            <button class="chip-btn" onclick="sendChip('O que tem aberto em São Luís?')">📍 São Luís</button>
+            <button class="chip-btn" onclick="sendChip('Concursos com maiores salários em SP')">💰 Salários SP</button>
+        </div>
+    </div>
+
+    <div class="chat-input-area">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Pergunte sobre um cargo ou cidade..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+        <button onclick="sendChatMessage()" class="btn" style="padding: 0.5rem 0.9rem; font-size: 0.85rem;">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+function toggleAiChat() {
+    const modal = document.getElementById('ai-chat-modal');
+    modal.classList.toggle('active');
+    if (modal.classList.contains('active')) {
+        document.getElementById('chat-input').focus();
+    }
+}
+
+function sendChip(text) {
+    document.getElementById('chat-input').value = text;
+    sendChatMessage();
+}
+
+function formatMarkdown(text) {
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: var(--brand-orange); text-decoration: underline;">$1</a>')
+        .replace(/\n/g, '<br>');
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const msgText = input.value.trim();
+    if (!msgText) return;
+
+    const chatBody = document.getElementById('chat-messages');
+
+    // Mensagem do Usuário
+    const userDiv = document.createElement('div');
+    userDiv.className = 'chat-msg user';
+    userDiv.textContent = msgText;
+    chatBody.appendChild(userDiv);
+    input.value = '';
+
+    // Indicator de Carregando
+    const botDiv = document.createElement('div');
+    botDiv.className = 'chat-msg bot';
+    botDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando PCI Concursos...';
+    chatBody.appendChild(botDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    // Enviar AJAX para o backend
+    fetch('ajax_chat.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msgText, uf: '<?= $uf ?>' })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.reply) {
+            botDiv.innerHTML = formatMarkdown(data.reply);
+        } else {
+            botDiv.innerHTML = 'Desculpe, ocorreu uma falha ao consultar o servidor da PCI Concursos.';
+        }
+        chatBody.scrollTop = chatBody.scrollHeight;
+    })
+    .catch(err => {
+        botDiv.innerHTML = 'Erro de comunicação. Por favor, tente novamente.';
+    });
+}
+</script>
 
 <?php require_once 'includes/footer.php'; ?>
