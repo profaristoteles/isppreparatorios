@@ -80,19 +80,25 @@ require_once 'includes/header.php';
         <h3 style="margin: 0; color: #ff8000; display: flex; align-items: center; gap: 0.6rem; font-size: 1.3rem;">
             🤖 Agente Redator IA — Blog Autônomo
         </h3>
-        <span style="background: rgba(0,210,255,0.2); color: #00d2ff; padding: 0.35rem 0.9rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">
-            Diagramação Profissional HTML
-        </span>
+        <div style="display: flex; gap: 0.5rem;">
+            <span style="background: rgba(0,210,255,0.2); color: #00d2ff; padding: 0.35rem 0.9rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">
+                Diagramação HTML
+            </span>
+            <span style="background: rgba(255,128,0,0.2); color: #ff8000; padding: 0.35rem 0.9rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">
+                🎨 Imagens 3D Nano Banana
+            </span>
+        </div>
     </div>
     
     <p style="color: #ccc; font-size: 0.92rem; margin-bottom: 1.2rem; line-height: 1.5;">
-        Gere artigos de blog completos em tempo real baseados nos últimos editais da <strong>PCI Concursos (MCP)</strong> ou em temas educacionais, com tabelas de vagas, caixas de alerta, badges e capas por IA.
+        Gere artigos completos em tempo real. Você pode <strong>cole um link (URL)</strong> para o agente analisar e extrair os dados reais sem inventar fatos, pesquisar editais da <strong>PCI Concursos</strong> ou abordar temas da Educação com capas e ilustrações geradas pelo <strong>Nano Banana 3D</strong>.
     </p>
 
     <div style="display: grid; grid-template-columns: 1.5fr 1fr 120px auto; gap: 1rem; align-items: flex-end;">
         <div>
             <label style="color: #aaa; font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">MODO DE GERAÇÃO</label>
-            <select id="agent-mode" class="form-control" style="background: #02041b; color: #fff; border-color: rgba(0,210,255,0.3);">
+            <select id="agent-mode" class="form-control" style="background: #02041b; color: #fff; border-color: rgba(0,210,255,0.3);" onchange="updateAgentPlaceholder()">
+                <option value="url_analysis">🔗 Extrair & Redigir a partir de um Link (URL)</option>
                 <option value="pci_contest">📌 Análise de Edital PCI Concursos (Maranhão / Professores)</option>
                 <option value="education_topic">📚 Artigo Educacional (LDB, Português, Pedagogia)</option>
                 <option value="custom_prompt">✍️ Tema Personalizado</option>
@@ -100,8 +106,8 @@ require_once 'includes/header.php';
         </div>
 
         <div>
-            <label style="color: #aaa; font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">ESTADO (UF) / TEMA LIVRE</label>
-            <input type="text" id="agent-prompt" class="form-control" placeholder="Ex: MA ou digite o tema desejado..." style="background: #02041b; color: #fff; border-color: rgba(0,210,255,0.3);">
+            <label style="color: #aaa; font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 0.3rem;">LINK (URL) OU TEMA / ESTADO (UF)</label>
+            <input type="text" id="agent-prompt" class="form-control" placeholder="Cole o link completo (ex: https://www.gov.br/mec/...)" style="background: #02041b; color: #fff; border-color: rgba(0,210,255,0.3);">
         </div>
 
         <div>
@@ -129,6 +135,20 @@ require_once 'includes/header.php';
 </div>
 
 <script>
+function updateAgentPlaceholder() {
+    const mode = document.getElementById('agent-mode').value;
+    const promptInput = document.getElementById('agent-prompt');
+    if (mode === 'url_analysis') {
+        promptInput.placeholder = 'Cole o link completo (ex: https://www.gov.br/mec/pt-br/assuntos/noticias/...)';
+    } else if (mode === 'pci_contest') {
+        promptInput.placeholder = 'Ex: MA ou digite o nome do município/concurso...';
+    } else if (mode === 'education_topic') {
+        promptInput.placeholder = 'Deixe vazio para tema aleatório ou digite o assunto...';
+    } else {
+        promptInput.placeholder = 'Digite qualquer tema desejado ou cole um link...';
+    }
+}
+
 function runAiBlogAgent() {
     const mode = document.getElementById('agent-mode').value;
     const promptInput = document.getElementById('agent-prompt').value.trim();
@@ -138,10 +158,15 @@ function runAiBlogAgent() {
     const progressMsg = document.getElementById('agent-progress-msg');
     
     progressBox.style.display = 'block';
-    progressMsg.innerHTML = '⚡ <strong>Agente IA Ativo:</strong> Pesquisando edital e redigindo artigo com diagramação HTML... (Aguarde alguns segundos)';
+    
+    if (mode === 'url_analysis' || promptInput.startsWith('http')) {
+        progressMsg.innerHTML = '⚡ <strong>Agente IA Ativo:</strong> Acessando o link, extraindo texto real da fonte, redigindo o artigo e gerando imagens 3D Nano Banana... (Aguarde alguns segundos)';
+    } else {
+        progressMsg.innerHTML = '⚡ <strong>Agente IA Ativo:</strong> Pesquisando conteúdo, redigindo artigo com diagramação HTML e gerando imagens 3D Nano Banana... (Aguarde alguns segundos)';
+    }
 
     let uf = 'MA';
-    if (promptInput.length === 2) {
+    if (promptInput.length === 2 && !promptInput.startsWith('http')) {
         uf = promptInput.toUpperCase();
     } else {
         const ufMatch = promptInput.match(/\b(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b/i);

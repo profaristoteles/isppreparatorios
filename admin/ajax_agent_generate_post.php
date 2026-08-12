@@ -5,6 +5,8 @@ error_reporting(E_ALL);
 require_once 'auth.php';
 require_once '../db_config.php';
 require_once '../includes/pci_mcp_client.php';
+require_once '../includes/url_scraper.php';
+require_once '../includes/nano_banana_generator.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -27,7 +29,7 @@ function extract_article_payload($rawText, $fallbackTopic) {
     // 1. Tentar json_decode normal
     $json = json_decode($cleanedText, true);
 
-    // 2. Se falhar, tentar sanitizar caracteres de controle (quebras de linha não escapadas dentro de strings JSON)
+    // 2. Se falhar, tentar sanitizar caracteres de controle
     if (!is_array($json)) {
         $sanitized = preg_replace_callback('/"([^"\\\\]*|\\\\.)*"/s', function($m) {
             return str_replace(["\r\n", "\r", "\n", "\t"], ["\\n", "\\n", "\\n", "\\t"], $m[0]);
@@ -38,7 +40,6 @@ function extract_article_payload($rawText, $fallbackTopic) {
     // 3. Se json_decode funcionou e encontrou html_content
     if (is_array($json) && !empty($json['html_content'])) {
         $html = $json['html_content'];
-        // Limpar qualquer prefixo ou sufixo JSON acidental dentro de html_content
         $html = preg_replace('/^\s*\{?\s*"html_content"\s*:\s*"/i', '', $html);
         $html = preg_replace('/"\s*\}\s*$/', '', $html);
         $json['html_content'] = trim($html);
@@ -59,13 +60,11 @@ function extract_article_payload($rawText, $fallbackTopic) {
         $htmlContent = stripslashes($htmlContent);
     }
 
-    // Se ainda assim o htmlContent contiver JSON inicial ou rótulos json {
     if (empty($htmlContent) && (strpos($cleanedText, '<') !== false)) {
         $htmlContent = preg_replace('/^(?:json)?\s*\{[\s\S]*?"html_content"\s*:\s*"/i', '', $cleanedText);
         $htmlContent = preg_replace('/"\s*\}\s*$/', '', $htmlContent);
     }
 
-    // Limpeza rigorosa final anti-vazamento de estrutura JSON
     $htmlContent = preg_replace('/^\s*json\s*\{[\s\S]*?"html_content"\s*:\s*"/i', '', $htmlContent);
     $htmlContent = preg_replace('/^\s*\{[\s\S]*?"html_content"\s*:\s*"/i', '', $htmlContent);
     $htmlContent = trim($htmlContent);
@@ -74,11 +73,12 @@ function extract_article_payload($rawText, $fallbackTopic) {
         $resumo = safe_substr(trim(preg_replace('/\s+/', ' ', strip_tags($htmlContent))), 0, 155) . '...';
         return [
             'title' => $extractedTitle,
-            'category' => 'Concursos',
+            'category' => 'Notícias',
             'meta_title' => safe_substr($extractedTitle, 0, 70),
             'meta_description' => $resumo,
-            'seo_keywords' => 'concurso, edital, professores, maranhão',
-            'image_prompt' => 'edital verticalizado mapa de estudos concurso publico',
+            'seo_keywords' => 'educação, mec, portaria, legislação, notícias',
+            'cover_image_prompt' => $extractedTitle,
+            'inline_image_prompt' => 'ilustração conceito visual educacional 3d',
             'html_content' => $htmlContent
         ];
     }
@@ -126,97 +126,120 @@ try {
     $articleTopic = "";
     $defaultCategory = "Concursos";
 
-    // Verificar se o tema/prompt é claramente um concurso público
-    $isExplicitContest = false;
-    if (!empty($customPrompt)) {
-        if (preg_match('/\b(concurso|edital|prefeitura|selecao|seleção|processo seletivo|banca|gabarito|vagas)\b/i', $customPrompt)) {
-            $isExplicitContest = true;
+    // Verificar se o usuário inseriu uma URL / Link
+    $isUrlInput = ($mode === 'url_analysis') || filter_var($customPrompt, FILTER_VALIDATE_URL) || preg_match('/^https?:\/\//i', $customPrompt);
+
+    if ($isUrlInput) {
+        $scraped = UrlScraper::extractTextFromUrl($customPrompt);
+        if (!$scraped['success']) {
+            echo json_encode([
+                'success' => false,
+                'error' => "Falha ao analisar o link: " . $scraped['error']
+            ]);
+            exit;
         }
-    }
 
-    if (!empty($customPrompt) && strlen($customPrompt) > 2) {
-        $items = [];
-        if ($isExplicitContest || $mode === 'pci_contest') {
-            // Tentar pesquisar edital no PCI Concursos se for um tema de concurso
-            $mcpRes = PciMcpClient::pesquisarConcursos($customPrompt, $uf);
-            $items = $mcpRes['data'] ?? [];
+        $scrapedTitle = $scraped['title'];
+        $scrapedContent = $scraped['content'];
+        $articleTopic = !empty($scrapedTitle) ? $scrapedTitle : "Matéria Analisada por Link";
 
-            if (empty($items)) {
-                $cidadeLimpa = trim(preg_replace('/(concurso|prefeitura|pública|da|de|do|ma|sp|rj|pi|ce|ba|se|al|pe|pb|rn)/i', '', $customPrompt));
-                if (!empty($cidadeLimpa) && strlen($cidadeLimpa) >= 3) {
-                    $mcpResCidade = PciMcpClient::buscarPorCidade($cidadeLimpa);
-                    $items = $mcpResCidade['data'] ?? [];
+        $contestInfo = "CONTEÚDO OFICIAL EXTRAÍDO DO LINK ($customPrompt):\nTítulo da Página: $scrapedTitle\n\nTEXTO INTEGRAL EXTRAÍDO DA PÁGINA ORIGEM:\n---\n$scrapedContent\n---\n\nDIRETRIZES DE FIDELIDADE (ANTI-ALUCINAÇÃO):\n1. Este artigo DEVE ser redigido ESTRITAMENTE com base nas informações contidas no texto extraído acima.\n2. É ESTRITAMENTE PROIBIDO inventar datas, nomes de prefeituras, números de portarias, salários ou regras que NÃO constam na fonte acima.\n3. Estruture em formato de artigo de blog atraente e profissional para o ISP Preparatórios, destacando os pontos essenciais, orientações práticas e impacto para os leitores.";
+
+        if (preg_match('/\b(portaria|mec|lei|ldb|diretriz|resolucao|resolução|decreto|bncc|legisla)/i', $scrapedContent . ' ' . $scrapedTitle)) {
+            $defaultCategory = "Legislação / MEC";
+        } elseif (preg_match('/\b(concurso|edital|vagas|prefeitura|inscri)/i', $scrapedContent . ' ' . $scrapedTitle)) {
+            $defaultCategory = "Concursos";
+        } else {
+            $defaultCategory = "Notícias / Educação";
+        }
+    } else {
+        // Verificar se o tema/prompt é claramente um concurso público
+        $isExplicitContest = false;
+        if (!empty($customPrompt)) {
+            if (preg_match('/\b(concurso|edital|prefeitura|selecao|seleção|processo seletivo|banca|gabarito|vagas)\b/i', $customPrompt)) {
+                $isExplicitContest = true;
+            }
+        }
+
+        if (!empty($customPrompt) && strlen($customPrompt) > 2) {
+            $items = [];
+            if ($isExplicitContest || $mode === 'pci_contest') {
+                $mcpRes = PciMcpClient::pesquisarConcursos($customPrompt, $uf);
+                $items = $mcpRes['data'] ?? [];
+
+                if (empty($items)) {
+                    $cidadeLimpa = trim(preg_replace('/(concurso|prefeitura|pública|da|de|do|ma|sp|rj|pi|ce|ba|se|al|pe|pb|rn)/i', '', $customPrompt));
+                    if (!empty($cidadeLimpa) && strlen($cidadeLimpa) >= 3) {
+                        $mcpResCidade = PciMcpClient::buscarPorCidade($cidadeLimpa);
+                        $items = $mcpResCidade['data'] ?? [];
+                    }
                 }
             }
-        }
 
-        if (!empty($items)) {
-            // Encontrou edital cadastrado no PCI para o termo solicitado
-            $featured = $items[0];
-            $tituloConcurso = $featured['titulo'] ?? $customPrompt;
-            $vagasSalario = $featured['vagas_salario'] ?? 'Vagas a definir no edital';
-            $cargos = !empty($featured['cargos']) ? implode(', ', $featured['cargos']) : ($featured['cargos_resumo'] ?? 'Educação e Administração');
-            $escolaridade = $featured['formacao'] ?? 'Fundamental / Médio / Superior';
-            $linkEdital = $featured['noticia']['link'] ?? 'https://www.pciconcursos.com.br';
-            $dias = $featured['datas']['dias_restantes'] ?? 'Em breve / Previsto';
+            if (!empty($items)) {
+                $featured = $items[0];
+                $tituloConcurso = $featured['titulo'] ?? $customPrompt;
+                $vagasSalario = $featured['vagas_salario'] ?? 'Vagas a definir no edital';
+                $cargos = !empty($featured['cargos']) ? implode(', ', $featured['cargos']) : ($featured['cargos_resumo'] ?? 'Educação e Administração');
+                $escolaridade = $featured['formacao'] ?? 'Fundamental / Médio / Superior';
+                $linkEdital = $featured['noticia']['link'] ?? 'https://www.pciconcursos.com.br';
+                $dias = $featured['datas']['dias_restantes'] ?? 'Em breve / Previsto';
 
-            $articleTopic = "Análise e Guia de Estudos do $tituloConcurso ($uf)";
-            $contestInfo = "Dados Oficiais do Edital no PCI Concursos:\n- Órgão: $tituloConcurso ($uf)\n- Vagas e Remuneração: $vagasSalario\n- Cargos: $cargos\n- Escolaridade: $escolaridade\n- Prazo de Inscrição: $dias\n- Link do Edital Oficial: $linkEdital";
-            $defaultCategory = "Concursos";
-        } elseif ($isExplicitContest) {
-            // É um concurso solicitado pelo usuário, mas não listado no PCI no momento
-            $articleTopic = "Guia de Estudos e Análise do Concurso Público: " . ucwords(mb_strtolower($customPrompt, 'UTF-8'));
-            $contestInfo = "O artigo DEVE ser ESTRITAMENTE sobre o concurso indicado: " . $customPrompt . " ($uf).\nFoque na preparação completa (disciplinas essenciais, dicas de estudos e bancas organizadoras).";
-            $defaultCategory = "Concursos";
-        } else {
-            // NÃO É CONCURSO ou É TEMA GERAL / LEGISLAÇÃO / NOTÍCIA / MEC / PEDAGOGIA!
-            $articleTopic = $customPrompt;
-            $contestInfo = "Tema Solicitado pelo Usuário: $customPrompt.\nATENÇÃO: Este artigo NÃO é sobre um concurso público fictício! É um artigo temático, educativo ou informativo sobre o assunto especificado ($customPrompt). Apresente dados precisos, contexto pedagógico/normativo, análise detalhada e orientações práticas para educadores e estudantes. NÃO invente tabelas de vagas de concursos nem edital fictício.";
-            
-            if (preg_match('/\b(portaria|mec|lei|ldb|diretriz|resolucao|resolução|decreto|bncc|legisla)/i', $customPrompt)) {
-                $defaultCategory = "Legislação / MEC";
-            } elseif (preg_match('/\b(dica|estudo|metodologia|planejamento|aula|pedagog)/i', $customPrompt)) {
-                $defaultCategory = "Pedagogia / Dicas";
+                $articleTopic = "Análise e Guia de Estudos do $tituloConcurso ($uf)";
+                $contestInfo = "Dados Oficiais do Edital no PCI Concursos:\n- Órgão: $tituloConcurso ($uf)\n- Vagas e Remuneração: $vagasSalario\n- Cargos: $cargos\n- Escolaridade: $escolaridade\n- Prazo de Inscrição: $dias\n- Link do Edital Oficial: $linkEdital";
+                $defaultCategory = "Concursos";
+            } elseif ($isExplicitContest) {
+                $articleTopic = "Guia de Estudos e Análise do Concurso Público: " . ucwords(mb_strtolower($customPrompt, 'UTF-8'));
+                $contestInfo = "O artigo DEVE ser ESTRITAMENTE sobre o concurso indicado: " . $customPrompt . " ($uf).\nFoque na preparação completa (disciplinas essenciais, dicas de estudos e bancas organizadoras).";
+                $defaultCategory = "Concursos";
             } else {
-                $defaultCategory = "Notícias";
+                $articleTopic = $customPrompt;
+                $contestInfo = "Tema Solicitado pelo Usuário: $customPrompt.\nATENÇÃO: Este artigo NÃO é sobre um concurso público fictício! É um artigo temático, educativo ou informativo sobre o assunto especificado ($customPrompt). Apresente dados precisos, contexto pedagógico/normativo, análise detalhada e orientações práticas para educadores e estudantes.";
+                
+                if (preg_match('/\b(portaria|mec|lei|ldb|diretriz|resolucao|resolução|decreto|bncc|legisla)/i', $customPrompt)) {
+                    $defaultCategory = "Legislação / MEC";
+                } elseif (preg_match('/\b(dica|estudo|metodologia|planejamento|aula|pedagog)/i', $customPrompt)) {
+                    $defaultCategory = "Pedagogia / Dicas";
+                } else {
+                    $defaultCategory = "Notícias";
+                }
             }
-        }
-    } elseif ($mode === 'pci_contest') {
-        // Se nenhum prompt específico foi digitado, buscar edital geral de destaque na PCI para o estado
-        $mcpRes = PciMcpClient::buscarPorCargo('professor', $uf);
-        if (empty($mcpRes['data'])) {
-            $mcpRes = PciMcpClient::pesquisarConcursos('concurso', $uf);
-        }
+        } elseif ($mode === 'pci_contest') {
+            $mcpRes = PciMcpClient::buscarPorCargo('professor', $uf);
+            if (empty($mcpRes['data'])) {
+                $mcpRes = PciMcpClient::pesquisarConcursos('concurso', $uf);
+            }
 
-        $items = $mcpRes['data'] ?? [];
-        if (!empty($items)) {
-            $featured = $items[0];
-            $tituloConcurso = $featured['titulo'] ?? 'Concurso Público';
-            $vagasSalario = $featured['vagas_salario'] ?? 'Diversas vagas';
-            $cargos = !empty($featured['cargos']) ? implode(', ', $featured['cargos']) : ($featured['cargos_resumo'] ?? 'Educação');
-            $escolaridade = $featured['formacao'] ?? 'Médio / Superior';
-            $linkEdital = $featured['noticia']['link'] ?? 'https://www.pciconcursos.com.br';
-            $dias = $featured['datas']['dias_restantes'] ?? 'Abertas';
+            $items = $mcpRes['data'] ?? [];
+            if (!empty($items)) {
+                $featured = $items[0];
+                $tituloConcurso = $featured['titulo'] ?? 'Concurso Público';
+                $vagasSalario = $featured['vagas_salario'] ?? 'Diversas vagas';
+                $cargos = !empty($featured['cargos']) ? implode(', ', $featured['cargos']) : ($featured['cargos_resumo'] ?? 'Educação');
+                $escolaridade = $featured['formacao'] ?? 'Médio / Superior';
+                $linkEdital = $featured['noticia']['link'] ?? 'https://www.pciconcursos.com.br';
+                $dias = $featured['datas']['dias_restantes'] ?? 'Abertas';
 
-            $articleTopic = "Análise e Guia de Estudos do $tituloConcurso ($uf)";
-            $contestInfo = "Dados do Edital:\n- Órgão: $tituloConcurso ($uf)\n- Vagas e Remuneração: $vagasSalario\n- Cargos: $cargos\n- Escolaridade: $escolaridade\n- Prazo de Inscrição: $dias dias restantes\n- Link do Edital Oficial: $linkEdital";
-            $defaultCategory = "Concursos";
+                $articleTopic = "Análise e Guia de Estudos do $tituloConcurso ($uf)";
+                $contestInfo = "Dados do Edital:\n- Órgão: $tituloConcurso ($uf)\n- Vagas e Remuneração: $vagasSalario\n- Cargos: $cargos\n- Escolaridade: $escolaridade\n- Prazo de Inscrição: $dias dias restantes\n- Link do Edital Oficial: $linkEdital";
+                $defaultCategory = "Concursos";
+            } else {
+                $articleTopic = "Guia Prático de Estudos para Concursos da Educação em $uf";
+                $defaultCategory = "Concursos";
+            }
+        } elseif ($mode === 'education_topic') {
+            $topicsList = [
+                "Como Gabaritar a LDB (Lei de Diretrizes e Bases) em Concursos da Educação",
+                "5 Conteúdos Pedagógicos que Mais Caem nas Provas de Professores",
+                "Português para Concursos Públicos: Principais Pegadinhas da Banca",
+                "Planejamento de Aula e Avaliação Escolar: Guia de Revisão Rápida"
+            ];
+            $articleTopic = $topicsList[array_rand($topicsList)];
+            $defaultCategory = "Pedagogia / Dicas";
         } else {
-            $articleTopic = "Guia Prático de Estudos para Concursos da Educação em $uf";
-            $defaultCategory = "Concursos";
+            $articleTopic = !empty($customPrompt) ? $customPrompt : "Dicas de Estudo e Preparação para Concursos Públicos";
+            $defaultCategory = "Geral";
         }
-    } elseif ($mode === 'education_topic') {
-        $topicsList = [
-            "Como Gabaritar a LDB (Lei de Diretrizes e Bases) em Concursos da Educação",
-            "5 Conteúdos Pedagógicos que Mais Caem nas Provas de Professores",
-            "Português para Concursos Públicos: Principais Pegadinhas da Banca",
-            "Planejamento de Aula e Avaliação Escolar: Guia de Revisão Rápida"
-        ];
-        $articleTopic = $topicsList[array_rand($topicsList)];
-        $defaultCategory = "Pedagogia / Dicas";
-    } else {
-        $articleTopic = !empty($customPrompt) ? $customPrompt : "Dicas de Estudo e Preparação para Concursos Públicos";
-        $defaultCategory = "Geral";
     }
 
     // 2. Engenharia de Prompt Especializada com Diagramação Profissional HTML
@@ -228,27 +251,29 @@ DIRETRIZES DE FORMATAÇÃO E DIAGRAMAÇÃO HTML:
 3. ESTRUTURA VISUAL OBRIGATÓRIA NO HTML:
    - Títulos de Seção: <div class=\"sec-title\"><span class=\"sec-num\">1</span> <h2>1. Visão Geral e Contexto</h2></div>
    - Subtítulos: <div class=\"subsec\">Subtítulo da Seção</div>
-   - Dica do Professor/Especialista: <div class=\"box tip\"><strong>💡 Dica de Estudos:</strong> Conteúdo da dica...</div>
-   - Informações Relevantes / Alertas: <div class=\"box info\"><strong>ℹ️ Informações Importantes:</strong> Conteúdo fluido...</div>
+   - Dica do Professor/Especialista: <div class=\"box tip\"><strong>💡 Dica do Especialista:</strong> Conteúdo relevante...</div>
+   - Informações Relevantes / Alertas: <div class=\"box info\"><strong>ℹ️ Informações Importantes:</strong> Conteúdo em texto fluido...</div>
    - Tabelas (quando aplicável): <div class=\"table-wrap\"><table class=\"table\"><thead><tr><th>Tópico</th><th>Detalhe</th><th>Impacto</th></tr></thead><tbody><tr><td class=\"b\">Item</td><td class=\"c\">Descrição</td><td>Aplicação</td></tr></tbody></table></div>
-   - Caixa de Chamada (CTA) ao final: <div class=\"post-cta-box\"><h3>Quer se preparar melhor para concursos e seleções da educação?</h3><p>Estude com o ISP Preparatórios!</p><a href=\"/cursos.php\" class=\"btn\">Conhecer Nossos Cursos</a></div>
+   - Caixa de Chamada (CTA) ao final: <div class=\"post-cta-box\"><h3>Quer se preparar com excelência?</h3><p>Conheça os cursos e preparatórios do ISP!</p><a href=\"/cursos.php\" class=\"btn\">Conhecer Nossos Cursos</a></div>
 
-DIRETRIZ DE TEMÁTICA:
-- Se a solicitação for sobre um Concurso Público específico, apresente análise de edital, vagas, disciplinas e dicas de estudos.
-- Se a solicitação for sobre uma Portaria do MEC, Lei, LDB, Resolução, Notícia ou Tema Pedagógico, escreva um artigo educacional/informativo detalhando os impactos, a aplicação prática na educação e como o assunto pode ser cobrado. NÃO invente edital fictício de concurso público se o tema não for sobre concurso!
+DIRETRIZ DE NANO BANANA (IMAGENS):
+Crie dois prompts específicos no estilo Nano Banana 3D:
+1. 'cover_image_prompt': um prompt descritivo para a CAPA DO POST (conceito visual 3D ilustrativo, vibrante, sem rostos humanos fotográficos).
+2. 'inline_image_prompt': um prompt descritivo para uma ILUSTRAÇÃO INTERNA do corpo do post (diagrama visual 3D, ícones 3D ou ambiente de estudo).
 
 Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
 {
-  \"title\": \"Título Oficial e Atrativo do Post\",
+  \"title\": \"Título Oficial do Post\",
   \"category\": \"$defaultCategory\",
   \"meta_title\": \"Meta Title SEO (máx 70 caracteres)\",
   \"meta_description\": \"Resumo SEO de 150 caracteres\",
   \"seo_keywords\": \"Palavras-chave separadas por vírgula\",
-  \"image_prompt\": \"conceito visual ilustração 3d moderna sobre o tema do artigo\",
+  \"cover_image_prompt\": \"descrição da capa no estilo nano banana 3d\",
+  \"inline_image_prompt\": \"descrição da imagem interna no estilo nano banana 3d\",
   \"html_content\": \"<div class=\\\"sec-title\\\">...</div>...\"
 }";
 
-    $userMessage = "Tema Solicitado: $articleTopic\n" . ($contestInfo ? "\n$contestInfo\n" : "");
+    $userMessage = "Tema / Conteúdo Solicitado: $articleTopic\n" . ($contestInfo ? "\n$contestInfo\n" : "");
 
     // 3. Executar chamada de API conforme o Provedor de IA
     $jsonRaw = '';
@@ -292,7 +317,6 @@ Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
 
         $parsed = json_decode($res, true);
 
-        // Verificar erros da API
         if (isset($parsed['error'])) {
             $errMsg = $parsed['error']['message'] ?? json_encode($parsed['error']);
             echo json_encode([
@@ -302,17 +326,15 @@ Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
             exit;
         }
 
-        // Verificar bloqueio por segurança
         $finishReason = $parsed['candidates'][0]['finishReason'] ?? '';
         if ($finishReason === 'SAFETY') {
             echo json_encode([
                 'success' => false,
-                'error' => 'A IA bloqueou a resposta por filtro de segurança. Tente reformular o tema.'
+                'error' => 'A IA bloqueou a resposta por filtro de segurança. Tente reformular a solicitação.'
             ]);
             exit;
         }
 
-        // Extrair texto — suporte a modelos com thinking (múltiplas parts)
         $parts = $parsed['candidates'][0]['content']['parts'] ?? [];
         $jsonRaw = '';
         foreach ($parts as $part) {
@@ -321,10 +343,9 @@ Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
             }
         }
 
-        $debugInfo = "Provider: gemini | HTTP: $httpCode | FinishReason: $finishReason | Parts: " . count($parts);
+        $debugInfo = "Provider: gemini | HTTP: $httpCode | FinishReason: $finishReason";
 
     } else {
-        // Groq / OpenAI / OpenRouter
         $openrouterModel = !empty($config['ai_openrouter_model']) ? $config['ai_openrouter_model'] : 'meta-llama/llama-3.3-70b-instruct';
         $endpoints = [
             'groq' => ['url' => 'https://api.groq.com/openai/v1/chat/completions', 'model' => 'llama-3.3-70b-versatile'],
@@ -376,7 +397,6 @@ Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
 
         $parsed = json_decode($res, true);
 
-        // Verificar erros da API
         if (isset($parsed['error'])) {
             $errMsg = is_array($parsed['error']) ? ($parsed['error']['message'] ?? json_encode($parsed['error'])) : $parsed['error'];
             echo json_encode([
@@ -403,12 +423,13 @@ Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
     }
 
     $title = $aiData['title'] ?? $articleTopic;
-    $category = $aiData['category'] ?? 'Concursos';
+    $category = $aiData['category'] ?? $defaultCategory;
     $metaTitle = $aiData['meta_title'] ?? $title;
-    $metaDesc = $aiData['meta_description'] ?? 'Saiba tudo sobre concursos e oportunidades da educação com o ISP Preparatórios.';
-    $keywords = $aiData['seo_keywords'] ?? 'concurso, edital, professores, maranhão';
+    $metaDesc = $aiData['meta_description'] ?? 'Saiba tudo sobre educação e legislações no Blog do ISP Preparatórios.';
+    $keywords = $aiData['seo_keywords'] ?? 'educação, mec, legislação, concurso, dicas de estudo';
     $htmlContent = $aiData['html_content'];
-    $imagePrompt = $aiData['image_prompt'] ?? 'education contest study books student maranhao';
+    $coverPrompt = !empty($aiData['cover_image_prompt']) ? $aiData['cover_image_prompt'] : ($aiData['image_prompt'] ?? $title);
+    $inlinePrompt = !empty($aiData['inline_image_prompt']) ? $aiData['inline_image_prompt'] : '';
 
     // Truncar campos para respeitar limites do banco
     $title = safe_substr($title, 0, 250);
@@ -427,32 +448,28 @@ Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
     ]);
     $slug = preg_replace('/[\s-]+/', '-', trim(preg_replace('/[^a-z0-9\s-]/', '', $slugText)));
 
-    // 5. Gerar e salvar a Imagem de Capa via IA (Pollinations AI)
-    $coverFilename = 'agent_' . uniqid() . '.jpg';
-    $uploadDir = __DIR__ . '/../uploads/';
-    if (!file_exists($uploadDir)) {
-        @mkdir($uploadDir, 0777, true);
-    }
-
-    $finalImgPrompt = "3d graphic illustration of public exam edital verticalizado study map, checklist notebook, pen, study strategy diagram, glowing blue and orange lighting, high quality 8k render, no human faces";
-    $imgUrl = "https://image.pollinations.ai/prompt/" . urlencode($finalImgPrompt) . "?width=800&height=500&nologo=true";
-    
-    $chImg = curl_init($imgUrl);
-    curl_setopt_array($chImg, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_TIMEOUT => 20,
-        CURLOPT_SSL_VERIFYPEER => false
-    ]);
-    $imgData = curl_exec($chImg);
-
-    if ($imgData && strlen($imgData) > 5000) {
-        @file_put_contents($uploadDir . $coverFilename, $imgData);
-    } else {
+    // 5. Gerar Imagem de CAPA no estilo Nano Banana 3D
+    $coverFilename = NanoBananaGenerator::generateImage($coverPrompt, $pdo, 1200, 630);
+    if (!$coverFilename) {
         $coverFilename = '';
     }
 
-    // 6. Inserir no Banco de Dados
+    // 6. Gerar Imagem INTERNA do post no estilo Nano Banana 3D e inserir no HTML
+    if (!empty($inlinePrompt)) {
+        $inlineFilename = NanoBananaGenerator::generateImage($inlinePrompt, $pdo, 1024, 600);
+        if ($inlineFilename) {
+            $inlineHtml = '<figure class="post-inline-img" style="margin: 2rem 0; text-align: center;"><img src="../uploads/' . $inlineFilename . '" alt="' . htmlspecialchars($title) . '" style="width: 100%; max-width: 850px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: block; margin: 0 auto;"><figcaption style="font-size: 0.85rem; color: #666; margin-top: 0.6rem; font-style: italic;">Ilustração temática (Nano Banana 3D Render)</figcaption></figure>';
+
+            if (preg_match('/(<\/div>\s*<\/div>)/i', $htmlContent, $mInline, PREG_OFFSET_CAPTURE)) {
+                $pos = $mInline[0][1] + strlen($mInline[0][0]);
+                $htmlContent = substr_replace($htmlContent, "\n" . $inlineHtml . "\n", $pos, 0);
+            } else {
+                $htmlContent .= "\n" . $inlineHtml;
+            }
+        }
+    }
+
+    // 7. Inserir no Banco de Dados
     $now = date('Y-m-d H:i:s');
     $stmt = $pdo->prepare("INSERT INTO posts (title, category, content, cover_image, image_alt, status, seo_keywords, meta_title, meta_description, slug, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([
@@ -479,7 +496,7 @@ Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
         'cover_image' => $coverFilename,
         'slug' => $slug,
         'status' => $status,
-        'message' => "Post '$title' gerado com diagramação profissional em HTML e salvo com sucesso!"
+        'message' => "Post '$title' gerado com sucesso com dados da fonte e imagens Nano Banana 3D!"
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } catch (Exception $e) {
