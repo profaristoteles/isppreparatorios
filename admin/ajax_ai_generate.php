@@ -41,14 +41,15 @@ try {
         exit;
     }
 
-    // Instrução do sistema (igual para todos)
-    $system_instruction = "Você é um redator especialista em concursos públicos da área da educação no Brasil. Escreva o artigo completo formatado em HTML nativo (use tags <h2>, <p>, <ul>, <strong>). Não use formatação markdown de código, retorne apenas o HTML limpo, pronto para ser inserido em um editor de texto rico.";
+    // Instrução do sistema (igual para todos os provedores)
+    $system_instruction = "Você é um redator oficial e especialista em Educação e Concursos Públicos no Brasil. Escreva o artigo completo formatado em HTML nativo (use tags <h2>, <h3>, <p>, <ul>, <strong>, <table>, <div class=\"box info\">). Se o tema for sobre concursos, apresente edital, vagas e dicas. Se for sobre portarias do MEC, legislação, LDB ou pedagogia, escreva um artigo informativo e jornalístico detalhando os impactos e como aplicar. Não use blocos de código markdown, retorne apenas o HTML limpo, pronto para o editor de texto.";
     $user_message = "Tema sugerido pelo administrador: " . $prompt;
 
     // Montar URL, payload conforme o provedor e executar via cURL
     $url = '';
     $payload = '';
     $authHeader = '';
+    $openrouterModel = !empty($config['ai_openrouter_model']) ? $config['ai_openrouter_model'] : 'meta-llama/llama-3.3-70b-instruct';
 
     switch ($provider) {
         case 'gemini':
@@ -91,7 +92,7 @@ try {
         case 'openrouter':
             $url = 'https://openrouter.ai/api/v1/chat/completions';
             $payload = json_encode([
-                "model" => "meta-llama/llama-3.3-70b-instruct",
+                "model" => $openrouterModel,
                 "messages" => [
                     ["role" => "system", "content" => $system_instruction],
                     ["role" => "user", "content" => $user_message]

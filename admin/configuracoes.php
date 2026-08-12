@@ -17,10 +17,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ai_groq_key = $_POST['ai_groq_key'] ?? '';
     $ai_openai_key = $_POST['ai_openai_key'] ?? '';
     $ai_openrouter_key = $_POST['ai_openrouter_key'] ?? '';
+    $ai_openrouter_model = trim($_POST['ai_openrouter_model'] ?? '');
+    if (empty($ai_openrouter_model)) {
+        $ai_openrouter_model = 'meta-llama/llama-3.3-70b-instruct';
+    }
     $site_description = $_POST['site_description'] ?? '';
 
-    $stmt = $pdo->prepare("UPDATE configuracoes SET theme_color_primary=?, theme_color_secondary=?, footer_text=?, phone=?, email=?, facebook=?, instagram=?, youtube=?, tiktok=?, ai_provider=?, ai_api_key=?, ai_groq_key=?, ai_openai_key=?, ai_openrouter_key=?, site_description=? WHERE id=1");
-    if($stmt->execute([$primary, $secondary, $footer, $phone, $email, $facebook, $instagram, $youtube, $tiktok, $ai_provider, $ai_api_key, $ai_groq_key, $ai_openai_key, $ai_openrouter_key, $site_description])){
+    $stmt = $pdo->prepare("UPDATE configuracoes SET theme_color_primary=?, theme_color_secondary=?, footer_text=?, phone=?, email=?, facebook=?, instagram=?, youtube=?, tiktok=?, ai_provider=?, ai_api_key=?, ai_groq_key=?, ai_openai_key=?, ai_openrouter_key=?, ai_openrouter_model=?, site_description=? WHERE id=1");
+    if($stmt->execute([$primary, $secondary, $footer, $phone, $email, $facebook, $instagram, $youtube, $tiktok, $ai_provider, $ai_api_key, $ai_groq_key, $ai_openai_key, $ai_openrouter_key, $ai_openrouter_model, $site_description])){
         $_SESSION['msg'] = "Configurações salvas com sucesso!";
     } else {
         $_SESSION['erro'] = "Erro ao salvar configurações.";
@@ -98,7 +102,7 @@ require_once 'includes/header.php';
                     <option value="gemini" <?= ($config['ai_provider'] ?? '') === 'gemini' ? 'selected' : '' ?>>🔵 Google Gemini (Gratuito com limites)</option>
                     <option value="groq" <?= ($config['ai_provider'] ?? '') === 'groq' ? 'selected' : '' ?>>🟢 Groq (Gratuito e Rápido)</option>
                     <option value="openai" <?= ($config['ai_provider'] ?? '') === 'openai' ? 'selected' : '' ?>>⚪ OpenAI (ChatGPT - Pago)</option>
-                    <option value="openrouter" <?= ($config['ai_provider'] ?? '') === 'openrouter' ? 'selected' : '' ?>>🟠 OpenRouter (Múltiplos modelos)</option>
+                    <option value="openrouter" <?= ($config['ai_provider'] ?? '') === 'openrouter' ? 'selected' : '' ?>>🟠 OpenRouter (Múltiplos modelos LLM)</option>
                 </select>
             </div>
 
@@ -127,7 +131,24 @@ require_once 'includes/header.php';
             <div id="key_openrouter" class="ai-key-group" style="margin-top: 1rem;">
                 <label>OpenRouter API Key</label>
                 <input type="text" name="ai_openrouter_key" class="form-control" placeholder="sk-or-..." value="<?= htmlspecialchars($config['ai_openrouter_key'] ?? '') ?>">
-                <small style="color: var(--text-secondary); display: block; margin-top: 0.3rem;">Obtenha em <a href="https://openrouter.ai/keys" target="_blank" style="color: var(--prism-cyan);">openrouter.ai</a></small>
+                <small style="color: var(--text-secondary); display: block; margin-top: 0.3rem; margin-bottom: 1rem;">Obtenha em <a href="https://openrouter.ai/keys" target="_blank" style="color: var(--prism-cyan);">openrouter.ai</a></small>
+
+                <label>Modelo LLM (OpenRouter)</label>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
+                    <select id="openrouter_preset" class="form-control" style="flex: 1;" onchange="setOpenrouterModel(this.value)">
+                        <option value="">-- Selecionar modelo pré-configurado --</option>
+                        <option value="meta-llama/llama-3.3-70b-instruct">Meta: Llama 3.3 70B Instruct (Recomendado)</option>
+                        <option value="deepseek/deepseek-chat">DeepSeek: DeepSeek V3</option>
+                        <option value="deepseek/deepseek-r1">DeepSeek: DeepSeek R1 (Raciocínio)</option>
+                        <option value="anthropic/claude-3.5-sonnet">Anthropic: Claude 3.5 Sonnet</option>
+                        <option value="google/gemini-2.0-flash-001">Google: Gemini 2.0 Flash</option>
+                        <option value="openai/gpt-4o-mini">OpenAI: GPT-4o Mini</option>
+                        <option value="qwen/qwen-2.5-72b-instruct">Qwen: Qwen 2.5 72B Instruct</option>
+                        <option value="custom">Outro (Digitar ID personalizado)</option>
+                    </select>
+                </div>
+                <input type="text" name="ai_openrouter_model" id="ai_openrouter_model" class="form-control" style="margin-top: 0.5rem;" placeholder="Ex: meta-llama/llama-3.3-70b-instruct" value="<?= htmlspecialchars($config['ai_openrouter_model'] ?? 'meta-llama/llama-3.3-70b-instruct') ?>">
+                <small style="color: var(--text-secondary); display: block; margin-top: 0.3rem;">Informe o ID exato do modelo conforme listado no catálogo da OpenRouter (<a href="https://openrouter.ai/models" target="_blank" style="color: var(--prism-cyan);">openrouter.ai/models</a>).</small>
             </div>
         </div>
 
@@ -142,6 +163,13 @@ function toggleApiKeys() {
     document.getElementById('key_' + provider).style.display = 'block';
 }
 toggleApiKeys();
+
+function setOpenrouterModel(val) {
+    if (val && val !== 'custom') {
+        document.getElementById('ai_openrouter_model').value = val;
+    }
+}
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
+

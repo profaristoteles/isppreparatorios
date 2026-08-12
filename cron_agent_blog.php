@@ -202,10 +202,11 @@ if ($provider === 'gemini') {
         }
     }
 } else {
+    $openrouterModel = !empty($config['ai_openrouter_model']) ? $config['ai_openrouter_model'] : 'meta-llama/llama-3.3-70b-instruct';
     $endpoints = [
         'groq' => ['url' => 'https://api.groq.com/openai/v1/chat/completions', 'model' => 'llama-3.3-70b-versatile'],
         'openai' => ['url' => 'https://api.openai.com/v1/chat/completions', 'model' => 'gpt-4o-mini'],
-        'openrouter' => ['url' => 'https://openrouter.ai/api/v1/chat/completions', 'model' => 'meta-llama/llama-3.3-70b-instruct']
+        'openrouter' => ['url' => 'https://openrouter.ai/api/v1/chat/completions', 'model' => $openrouterModel]
     ];
     $ep = $endpoints[$provider];
 

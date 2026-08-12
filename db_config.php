@@ -35,6 +35,15 @@ try {
     }
 } catch (Exception $e) { /* tabela pode não existir ainda */ }
 
+// Auto-migration: coluna ai_openrouter_model na tabela configuracoes
+try {
+    $cols = $pdo->query("SHOW COLUMNS FROM configuracoes LIKE 'ai_openrouter_model'")->fetchAll();
+    if (empty($cols)) {
+        $pdo->exec("ALTER TABLE configuracoes ADD COLUMN ai_openrouter_model VARCHAR(255) DEFAULT 'meta-llama/llama-3.3-70b-instruct'");
+    }
+} catch (Exception $e) { /* tabela pode não existir ainda */ }
+
+
 // Auto-migration: colunas SEO de posts (meta_title, meta_description, slug, image_alt)
 // Garante que existam E tenham tamanho suficiente (VARCHAR 500)
 try {

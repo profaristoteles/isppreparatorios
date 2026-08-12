@@ -124,18 +124,29 @@ try {
     // 1. Coletar dados base conforme o modo e o prompt do usuário
     $contestInfo = "";
     $articleTopic = "";
+    $defaultCategory = "Concursos";
+
+    // Verificar se o tema/prompt é claramente um concurso público
+    $isExplicitContest = false;
+    if (!empty($customPrompt)) {
+        if (preg_match('/\b(concurso|edital|prefeitura|selecao|seleção|processo seletivo|banca|gabarito|vagas)\b/i', $customPrompt)) {
+            $isExplicitContest = true;
+        }
+    }
 
     if (!empty($customPrompt) && strlen($customPrompt) > 2) {
-        // Se o usuário digitou uma cidade ou tema específico (ex: "humberto de campos" ou "concurso prefeitura de humberto de campos ma")
-        $mcpRes = PciMcpClient::pesquisarConcursos($customPrompt, $uf);
-        $items = $mcpRes['data'] ?? [];
+        $items = [];
+        if ($isExplicitContest || $mode === 'pci_contest') {
+            // Tentar pesquisar edital no PCI Concursos se for um tema de concurso
+            $mcpRes = PciMcpClient::pesquisarConcursos($customPrompt, $uf);
+            $items = $mcpRes['data'] ?? [];
 
-        if (empty($items)) {
-            // Tentar extrair nome de cidade limpo
-            $cidadeLimpa = trim(preg_replace('/(concurso|prefeitura|pública|da|de|do|ma|sp|rj|pi|ce|ba|se|al|pe|pb|rn)/i', '', $customPrompt));
-            if (!empty($cidadeLimpa) && strlen($cidadeLimpa) >= 3) {
-                $mcpResCidade = PciMcpClient::buscarPorCidade($cidadeLimpa);
-                $items = $mcpResCidade['data'] ?? [];
+            if (empty($items)) {
+                $cidadeLimpa = trim(preg_replace('/(concurso|prefeitura|pública|da|de|do|ma|sp|rj|pi|ce|ba|se|al|pe|pb|rn)/i', '', $customPrompt));
+                if (!empty($cidadeLimpa) && strlen($cidadeLimpa) >= 3) {
+                    $mcpResCidade = PciMcpClient::buscarPorCidade($cidadeLimpa);
+                    $items = $mcpResCidade['data'] ?? [];
+                }
             }
         }
 
@@ -151,11 +162,24 @@ try {
 
             $articleTopic = "Análise e Guia de Estudos do $tituloConcurso ($uf)";
             $contestInfo = "Dados Oficiais do Edital no PCI Concursos:\n- Órgão: $tituloConcurso ($uf)\n- Vagas e Remuneração: $vagasSalario\n- Cargos: $cargos\n- Escolaridade: $escolaridade\n- Prazo de Inscrição: $dias\n- Link do Edital Oficial: $linkEdital";
+            $defaultCategory = "Concursos";
+        } elseif ($isExplicitContest) {
+            // É um concurso solicitado pelo usuário, mas não listado no PCI no momento
+            $articleTopic = "Guia de Estudos e Análise do Concurso Público: " . ucwords(mb_strtolower($customPrompt, 'UTF-8'));
+            $contestInfo = "O artigo DEVE ser ESTRITAMENTE sobre o concurso indicado: " . $customPrompt . " ($uf).\nFoque na preparação completa (disciplinas essenciais, dicas de estudos e bancas organizadoras).";
+            $defaultCategory = "Concursos";
         } else {
-            // Se o edital específico não foi encontrado no PCI no momento,
-            // NUNCA carregar outra cidade aleatória! Usar ESTRITAMENTE o município solicitado pelo usuário.
-            $articleTopic = "Guia de Estudos e Análise do Concurso Público da " . ucwords(mb_strtolower($customPrompt, 'UTF-8'));
-            $contestInfo = "O artigo DEVE ser ESTRITAMENTE sobre: " . $customPrompt . ".\nFoque na preparação completa para este município ($uf), detalhando disciplinas essenciais (Português, LDB, Conhecimentos Pedagógicos e Específicos), dicas de estudos por bancas organizadoras regionais e orientações para os candidatos.";
+            // NÃO É CONCURSO ou É TEMA GERAL / LEGISLAÇÃO / NOTÍCIA / MEC / PEDAGOGIA!
+            $articleTopic = $customPrompt;
+            $contestInfo = "Tema Solicitado pelo Usuário: $customPrompt.\nATENÇÃO: Este artigo NÃO é sobre um concurso público fictício! É um artigo temático, educativo ou informativo sobre o assunto especificado ($customPrompt). Apresente dados precisos, contexto pedagógico/normativo, análise detalhada e orientações práticas para educadores e estudantes. NÃO invente tabelas de vagas de concursos nem edital fictício.";
+            
+            if (preg_match('/\b(portaria|mec|lei|ldb|diretriz|resolucao|resolução|decreto|bncc|legisla)/i', $customPrompt)) {
+                $defaultCategory = "Legislação / MEC";
+            } elseif (preg_match('/\b(dica|estudo|metodologia|planejamento|aula|pedagog)/i', $customPrompt)) {
+                $defaultCategory = "Pedagogia / Dicas";
+            } else {
+                $defaultCategory = "Notícias";
+            }
         }
     } elseif ($mode === 'pci_contest') {
         // Se nenhum prompt específico foi digitado, buscar edital geral de destaque na PCI para o estado
@@ -176,8 +200,10 @@ try {
 
             $articleTopic = "Análise e Guia de Estudos do $tituloConcurso ($uf)";
             $contestInfo = "Dados do Edital:\n- Órgão: $tituloConcurso ($uf)\n- Vagas e Remuneração: $vagasSalario\n- Cargos: $cargos\n- Escolaridade: $escolaridade\n- Prazo de Inscrição: $dias dias restantes\n- Link do Edital Oficial: $linkEdital";
+            $defaultCategory = "Concursos";
         } else {
             $articleTopic = "Guia Prático de Estudos para Concursos da Educação em $uf";
+            $defaultCategory = "Concursos";
         }
     } elseif ($mode === 'education_topic') {
         $topicsList = [
@@ -187,35 +213,38 @@ try {
             "Planejamento de Aula e Avaliação Escolar: Guia de Revisão Rápida"
         ];
         $articleTopic = $topicsList[array_rand($topicsList)];
+        $defaultCategory = "Pedagogia / Dicas";
     } else {
         $articleTopic = !empty($customPrompt) ? $customPrompt : "Dicas de Estudo e Preparação para Concursos Públicos";
+        $defaultCategory = "Geral";
     }
 
     // 2. Engenharia de Prompt Especializada com Diagramação Profissional HTML
-    $systemInstruction = "Você é o Redator Oficial do ISP Preparatórios. Escreva um artigo de blog completo sobre o concurso indicado, otimizado para SEO e com diagramação HTML profissional impecável.
+    $systemInstruction = "Você é o Redator Oficial do ISP Preparatórios. Escreva um artigo de blog completo e aprofundado sobre o tema solicitado ('$articleTopic'), otimizado para SEO e com diagramação HTML profissional impecável.
 
 DIRETRIZES DE FORMATAÇÃO E DIAGRAMAÇÃO HTML:
 1. No 'html_content', escreva APENAS o código HTML limpo do corpo do artigo. É ESTRITAMENTE PROIBIDO incluir a palavra 'json', chaves {}, ou aspas do formato JSON dentro do 'html_content'.
-2. PROIBIÇÃO DE TEXTO VERTICAL: Escreva todos os textos, títulos e tabelas de forma horizontal normal. NUNCA crie células de tabela ou blocos com letras empilhadas verticalmente (ex: NUNCA faça letras uma embaixo da outra).
+2. PROIBIÇÃO DE TEXTO VERTICAL: Escreva todos os textos, títulos e tabelas de forma horizontal normal. NUNCA crie células de tabela ou blocos com letras empilhadas verticalmente.
 3. ESTRUTURA VISUAL OBRIGATÓRIA NO HTML:
-   - Títulos de Seção: <div class=\"sec-title\"><span class=\"sec-num\">1</span> <h2>1. Resumo e Visão Geral do Edital</h2></div>
-   - Subtítulos: <div class=\"subsec\">Principais Informações do Concurso</div>
-   - Dica do Professor: <div class=\"box tip\"><strong>💡 Dica de Estudos:</strong> Conteúdo da dica...</div>
-   - Informações Relevantes: <div class=\"box info\"><strong>ℹ️ Informações Importantes:</strong> Conteúdo em texto fluido...</div>
-   - Tabelas Responsivas: <div class=\"table-wrap\"><table class=\"table\"><thead><tr><th>Cargo</th><th>Vagas</th><th>Remuneração</th></tr></thead><tbody><tr><td class=\"b\">Nome do Cargo</td><td class=\"c\">01</td><td>R$ 3.500,00</td></tr></tbody></table></div>
-   - Caixa de Chamada (CTA) ao final: <div class=\"post-cta-box\"><h3>Quer garantir a sua aprovação neste concurso?</h3><p>Estude com o ISP Preparatórios!</p><a href=\"/cursos.php\" class=\"btn\">Conhecer Nossos Cursos</a></div>
+   - Títulos de Seção: <div class=\"sec-title\"><span class=\"sec-num\">1</span> <h2>1. Visão Geral e Contexto</h2></div>
+   - Subtítulos: <div class=\"subsec\">Subtítulo da Seção</div>
+   - Dica do Professor/Especialista: <div class=\"box tip\"><strong>💡 Dica de Estudos:</strong> Conteúdo da dica...</div>
+   - Informações Relevantes / Alertas: <div class=\"box info\"><strong>ℹ️ Informações Importantes:</strong> Conteúdo fluido...</div>
+   - Tabelas (quando aplicável): <div class=\"table-wrap\"><table class=\"table\"><thead><tr><th>Tópico</th><th>Detalhe</th><th>Impacto</th></tr></thead><tbody><tr><td class=\"b\">Item</td><td class=\"c\">Descrição</td><td>Aplicação</td></tr></tbody></table></div>
+   - Caixa de Chamada (CTA) ao final: <div class=\"post-cta-box\"><h3>Quer se preparar melhor para concursos e seleções da educação?</h3><p>Estude com o ISP Preparatórios!</p><a href=\"/cursos.php\" class=\"btn\">Conhecer Nossos Cursos</a></div>
 
-TEMA DO ARTIGO:
-O artigo DEVE ser OBRIGATORIAMENTE sobre o município/órgão especificado: \"$articleTopic\". É estritamente proibido trocar de cidade.
+DIRETRIZ DE TEMÁTICA:
+- Se a solicitação for sobre um Concurso Público específico, apresente análise de edital, vagas, disciplinas e dicas de estudos.
+- Se a solicitação for sobre uma Portaria do MEC, Lei, LDB, Resolução, Notícia ou Tema Pedagógico, escreva um artigo educacional/informativo detalhando os impactos, a aplicação prática na educação e como o assunto pode ser cobrado. NÃO invente edital fictício de concurso público se o tema não for sobre concurso!
 
 Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
 {
-  \"title\": \"Título Oficial do Post\",
-  \"category\": \"Concursos\",
+  \"title\": \"Título Oficial e Atrativo do Post\",
+  \"category\": \"$defaultCategory\",
   \"meta_title\": \"Meta Title SEO (máx 70 caracteres)\",
   \"meta_description\": \"Resumo SEO de 150 caracteres\",
   \"seo_keywords\": \"Palavras-chave separadas por vírgula\",
-  \"image_prompt\": \"edital verticalizado mapa de estudos concurso publico\",
+  \"image_prompt\": \"conceito visual ilustração 3d moderna sobre o tema do artigo\",
   \"html_content\": \"<div class=\\\"sec-title\\\">...</div>...\"
 }";
 
@@ -296,10 +325,11 @@ Retorne ESTRITAMENTE um objeto JSON válido com as seguintes chaves:
 
     } else {
         // Groq / OpenAI / OpenRouter
+        $openrouterModel = !empty($config['ai_openrouter_model']) ? $config['ai_openrouter_model'] : 'meta-llama/llama-3.3-70b-instruct';
         $endpoints = [
             'groq' => ['url' => 'https://api.groq.com/openai/v1/chat/completions', 'model' => 'llama-3.3-70b-versatile'],
             'openai' => ['url' => 'https://api.openai.com/v1/chat/completions', 'model' => 'gpt-4o-mini'],
-            'openrouter' => ['url' => 'https://openrouter.ai/api/v1/chat/completions', 'model' => 'meta-llama/llama-3.3-70b-instruct']
+            'openrouter' => ['url' => 'https://openrouter.ai/api/v1/chat/completions', 'model' => $openrouterModel]
         ];
         $ep = $endpoints[$provider] ?? null;
 
