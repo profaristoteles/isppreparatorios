@@ -278,6 +278,7 @@ function runAiBlogAgent() {
         <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
             <button type="submit" class="btn" onclick="document.getElementById('post_status').value='publicado'" style="background: #ff8000; border: none; color: #fff; font-weight: 600; padding: 0.6rem 1.5rem;"><i class="fas fa-paper-plane"></i> Publicar</button>
             <button type="submit" class="btn" onclick="document.getElementById('post_status').value='rascunho'" style="background: #e9ecef; border: 1px solid #ccc; color: #333; font-weight: 600; padding: 0.6rem 1.5rem;"><i class="fas fa-save"></i> Salvar Rascunho</button>
+            <button type="button" class="btn" onclick="openPreviewModal()" style="background: #0077b6; border: none; color: #fff; font-weight: 600; padding: 0.6rem 1.5rem;"><i class="fas fa-eye"></i> Pré-visualizar Post</button>
             <button type="button" class="btn btn-warning" onclick="resetForm()">Novo Post</button>
             <span id="status_indicator" style="display:none; font-size: 0.8rem; padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: 600;"></span>
         </div>
@@ -323,12 +324,174 @@ function runAiBlogAgent() {
                 ?>
             </td>
             <td>
+                <button type="button" class="btn" onclick="openPreviewModal(<?= htmlspecialchars(json_encode($p), ENT_QUOTES, 'UTF-8') ?>)" style="background: #0077b6; padding: 5px 12px; font-size: 0.82rem; margin-right: 4px;" title="Pré-visualizar"><i class="fas fa-eye"></i> Ver</button>
                 <button type="button" class="btn" onclick="editarPost(<?= htmlspecialchars(json_encode($p), ENT_QUOTES, 'UTF-8') ?>)">Editar</button>
                 <a href="?del=<?= $p['id'] ?>" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir?')">Excluir</a>
             </td>
         </tr>
         <?php endforeach; ?>
     </table>
+</div>
+
+<!-- Estilos da Pré-Visualização Fiel ao Site Live -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Sora:wght@100..800&display=swap');
+
+#preview-modal .blog-post-card {
+    background: #ffffff;
+    color: #1a1a2e;
+    font-family: 'DM Sans', sans-serif;
+    max-width: 900px;
+    margin: 0 auto;
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    padding: 4rem 4rem;
+    text-align: left;
+}
+
+#preview-modal .post-content {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+#preview-modal .post-content * {
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+}
+#preview-modal .post-content h2, #preview-modal .post-content h3, #preview-modal .post-content h4 {
+    font-family: 'Sora', sans-serif;
+    color: #03045e;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+#preview-modal .post-content p {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #333;
+}
+#preview-modal .post-content a {
+    color: #ff8000;
+    text-decoration: underline;
+    font-weight: 500;
+}
+#preview-modal .post-content img, #preview-modal .post-content iframe {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin: 2rem 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+#preview-modal .post-content ul, #preview-modal .post-content ol {
+    margin-bottom: 1.5rem;
+    padding-left: 2rem;
+    font-size: 1.05rem;
+    color: #333;
+}
+#preview-modal .post-content blockquote {
+    border-left: 4px solid #ff8000;
+    padding-left: 1.5rem;
+    margin: 2rem 0;
+    font-style: italic;
+    color: #555;
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0 8px 8px 0;
+}
+#preview-modal .table-wrap { overflow-x: auto; max-width: 100%; width: 100%; border-radius: 8px; border: 1px solid #dee2e6; margin: 1.5rem 0; -webkit-overflow-scrolling: touch; }
+#preview-modal .post-content table { width: 100%; border-collapse: collapse; min-width: 480px; margin: 0; font-size: 0.9rem; }
+#preview-modal .post-content thead tr { background: #03045e; color: #fff; }
+#preview-modal .post-content thead th { padding: 12px 15px; font-family: 'Sora', sans-serif; font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; text-align: left; border: none; }
+#preview-modal .post-content tbody tr:nth-child(even) { background: #f8f9fa; }
+#preview-modal .post-content tbody tr:hover { background: #e8f0fe; transition: background 0.2s; }
+#preview-modal .post-content tbody td { padding: 12px 15px; border-bottom: 1px solid #dee2e6; vertical-align: top; }
+#preview-modal .post-content tbody td.b { font-weight: 600; color: #03045e; }
+#preview-modal .post-content tbody td.c, #preview-modal .post-content thead th.c { text-align: center; }
+
+#preview-modal .sec-title { font-family: 'Sora', sans-serif; font-size: 1.25rem; font-weight: 700; color: #03045e; padding-bottom: 8px; border-bottom: 2px solid #ff8000; margin: 2.5rem 0 1.5rem; display: flex; align-items: center; gap: 10px; }
+#preview-modal .sec-num { background: #ff8000; color: #fff; font-size: 0.8rem; width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+#preview-modal .subsec { font-family: 'Sora', sans-serif; font-size: 0.9rem; font-weight: 700; color: #03045e; background: #e8f0fe; border-left: 3px solid #0077b6; padding: 8px 14px; border-radius: 0 6px 6px 0; margin: 1.5rem 0 1rem; }
+#preview-modal .box { border-radius: 8px; padding: 16px; margin: 1.5rem 0; font-size: 0.9rem; display: flex; gap: 12px; align-items: flex-start; flex-direction: column; }
+#preview-modal .box.info { background: #e8f0fe; border-left: 4px solid #0077b6; color: #03045e; }
+#preview-modal .box.tip { background: #eafaf1; border-left: 4px solid #1a7a4a; color: #145a32; }
+#preview-modal .box.warn { background: #fff8e1; border-left: 4px solid #f59e0b; color: #78350f; }
+
+#preview-modal .post-cta-box { background: linear-gradient(135deg, #03045e, #0b1340); color: #fff; border-radius: 12px; padding: 2.2rem 2rem; text-align: center; margin: 2.5rem 0; border: 1px solid rgba(0,210,255,0.3); box-shadow: 0 10px 30px rgba(3,4,94,0.2); }
+#preview-modal .post-cta-box h3 { color: #ff8000 !important; font-size: 1.35rem; margin-top: 0 !important; margin-bottom: 0.6rem !important; font-family: 'Sora', sans-serif; }
+#preview-modal .post-cta-box p { color: #e0e0e0 !important; margin-bottom: 1.4rem !important; font-size: 0.98rem; }
+#preview-modal .post-cta-box .btn { background: #ff8000; color: #fff !important; font-weight: 700; padding: 0.85rem 2.2rem; border-radius: 6px; text-decoration: none; display: inline-block; box-shadow: 0 4px 15px rgba(255,128,0,0.4); }
+</style>
+
+<!-- MODAL DE PRÉ-VISUALIZAÇÃO DO POST -->
+<div id="preview-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 999999; overflow-y: auto; padding: 2rem 1rem;">
+    <div style="max-width: 1000px; margin: 0 auto;">
+        <!-- Toolbar Superior -->
+        <div style="background: #03045e; color: #fff; padding: 1rem 1.5rem; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ff8000;">
+            <div style="display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap;">
+                <h4 style="margin: 0; color: #ff8000; font-family: 'Sora', sans-serif; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    👁️ Pré-visualização Fiel do Post
+                </h4>
+                <div style="display: flex; gap: 0.3rem; background: rgba(255,255,255,0.1); padding: 3px; border-radius: 8px;">
+                    <button type="button" onclick="setPreviewDevice('desktop')" id="btn-device-desktop" class="btn btn-sm" style="background: #ff8000; color: #fff; border: none; padding: 0.35rem 0.9rem; font-size: 0.8rem; font-weight: 600;">💻 Desktop</button>
+                    <button type="button" onclick="setPreviewDevice('mobile')" id="btn-device-mobile" class="btn btn-sm" style="background: transparent; color: #ccc; border: none; padding: 0.35rem 0.9rem; font-size: 0.8rem; font-weight: 600;">📱 Mobile</button>
+                </div>
+            </div>
+            <button type="button" onclick="closePreviewModal()" class="btn" style="background: rgba(255,255,255,0.15); color: #fff; border: none; border-radius: 50px; width: 36px; height: 36px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.1rem;">✕</button>
+        </div>
+
+        <!-- Conteúdo do Post na Pré-visualização -->
+        <div id="preview-viewport-wrap" style="background: #0b1340; padding: 2.5rem 1rem; border-radius: 0 0 16px 16px; transition: all 0.3s ease;">
+            <div id="preview-card-container" class="blog-post-card" style="transition: all 0.3s ease;">
+                
+                <!-- Cabeçalho -->
+                <div style="text-align: center; margin-bottom: 3rem;">
+                    <span id="prev-category" style="background: #ff8000; color: #fff; padding: 6px 16px; border-radius: 50px; font-size: 0.85rem; font-weight: bold; font-family: 'Sora', sans-serif; text-transform: uppercase; margin-bottom: 1.5rem; display: inline-block; letter-spacing: 1px;">
+                        Concursos
+                    </span>
+                    
+                    <h1 id="prev-title" style="color: #03045e; font-family: 'Sora', sans-serif; margin-bottom: 1.5rem; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -1px; line-height: 1.2;">
+                        Título do Post
+                    </h1>
+                    
+                    <div style="color: #6c757d; font-size: 0.95rem; font-family: 'DM Sans', sans-serif; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 1.5rem;">
+                        <span id="prev-date"><i class="far fa-calendar-alt"></i> Publicado em Hoje</span>
+                        <span style="opacity: 0.5;">|</span>
+                        <span>✍️ Por Equipe ISP</span>
+                    </div>
+                </div>
+                
+                <!-- Capa -->
+                <div id="prev-cover-wrap" style="margin-bottom: 3.5rem; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: none;">
+                    <img id="prev-cover-img" src="" alt="Capa" style="width: 100%; max-height: 480px; object-fit: cover; display: block;">
+                </div>
+                
+                <!-- Corpo do Artigo -->
+                <div id="prev-content" class="post-content">
+                    <!-- Conteúdo dinâmico -->
+                </div>
+                
+                <!-- Card de Autor -->
+                <div style="margin-top: 5rem; padding: 2rem; background: #f8f9fa; border: 1px solid #dee2e6; border-left: 4px solid #03045e; border-radius: 12px; display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+                    <div style="width: 80px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                        <img src="../uploads/logo.png" alt="ISP" style="max-width: 100%; height: auto;" onerror="this.style.display='none'">
+                    </div>
+                    <div style="flex: 1; min-width: 250px;">
+                        <h4 style="color: #03045e; font-family: 'Sora', sans-serif; font-size: 1.2rem; margin-bottom: 0.5rem; font-weight: 700;">ISP Preparatórios</h4>
+                        <p style="color: #555; font-size: 0.95rem; line-height: 1.6; margin-bottom: 0;">
+                            Especialistas em aprovação nas carreiras da educação. Nossa missão é entregar o conteúdo mais focado e atualizado para acelerar a sua nomeação.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Footer CTA do Post -->
+                <div style="text-align: center; margin-top: 4rem; padding-top: 3rem; border-top: 1px solid #dee2e6; display: flex; flex-direction: column; gap: 1.5rem; align-items: center;">
+                    <h3 style="color: #03045e; font-family: 'Sora', sans-serif; font-size: 1.4rem; margin-bottom: 0; font-weight: 700;">Dê o próximo passo rumo à sua aprovação!</h3>
+                    <a href="javascript:void(0)" class="btn" style="background: #ff8000; color: #fff; border: none; font-weight: 800; font-size: 1.05rem; padding: 1.2rem 2.5rem; border-radius: 8px; box-shadow: 0 8px 20px rgba(255,128,0,0.3); text-transform: uppercase; letter-spacing: 1px;">CONHECER NOSSOS CURSOS</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -540,6 +703,116 @@ async function gerarImagemIA() {
         loading.style.display = 'none';
     }
 }
+
+function openPreviewModal(postData = null) {
+    let title = '';
+    let category = '';
+    let content = '';
+    let coverSrc = '';
+    let dateStr = 'Publicado em ' + new Date().toLocaleDateString('pt-BR');
+
+    if (postData) {
+        // Pré-visualizar um post já existente da lista
+        title = postData.title || 'Sem Título';
+        category = postData.category || 'Concursos';
+        content = postData.content || '<p>Sem conteúdo.</p>';
+        if (postData.cover_image) {
+            coverSrc = '../uploads/' + postData.cover_image;
+        }
+        if (postData.created_at) {
+            const dateParts = postData.created_at.substring(0, 10).split('-');
+            if (dateParts.length === 3) {
+                dateStr = 'Publicado em ' + dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
+            }
+        }
+    } else {
+        // Pré-visualizar o post em edição no formulário
+        title = document.getElementById('post_title').value.trim() || 'Título do Artigo (Exemplo)';
+        category = document.getElementById('post_category').value.trim() || 'Concursos';
+        
+        if (typeof tinymce !== 'undefined' && tinymce.get('post_content')) {
+            content = tinymce.get('post_content').getContent();
+        } else {
+            content = document.getElementById('post_content').value;
+        }
+
+        if (!content || content.trim() === '') {
+            content = '<p style="color: #888; font-style: italic; text-align: center; padding: 2rem;">[O conteúdo do post está vazio no momento. Digite no editor ou clique em "⚡ GERAR POST AGORA" para redigir...]</p>';
+        }
+
+        // Checar imagem gerada por IA ou enviada por upload
+        const aiImg = document.getElementById('ai_generated_image').value;
+        if (aiImg) {
+            coverSrc = '../uploads/' + aiImg;
+        } else {
+            const fileInput = document.querySelector('input[name="cover_image"]');
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                coverSrc = URL.createObjectURL(fileInput.files[0]);
+            } else {
+                const aiPreview = document.getElementById('ai_img_preview');
+                if (aiPreview && aiPreview.src && aiPreview.src.includes('uploads/')) {
+                    coverSrc = aiPreview.src;
+                }
+            }
+        }
+    }
+
+    document.getElementById('prev-title').textContent = title;
+    document.getElementById('prev-category').textContent = category;
+    document.getElementById('prev-content').innerHTML = content;
+    document.getElementById('prev-date').innerHTML = '<i class="far fa-calendar-alt"></i> ' + dateStr;
+
+    const coverWrap = document.getElementById('prev-cover-wrap');
+    const coverImg = document.getElementById('prev-cover-img');
+    if (coverSrc) {
+        coverImg.src = coverSrc;
+        coverWrap.style.display = 'block';
+    } else {
+        coverWrap.style.display = 'none';
+    }
+
+    // Resetar para visão desktop por padrão ao abrir
+    setPreviewDevice('desktop');
+
+    document.getElementById('preview-modal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closePreviewModal() {
+    document.getElementById('preview-modal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function setPreviewDevice(device) {
+    const card = document.getElementById('preview-card-container');
+    const btnDesktop = document.getElementById('btn-device-desktop');
+    const btnMobile = document.getElementById('btn-device-mobile');
+
+    if (device === 'mobile') {
+        card.style.maxWidth = '420px';
+        card.style.padding = '2rem 1.2rem';
+        card.style.borderRadius = '24px';
+        btnMobile.style.background = '#ff8000';
+        btnMobile.style.color = '#fff';
+        btnDesktop.style.background = 'transparent';
+        btnDesktop.style.color = '#ccc';
+    } else {
+        card.style.maxWidth = '900px';
+        card.style.padding = '4rem 4rem';
+        card.style.borderRadius = '24px';
+        btnDesktop.style.background = '#ff8000';
+        btnDesktop.style.color = '#fff';
+        btnMobile.style.background = 'transparent';
+        btnMobile.style.color = '#ccc';
+    }
+}
+
+// Fechar modal ao pressionar ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closePreviewModal();
+    }
+});
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
