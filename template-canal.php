@@ -13,10 +13,10 @@ if (!$canal) {
     http_response_code(404);
     $dynamic_title = "Canal Não Encontrado";
     require_once 'includes/header.php';
-    echo '<div class="container section-padding" style="padding: 5rem 5%; text-align: center;">';
+    echo '<div class="container section-padding" style="margin-top: 90px; padding: 5rem 5%; text-align: center;">';
     echo '<h1 style="font-size: 2rem; color: #fff; margin-bottom: 1rem;">404 - Canal Não Encontrado</h1>';
     echo '<p style="color: var(--text-secondary); margin-bottom: 2rem;">O canal solicitado não existe ou foi removido.</p>';
-    echo '<a href="/aulas-gratuitas" class="btn" style="padding: 0.8rem 1.5rem; background: var(--brand-orange); color: #fff; text-decoration: none; border-radius: 4px;">Voltar para Aulas Gratuitas</a>';
+    echo '<a href="/aulas-gratuitas" class="btn" style="padding: 0.8rem 1.5rem; background: var(--brand-orange); color: #fff; text-decoration: none; border-radius: 6px;">Voltar para Aulas Gratuitas</a>';
     echo '</div>';
     require_once 'includes/footer.php';
     exit;
@@ -25,6 +25,9 @@ if (!$canal) {
 // SEO
 $dynamic_title = htmlspecialchars($canal['name']) . " | Aulas Gratuitas";
 $dynamic_desc = !empty($canal['description']) ? mb_strimwidth(strip_tags($canal['description']), 0, 160, '...') : "Videoaulas gratuitas do canal " . htmlspecialchars($canal['name']) . " no ISP Preparatórios.";
+
+// URL oficial do YouTube
+$youtube_channel_url = "https://www.youtube.com/@ISPPreparat%C3%B3rios?sub_confirmation=1";
 
 require_once 'includes/header.php';
 
@@ -92,57 +95,66 @@ $selectBoards->execute([$canal['id']]);
 $selectBoardsList = $selectBoards->fetchAll();
 ?>
 
-<div class="container section-padding" style="padding: 2rem 5%;">
+<!-- Container principal com margem superior para o menu fixo -->
+<div class="container section-padding" style="margin-top: 90px; padding: 2rem 5%;">
 
     <!-- Breadcrumb Semântico -->
-    <nav aria-label="Breadcrumb" style="margin-bottom: 2rem; font-size: 0.85rem; color: var(--text-secondary);">
-        <a href="/index.php" style="color: var(--text-secondary); text-decoration: none;">Início</a>
+    <nav aria-label="Breadcrumb" style="margin-bottom: 2rem; font-size: 0.85rem; color: rgba(255,255,255,0.75);">
+        <a href="/index.php" style="color: rgba(255,255,255,0.75); text-decoration: none;">Início</a>
         <span style="margin: 0 0.4rem;">&gt;</span>
-        <a href="/aulas-gratuitas" style="color: var(--text-secondary); text-decoration: none;">Aulas Gratuitas</a>
+        <a href="/aulas-gratuitas" style="color: rgba(255,255,255,0.75); text-decoration: none;">Aulas Gratuitas</a>
         <span style="margin: 0 0.4rem;">&gt;</span>
-        <span style="color: var(--brand-orange); font-weight: 600;"><?= htmlspecialchars($canal['name']) ?></span>
+        <span style="color: var(--brand-orange); font-weight: 700;"><?= htmlspecialchars($canal['name']) ?></span>
     </nav>
 
     <!-- Header do Canal -->
-    <section class="card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden; margin-bottom: 3rem;">
+    <section class="card" style="background: rgba(10, 15, 50, 0.85); border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden; margin-bottom: 3rem; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
         <?php if (!empty($canal['cover_image'])): ?>
             <div style="width: 100%; height: 200px; overflow: hidden;">
                 <img src="/uploads/<?= htmlspecialchars($canal['cover_image']) ?>" alt="Capa do canal <?= htmlspecialchars($canal['name']) ?>" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
+        <?php else: ?>
+            <div style="width: 100%; height: 140px; background: linear-gradient(135deg, rgba(255,0,0,0.2), #03045e); display: flex; align-items: center; justify-content: center;">
+                <i class="fab fa-youtube fa-4x" style="color: #FF0000;" aria-hidden="true"></i>
+            </div>
         <?php endif; ?>
         
         <div style="padding: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1rem;">
                 <div>
-                    <span style="color: var(--brand-orange); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">CANAL DE VIDEOAULAS</span>
-                    <h1 style="font-size: 2.2rem; color: #fff; font-weight: 800; margin: 0.2rem 0 0.8rem 0;"><?= htmlspecialchars($canal['name']) ?></h1>
+                    <span style="color: var(--brand-orange); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">CANAL OFICIAL</span>
+                    <h1 style="font-size: 2.2rem; color: #fff; font-weight: 800; margin: 0.2rem 0 0.4rem 0;"><?= htmlspecialchars($canal['name']) ?></h1>
+                    <span style="color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 600;">
+                        <?= $totalVideos ?> videoaula(s) publicada(s) no site
+                    </span>
                 </div>
-                <span style="background: rgba(255,128,0,0.15); color: var(--brand-orange); font-size: 0.9rem; padding: 0.4rem 0.9rem; border-radius: 20px; font-weight: 700; border: 1px solid rgba(255,128,0,0.3);">
-                    <?= $totalVideos ?> videoaula(s) publicada(s)
-                </span>
+                
+                <a href="<?= htmlspecialchars($youtube_channel_url) ?>" target="_blank" rel="noopener noreferrer" style="padding: 0.8rem 1.6rem; background: #FF0000; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 800; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 15px rgba(255,0,0,0.5);">
+                    <i class="fab fa-youtube" style="font-size: 1.2rem;"></i> INSCREVER-SE NO YOUTUBE
+                </a>
             </div>
             
             <?php if (!empty($canal['description'])): ?>
-                <p style="font-size: 1rem; color: var(--text-secondary); line-height: 1.6; max-width: 900px; margin-top: 0.5rem;">
+                <p style="font-size: 1rem; color: rgba(255,255,255,0.9); line-height: 1.6; max-width: 900px; margin: 0;">
                     <?= htmlspecialchars($canal['description']) ?>
                 </p>
             <?php endif; ?>
         </div>
     </section>
 
-    <!-- Barra de Busca e Filtros do Canal -->
-    <section style="margin-bottom: 2.5rem;">
+    <!-- Barra de Busca e Filtros do Canal (Alto Contraste) -->
+    <section style="margin-bottom: 2.5rem; background: rgba(10, 15, 50, 0.85); padding: 1.5rem; border-radius: 10px; border: 1px solid var(--glass-border);">
         <form method="GET" style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <div style="flex: 2; min-width: 240px;">
-                <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Buscar aulas neste canal..." style="width: 100%; padding: 0.7rem 1rem; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); border-radius: 4px; color: #fff; font-size: 0.9rem;">
+                <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Buscar aulas neste canal..." style="width: 100%; padding: 0.75rem 1rem; background: #06092b; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; color: #ffffff; font-size: 0.9rem; font-weight: 500;">
             </div>
             
             <?php if (!empty($selectDisciplinesList)): ?>
             <div style="flex: 1; min-width: 160px;">
-                <select name="disciplina" style="width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 4px; color: #fff; font-size: 0.85rem;">
-                    <option value="">Todas as disciplinas</option>
+                <select name="disciplina" style="width: 100%; padding: 0.75rem; background: #06092b; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; color: #ffffff; font-size: 0.85rem; font-weight: 500;">
+                    <option value="" style="background: #06092b; color: #fff;">Todas as disciplinas</option>
                     <?php foreach ($selectDisciplinesList as $sd): ?>
-                        <option value="<?= htmlspecialchars($sd['slug']) ?>" <?= $filterDiscipline === $sd['slug'] ? 'selected' : '' ?>><?= htmlspecialchars($sd['name']) ?></option>
+                        <option value="<?= htmlspecialchars($sd['slug']) ?>" <?= $filterDiscipline === $sd['slug'] ? 'selected' : '' ?> style="background: #06092b; color: #fff;"><?= htmlspecialchars($sd['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -150,31 +162,36 @@ $selectBoardsList = $selectBoards->fetchAll();
 
             <?php if (!empty($selectBoardsList)): ?>
             <div style="flex: 1; min-width: 160px;">
-                <select name="banca" style="width: 100%; padding: 0.7rem; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 4px; color: #fff; font-size: 0.85rem;">
-                    <option value="">Todas as bancas</option>
+                <select name="banca" style="width: 100%; padding: 0.75rem; background: #06092b; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; color: #ffffff; font-size: 0.85rem; font-weight: 500;">
+                    <option value="" style="background: #06092b; color: #fff;">Todas as bancas</option>
                     <?php foreach ($selectBoardsList as $sb): ?>
-                        <option value="<?= htmlspecialchars($sb['slug']) ?>" <?= $filterBoard === $sb['slug'] ? 'selected' : '' ?>><?= htmlspecialchars($sb['name']) ?></option>
+                        <option value="<?= htmlspecialchars($sb['slug']) ?>" <?= $filterBoard === $sb['slug'] ? 'selected' : '' ?> style="background: #06092b; color: #fff;"><?= htmlspecialchars($sb['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <?php endif; ?>
 
-            <button type="submit" style="padding: 0.7rem 1.5rem; background: var(--brand-orange); color: #fff; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 0.85rem;"><i class="fas fa-search"></i> BUSCAR</button>
+            <button type="submit" style="padding: 0.75rem 1.6rem; background: var(--brand-orange); color: #fff; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 0.85rem;"><i class="fas fa-search"></i> BUSCAR</button>
         </form>
     </section>
 
     <!-- Grade de Aulas do Canal -->
     <section>
         <?php if (empty($videosList)): ?>
-            <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--glass-border); padding: 3rem 1.5rem; text-align: center; border-radius: 8px;">
-                <i class="fas fa-video-slash fa-3x" style="color: var(--brand-orange); margin-bottom: 1rem; display: block;" aria-hidden="true"></i>
-                <h3 style="font-size: 1.2rem; color: #fff; margin-bottom: 0.5rem;">Nenhuma aula publicada neste canal no momento.</h3>
-                <p style="color: var(--text-secondary);">Novas videoaulas serão adicionadas em breve pelos nossos professores.</p>
+            <div style="background: rgba(255,255,255,0.03); border: 1px dashed var(--glass-border); padding: 3.5rem 1.5rem; text-align: center; border-radius: 10px;">
+                <i class="fab fa-youtube fa-4x" style="color: #FF0000; margin-bottom: 1rem; display: block;" aria-hidden="true"></i>
+                <h3 style="font-size: 1.3rem; color: #fff; font-weight: 800; margin-bottom: 0.5rem;">Nenhuma aula publicada neste canal no momento.</h3>
+                <p style="color: rgba(255,255,255,0.8); max-width: 500px; margin: 0 auto 1.5rem auto;">
+                    Novas videoaulas serão adicionadas em breve pelos nossos professores. Inscreva-se no canal do YouTube para receber avisos de novas publicações.
+                </p>
+                <a href="<?= htmlspecialchars($youtube_channel_url) ?>" target="_blank" rel="noopener noreferrer" style="padding: 0.75rem 1.5rem; background: #FF0000; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 800; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <i class="fab fa-youtube"></i> INSCREVER-SE NO YOUTUBE
+                </a>
             </div>
         <?php else: ?>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
                 <?php foreach ($videosList as $v): ?>
-                    <article style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;">
+                    <article style="background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 8px 25px rgba(0,0,0,0.3);">
                         <div style="position: relative; aspect-ratio: 16/9; background: #000; overflow: hidden;">
                             <?php if (!empty($v['thumbnail'])): ?>
                                 <img src="/uploads/<?= htmlspecialchars($v['thumbnail']) ?>" alt="Thumbnail da aula: <?= htmlspecialchars($v['title']) ?>" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
@@ -188,38 +205,38 @@ $selectBoardsList = $selectBoards->fetchAll();
                             
                             <div style="position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; gap: 0.5rem; pointer-events: none;">
                                 <?php if (!empty($v['discipline_name'])): ?>
-                                    <span style="background: rgba(3, 4, 94, 0.85); backdrop-filter: blur(4px); color: #fff; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 4px; font-weight: 600;">
+                                    <span style="background: rgba(3, 4, 94, 0.9); backdrop-filter: blur(4px); color: #fff; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 4px; font-weight: 700;">
                                         <?= htmlspecialchars($v['discipline_name']) ?>
                                     </span>
                                 <?php endif; ?>
 
                                 <?php if ($v['total_materiais'] > 0): ?>
-                                    <span style="background: #ff8000; color: #fff; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 4px; font-weight: 700;">
-                                        📘 MATERIAL GRATUITO
+                                    <span style="background: #ff8000; color: #fff; font-size: 0.7rem; padding: 0.25rem 0.6rem; border-radius: 4px; font-weight: 800;">
+                                        📘 CADERNO EM PDF
                                     </span>
                                 <?php endif; ?>
                             </div>
                         </div>
 
-                        <div style="padding: 1.2rem; display: flex; flex-direction: column; flex-grow: 1;">
-                            <h3 style="font-size: 1.05rem; color: #fff; font-weight: 700; line-height: 1.4; margin-bottom: 0.8rem; flex-grow: 1;">
+                        <div style="padding: 1.3rem; display: flex; flex-direction: column; flex-grow: 1;">
+                            <h3 style="font-size: 1.05rem; color: #fff; font-weight: 800; line-height: 1.4; margin-bottom: 0.8rem; flex-grow: 1;">
                                 <a href="/aulas-gratuitas/<?= htmlspecialchars($canal['slug']) ?>/<?= htmlspecialchars($v['slug']) ?>" style="color: inherit; text-decoration: none;">
                                     <?= htmlspecialchars($v['title']) ?>
                                 </a>
                             </h3>
 
-                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                            <div style="font-size: 0.82rem; color: rgba(255,255,255,0.75); margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 0.35rem;">
                                 <?php if (!empty($v['teacher_name'])): ?>
-                                    <div><i class="fas fa-user-circle" aria-hidden="true"></i> Profª: <strong><?= htmlspecialchars($v['teacher_name']) ?></strong></div>
+                                    <div><i class="fas fa-user-circle" style="color: var(--brand-orange);" aria-hidden="true"></i> Profª: <strong style="color: #fff;"><?= htmlspecialchars($v['teacher_name']) ?></strong></div>
                                 <?php endif; ?>
                                 
                                 <?php if (!empty($v['board_name'])): ?>
-                                    <div><i class="fas fa-building" aria-hidden="true"></i> Banca: <strong><?= htmlspecialchars($v['board_name']) ?></strong></div>
+                                    <div><i class="fas fa-building" style="color: var(--brand-orange);" aria-hidden="true"></i> Banca: <strong style="color: #fff;"><?= htmlspecialchars($v['board_name']) ?></strong></div>
                                 <?php endif; ?>
                             </div>
 
-                            <a href="/aulas-gratuitas/<?= htmlspecialchars($canal['slug']) ?>/<?= htmlspecialchars($v['slug']) ?>" aria-label="Assistir aula: <?= htmlspecialchars($v['title']) ?>" style="display: block; text-align: center; padding: 0.7rem 1rem; background: var(--brand-blue); color: #fff; text-decoration: none; border-radius: 4px; font-size: 0.85rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.1);">
-                                <i class="fas fa-play" aria-hidden="true"></i> ASSISTIR AULA
+                            <a href="/aulas-gratuitas/<?= htmlspecialchars($canal['slug']) ?>/<?= htmlspecialchars($v['slug']) ?>" aria-label="Assistir aula: <?= htmlspecialchars($v['title']) ?>" style="display: block; text-align: center; padding: 0.75rem 1rem; background: var(--brand-orange); color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 800;">
+                                <i class="fas fa-play" aria-hidden="true"></i> ASSISTIR AULA AGORA
                             </a>
                         </div>
                     </article>
@@ -230,7 +247,7 @@ $selectBoardsList = $selectBoards->fetchAll();
             <?php if ($totalPages > 1): ?>
                 <nav aria-label="Paginação do canal" style="display: flex; justify-content: center; gap: 0.4rem; margin-top: 3rem;">
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                        <a href="/aulas-gratuitas/<?= htmlspecialchars($canal['slug']) ?>?page=<?= $i ?>" style="padding: 0.5rem 0.9rem; border-radius: 4px; font-size: 0.9rem; font-weight: 600; text-decoration: none; <?= $page == $i ? 'background: var(--brand-orange); color: #fff;' : 'background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border);' ?>">
+                        <a href="/aulas-gratuitas/<?= htmlspecialchars($canal['slug']) ?>?page=<?= $i ?>" style="padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 700; text-decoration: none; <?= $page == $i ? 'background: var(--brand-orange); color: #fff;' : 'background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border);' ?>">
                             <?= $i ?>
                         </a>
                     <?php endfor; ?>

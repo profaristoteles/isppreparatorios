@@ -345,12 +345,12 @@ try {
         echo "[SEED] Professora 'Walneane' criada (ID: $teachId).\n";
     }
 
-    // 19. Seed Inicial: Primeira Videoaula (Rascunho - aguardando configuração do admin)
+    // 19. Seed Inicial: Primeira Videoaula (Publicada com material para demonstração imediata)
     $stmtVid = $pdo->prepare("SELECT id FROM free_videos WHERE slug = 'resolucao-questoes-lingua-portuguesa-instituto-jk'");
     $stmtVid->execute();
     $vidId = $stmtVid->fetchColumn();
     if (!$vidId) {
-        $stmtVidIns = $pdo->prepare("INSERT INTO free_videos (channel_id, discipline_id, teacher_id, board_id, title, slug, short_description, full_description, youtube_url, youtube_id, campaign_code, status, is_featured, seo_title, seo_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'rascunho', 1, ?, ?)");
+        $stmtVidIns = $pdo->prepare("INSERT INTO free_videos (channel_id, discipline_id, teacher_id, board_id, title, slug, short_description, full_description, youtube_url, youtube_id, campaign_code, status, is_featured, seo_title, seo_description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'publicado', 1, ?, ?)");
         $stmtVidIns->execute([
             $chanId,
             $discId,
@@ -359,15 +359,30 @@ try {
             'Resolução de Questões de Língua Portuguesa – Instituto JK',
             'resolucao-questoes-lingua-portuguesa-instituto-jk',
             'Aula de resolução de questões da banca Instituto JK com a professora Walneane.',
-            'Assista à resolução completa das questões de Língua Portuguesa do Instituto JK e baixe o caderno de questões exclusivo.',
-            '', // Aguardando configuração no admin
-            '', // Aguardando configuração no admin
+            'Assista à resolução completa das questões de Língua Portuguesa do Instituto JK e baixe o caderno de questões exclusivo para acompanhar.',
+            'https://www.youtube.com/watch?v=_qT76mO0wAc',
+            '_qT76mO0wAc',
             'ISP-YT-JK-PORT-001',
             'Resolução de Questões de Língua Portuguesa – Instituto JK | ISP Preparatórios',
             'Estude com a professora Walneane e resolva questões da banca Instituto JK no ISP Preparatórios.'
         ]);
         $vidId = $pdo->lastInsertId();
-        echo "[SEED] Videoaula de demonstração criada como 'rascunho' (ID: $vidId).\n";
+        echo "[SEED] Videoaula de demonstração criada como 'publicado' (ID: $vidId).\n";
+
+        // Inserir Material em PDF vinculado
+        $pdo->prepare("INSERT INTO free_materials (video_id, title, description, file_path, original_filename, mime_type, file_size, active) VALUES (?, 'Caderno de Questões - Instituto JK', 'Material complementar em PDF com as questões de Língua Portuguesa resolvidas na videoaula.', 'caderno_questones_jk_portugues.pdf', 'Caderno_Questoes_Instituto_JK.pdf', 'application/pdf', 1048576, 1)")->execute([$vidId]);
+        echo "[SEED] Material PDF de demonstração vinculado (ID: " . $pdo->lastInsertId() . ").\n";
+    } else {
+        // Atualiza videoaula para publicado se ainda estiver em rascunho
+        $pdo->prepare("UPDATE free_videos SET status = 'publicado', youtube_id = IF(youtube_id = '', '_qT76mO0wAc', youtube_id) WHERE id = ?")->execute([$vidId]);
+        
+        // Garante material PDF cadastrado
+        $stmtMatChk = $pdo->prepare("SELECT id FROM free_materials WHERE video_id = ? LIMIT 1");
+        $stmtMatChk->execute([$vidId]);
+        if (!$stmtMatChk->fetchColumn()) {
+            $pdo->prepare("INSERT INTO free_materials (video_id, title, description, file_path, original_filename, mime_type, file_size, active) VALUES (?, 'Caderno de Questões - Instituto JK', 'Material complementar em PDF com as questões de Língua Portuguesa resolvidas na videoaula.', 'caderno_questones_jk_portugues.pdf', 'Caderno_Questoes_Instituto_JK.pdf', 'application/pdf', 1048576, 1)")->execute([$vidId]);
+        }
+        echo "[UPDATE] Videoaula ID $vidId atualizada para 'publicado' com material complementar.\n";
     }
 
     $pdo->commit();

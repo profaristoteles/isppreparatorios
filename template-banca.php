@@ -52,7 +52,7 @@ $stmtDisciplines->execute([$banca['id']]);
 $disciplinesList = $stmtDisciplines->fetchAll();
 ?>
 
-<div class="container section-padding" style="padding: 2rem 5%;">
+<div class="container section-padding" style="margin-top: 90px; padding: 2rem 5%;">
 
     <!-- Breadcrumb Semântico -->
     <nav aria-label="Breadcrumb" style="margin-bottom: 2rem; font-size: 0.85rem; color: var(--text-secondary);">
