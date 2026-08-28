@@ -13,35 +13,38 @@ try {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
     $pdo->exec($sql);
 
-    // 2. Verificar se já existem itens para não duplicar
+    // 2. Garantir que Aulas Gratuitas exista no menu
+    $stmtMenu = $pdo->prepare("SELECT id FROM menu_items WHERE url = '/aulas-gratuitas' LIMIT 1");
+    $stmtMenu->execute();
+    if (!$stmtMenu->fetchColumn()) {
+        $pdo->prepare("INSERT INTO menu_items (label, url, order_index, is_button, target_blank) VALUES ('Aulas Gratuitas', '/aulas-gratuitas', 4, 0, 0)")->execute();
+        echo "Item 'Aulas Gratuitas' adicionado ao menu principal do site.\n";
+    }
+
+    // Verificar se já existem itens para popular padrão inicial caso zerada
     $count = $pdo->query("SELECT COUNT(*) FROM menu_items")->fetchColumn();
-    
-    if ($count == 0) {
-        // Popula com o menu existente
+    if ($count <= 1) {
         $itens = [
             ['Início', '/index.php', 1, 0, 0],
             ['Diferenciais', '/index.php#diferenciais', 2, 0, 0],
             ['Cursos', '/cursos.php', 3, 0, 0],
-            ['Editais', '/editais.php', 4, 0, 0],
-            ['Eventos (Aulas/Lives)', '/eventos.php', 5, 0, 0],
-            ['Modalidades', '/index.php#modalidades', 6, 0, 0],
-            ['Depoimentos', '/index.php#depoimentos', 7, 0, 0],
-            ['Blog', '/blog.php', 8, 0, 0],
-            ['Apostilas', '/apostilas.php', 9, 0, 0],
-            ['Já sou Aluno(a)', 'https://ispreparatorios.classbuild.com', 10, 1, 1], // is_button=1, target_blank=1
+            ['Aulas Gratuitas', '/aulas-gratuitas', 4, 0, 0],
+            ['Editais', '/editais.php', 5, 0, 0],
+            ['Eventos (Aulas/Lives)', '/eventos.php', 6, 0, 0],
+            ['Modalidades', '/index.php#modalidades', 7, 0, 0],
+            ['Depoimentos', '/index.php#depoimentos', 8, 0, 0],
+            ['Blog', '/blog.php', 9, 0, 0],
+            ['Apostilas', '/apostilas.php', 10, 0, 0],
+            ['Já sou Aluno(a)', 'https://ispreparatorios.classbuild.com', 11, 1, 1],
         ];
 
-        $stmt = $pdo->prepare("INSERT INTO menu_items (label, url, order_index, is_button, target_blank) VALUES (?, ?, ?, ?, ?)");
-        
+        $stmt = $pdo->prepare("INSERT IGNORE INTO menu_items (label, url, order_index, is_button, target_blank) VALUES (?, ?, ?, ?, ?)");
         foreach ($itens as $item) {
             $stmt->execute($item);
         }
-        
-        echo "Migração do Menu concluída! Tabela 'menu_items' criada e preenchida com os links iniciais.";
-    } else {
-        echo "Tabela 'menu_items' já existe e possui dados. Nenhuma ação necessária.";
     }
 
+    echo "Migração do Menu concluída!";
 } catch (PDOException $e) {
     echo "Erro na migração: " . $e->getMessage();
 }

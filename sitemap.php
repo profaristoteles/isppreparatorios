@@ -8,13 +8,46 @@ echo '<?xml version="1.0" encoding="UTF-8"?>';
 echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
 // Páginas Estáticas
-$static_pages = ['', 'cursos.php', 'apostilas.php', 'blog.php', 'contato.php', 'sobre.php'];
+$static_pages = ['', 'aulas-gratuitas', 'cursos.php', 'apostilas.php', 'blog.php', 'contato.php', 'sobre.php'];
 foreach ($static_pages as $page) {
     echo '<url>';
     echo '<loc>' . $base_url . $page . '</loc>';
     echo '<priority>0.8</priority>';
     echo '</url>';
 }
+
+// Canais de Aulas Gratuitas
+try {
+    $canais = $pdo->query("SELECT slug FROM free_channels WHERE active=1 AND deleted_at IS NULL")->fetchAll();
+    foreach ($canais as $ch) {
+        echo '<url>';
+        echo '<loc>' . $base_url . 'aulas-gratuitas/' . $ch['slug'] . '</loc>';
+        echo '<priority>0.8</priority>';
+        echo '</url>';
+    }
+} catch (Exception $e) {}
+
+// Bancas Organizadoras
+try {
+    $bancas = $pdo->query("SELECT slug FROM free_boards WHERE active=1 AND deleted_at IS NULL")->fetchAll();
+    foreach ($bancas as $b) {
+        echo '<url>';
+        echo '<loc>' . $base_url . 'aulas-gratuitas/banca/' . $b['slug'] . '</loc>';
+        echo '<priority>0.7</priority>';
+        echo '</url>';
+    }
+} catch (Exception $e) {}
+
+// Videoaulas Publicadas
+try {
+    $videos = $pdo->query("SELECT v.slug as video_slug, c.slug as channel_slug FROM free_videos v JOIN free_channels c ON v.channel_id = c.id WHERE v.status = 'publicado' AND v.active = 1 AND v.deleted_at IS NULL")->fetchAll();
+    foreach ($videos as $v) {
+        echo '<url>';
+        echo '<loc>' . $base_url . 'aulas-gratuitas/' . $v['channel_slug'] . '/' . $v['video_slug'] . '</loc>';
+        echo '<priority>0.8</priority>';
+        echo '</url>';
+    }
+} catch (Exception $e) {}
 
 // Cursos
 $cursos = $pdo->query("SELECT id, slug FROM cursos WHERE active=1")->fetchAll();
@@ -57,4 +90,3 @@ foreach ($eventos as $e) {
 }
 
 echo '</urlset>';
-?>

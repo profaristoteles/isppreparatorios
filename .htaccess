@@ -1,7 +1,16 @@
 RewriteEngine On
 
-# Redireciona URLs antigas para o novo formato (já feito via PHP em post.php, mas mantemos conforme prompt)
-# RewriteRule ^post\.php$ - [L]
+# Rota para Aulas Gratuitas (Biblioteca Principal)
+RewriteRule ^aulas-gratuitas/?$ aulas-gratuitas.php [L,QSA]
+
+# Rota para Aulas Gratuitas por Banca (Deve vir antes do canal para evitar colisão)
+RewriteRule ^aulas-gratuitas/banca/([a-z0-9\-]+)/?$ banca-redirect.php?slug=$1 [L,QSA]
+
+# Rota para Canais de Aulas Gratuitas
+RewriteRule ^aulas-gratuitas/([a-z0-9\-]+)/?$ canal-redirect.php?slug=$1 [L,QSA]
+
+# Rota para Videoaula Individual dentro de um Canal
+RewriteRule ^aulas-gratuitas/([a-z0-9\-]+)/([a-z0-9\-]+)/?$ aula-redirect.php?canal=$1&video=$2 [L,QSA]
 
 # Rota para artigos do blog com slug
 RewriteRule ^blog/([a-z0-9\-]+)/?$ post-redirect.php?slug=$1 [L,QSA]
