@@ -44,18 +44,18 @@ body {
 }
 
 /* Layout Framework */
-nav {
+nav.main-header-nav, header nav {
     position: fixed;
     top: 0;
     width: 100%;
-    padding: 1.5rem 5%;
+    padding: 1.2rem 5%;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 9999;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--glass-border);
-    background: rgba(3, 4, 94, 0.7);
+    background: rgba(3, 4, 94, 0.95);
 }
 
 .logo {

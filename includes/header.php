@@ -93,7 +93,7 @@ $menu_items = $pdo->query("SELECT * FROM menu_items ORDER BY order_index ASC")->
 
     <div class="prism-overlay" aria-hidden="true"></div>
 
-    <nav role="navigation" aria-label="Menu principal">
+    <nav class="main-header-nav" role="navigation" aria-label="Menu principal">
         <a href="/index.php" style="text-decoration: none;" aria-label="ISP Preparatórios — Página inicial">
             <div class="logo">
                 <?php if(file_exists(__DIR__ . '/../uploads/logo.png') || file_exists('uploads/logo.png')): ?>

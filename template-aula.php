@@ -224,29 +224,19 @@ require_once 'includes/header.php';
             </section>
         </div>
 
-        <!-- Coluna Direita: Professor, Grupo VIP e Compartilhamento -->
+        <!-- Coluna Direita: Inscrição no YouTube, Grupo VIP e Compartilhamento -->
         <div>
-            <!-- Card do Professor -->
-            <?php if (!empty($v['teacher_name'])): ?>
-                <div class="card" style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center;">
-                    <?php if (!empty($v['teacher_photo'])): ?>
-                        <img src="/uploads/<?= htmlspecialchars($v['teacher_photo']) ?>" alt="Foto do(a) professor(a) <?= htmlspecialchars($v['teacher_name']) ?>" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; margin: 0 auto 1rem auto; border: 2px solid var(--brand-orange);">
-                    <?php else: ?>
-                        <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--brand-blue); margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center; border: 2px solid var(--brand-orange);">
-                            <i class="fas fa-user-tie fa-2x" style="color: #fff;" aria-hidden="true"></i>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <span style="font-size: 0.75rem; color: var(--brand-orange); font-weight: 700; text-transform: uppercase;">PROFESSOR(A)</span>
-                    <h3 style="font-size: 1.2rem; color: #fff; font-weight: 700; margin: 0.2rem 0 0.5rem 0;"><?= htmlspecialchars($v['teacher_name']) ?></h3>
-                    
-                    <?php if (!empty($v['teacher_bio'])): ?>
-                        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
-                            <?= htmlspecialchars($v['teacher_bio']) ?>
-                        </p>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
+            <!-- CTA Inscrição no YouTube -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(255,0,0,0.15), rgba(3,4,94,0.6)); border: 1px solid #FF0000; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center;">
+                <i class="fab fa-youtube fa-3x" style="color: #FF0000; margin-bottom: 0.8rem; display: block;" aria-hidden="true"></i>
+                <h3 style="font-size: 1.1rem; color: #fff; font-weight: 700; margin-bottom: 0.5rem;">Canal do ISP no YouTube</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.2rem; line-height: 1.4;">
+                    Inscreva-se no nosso canal oficial para acompanhar aulas ao vivo e novas resoluções de questões.
+                </p>
+                <a href="https://www.youtube.com/@ISPPreparat%C3%B3rios?sub_confirmation=1" target="_blank" rel="noopener noreferrer" style="display: block; padding: 0.7rem 1rem; background: #FF0000; color: #fff; text-decoration: none; border-radius: 4px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(255,0,0,0.4);">
+                    <i class="fab fa-youtube" aria-hidden="true"></i> INSCREVER-SE NO CANAL
+                </a>
+            </div>
 
             <!-- CTA Grupo VIP WhatsApp -->
             <?php if (!empty($whatsapp_group_url)): ?>
