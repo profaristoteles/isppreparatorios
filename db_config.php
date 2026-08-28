@@ -60,6 +60,12 @@ try {
         $pdo->exec("ALTER TABLE free_materials MODIFY COLUMN file_path VARCHAR(255) DEFAULT ''");
         $pdo->exec("ALTER TABLE free_materials MODIFY COLUMN original_filename VARCHAR(255) DEFAULT ''");
     }
+
+    // Auto-migration para coluna de compatibilidade has_material em free_videos
+    $colsVid = $pdo->query("SHOW COLUMNS FROM free_videos LIKE 'has_material'")->fetchAll();
+    if (empty($colsVid)) {
+        $pdo->exec("ALTER TABLE free_videos ADD COLUMN has_material TINYINT(1) DEFAULT 0 AFTER is_featured");
+    }
 } catch (Exception $e) { /* Auto-migração concluída ou em andamento */ }
 
 

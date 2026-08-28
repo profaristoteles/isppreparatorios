@@ -100,13 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$video_id, $title, $description, $material_type, $active, $id]);
         }
         
-        $pdo->prepare("UPDATE free_videos SET has_material = 1 WHERE id = ?")->execute([$video_id]);
         $_SESSION['msg'] = "Material atualizado com sucesso.";
     } else {
         $stmt = $pdo->prepare("INSERT INTO free_materials (video_id, title, description, file_path, external_url, material_type, original_filename, mime_type, file_size, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$video_id, $title, $description, $file_path, $external_url, $material_type, $original_filename, $mime_type, $file_size, $active]);
         
-        $pdo->prepare("UPDATE free_videos SET has_material = 1 WHERE id = ?")->execute([$video_id]);
         $_SESSION['msg'] = "Material cadastrado com sucesso.";
     }
     
