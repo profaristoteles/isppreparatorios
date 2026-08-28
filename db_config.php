@@ -43,6 +43,16 @@ try {
     }
 } catch (Exception $e) { /* tabela pode não existir ainda */ }
 
+// Auto-migration para Aulas Gratuitas (Criação automática das 15 tabelas se free_channels não existir no banco)
+try {
+    $tableCheck = $pdo->query("SHOW TABLES LIKE 'free_channels'")->fetch();
+    if (!$tableCheck) {
+        ob_start();
+        require_once __DIR__ . '/migration_aulas_gratuitas.php';
+        ob_end_clean();
+    }
+} catch (Exception $e) { /* Auto-migração concluída ou em andamento */ }
+
 
 // Auto-migration: colunas SEO de posts (meta_title, meta_description, slug, image_alt)
 // Garante que existam E tenham tamanho suficiente (VARCHAR 500)

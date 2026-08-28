@@ -3,31 +3,41 @@ require_once 'auth.php';
 require_once '../db_config.php';
 require_once 'includes/admin_security.php';
 
+function safe_count($pdo, $sql, $params = []) {
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    } catch (\Exception $e) {
+        return 0;
+    }
+}
+
 // Totais Principais
-$total_canais = $pdo->query("SELECT COUNT(*) FROM free_channels WHERE active=1 AND deleted_at IS NULL")->fetchColumn();
-$total_pub = $pdo->query("SELECT COUNT(*) FROM free_videos WHERE status='publicado' AND active=1 AND deleted_at IS NULL")->fetchColumn();
-$total_rascunho = $pdo->query("SELECT COUNT(*) FROM free_videos WHERE status='rascunho' AND active=1 AND deleted_at IS NULL")->fetchColumn();
-$total_materiais = $pdo->query("SELECT COUNT(*) FROM free_materials WHERE active=1 AND deleted_at IS NULL")->fetchColumn();
-$total_leads = $pdo->query("SELECT COUNT(*) FROM leads")->fetchColumn();
-$total_downloads = $pdo->query("SELECT COUNT(*) FROM lead_downloads")->fetchColumn();
-$total_conflitos = $pdo->query("SELECT COUNT(*) FROM lead_conflicts WHERE status='pending'")->fetchColumn();
-$total_fila_pend = $pdo->query("SELECT COUNT(*) FROM integration_queue WHERE status='pending'")->fetchColumn();
-$total_fila_erro = $pdo->query("SELECT COUNT(*) FROM integration_queue WHERE status='error'")->fetchColumn();
+$total_canais = safe_count($pdo, "SELECT COUNT(*) FROM free_channels WHERE active=1 AND deleted_at IS NULL");
+$total_pub = safe_count($pdo, "SELECT COUNT(*) FROM free_videos WHERE status='publicado' AND active=1 AND deleted_at IS NULL");
+$total_rascunho = safe_count($pdo, "SELECT COUNT(*) FROM free_videos WHERE status='rascunho' AND active=1 AND deleted_at IS NULL");
+$total_materiais = safe_count($pdo, "SELECT COUNT(*) FROM free_materials WHERE active=1 AND deleted_at IS NULL");
+$total_leads = safe_count($pdo, "SELECT COUNT(*) FROM leads");
+$total_downloads = safe_count($pdo, "SELECT COUNT(*) FROM lead_downloads");
+$total_conflitos = safe_count($pdo, "SELECT COUNT(*) FROM lead_conflicts WHERE status='pending'");
+$total_fila_pend = safe_count($pdo, "SELECT COUNT(*) FROM integration_queue WHERE status='pending'");
+$total_fila_erro = safe_count($pdo, "SELECT COUNT(*) FROM integration_queue WHERE status='error'");
 
 // Métricas de Tempo
-$leads_hoje = $pdo->query("SELECT COUNT(*) FROM leads WHERE DATE(created_at) = CURDATE()")->fetchColumn();
-$leads_7d = $pdo->query("SELECT COUNT(*) FROM leads WHERE created_at >= NOW() - INTERVAL 7 DAY")->fetchColumn();
-$leads_30d = $pdo->query("SELECT COUNT(*) FROM leads WHERE created_at >= NOW() - INTERVAL 30 DAY")->fetchColumn();
+$leads_hoje = safe_count($pdo, "SELECT COUNT(*) FROM leads WHERE DATE(created_at) = CURDATE()");
+$leads_7d = safe_count($pdo, "SELECT COUNT(*) FROM leads WHERE created_at >= NOW() - INTERVAL 7 DAY");
+$leads_30d = safe_count($pdo, "SELECT COUNT(*) FROM leads WHERE created_at >= NOW() - INTERVAL 30 DAY");
 
-$dl_hoje = $pdo->query("SELECT COUNT(*) FROM lead_downloads WHERE DATE(downloaded_at) = CURDATE()")->fetchColumn();
-$dl_7d = $pdo->query("SELECT COUNT(*) FROM lead_downloads WHERE downloaded_at >= NOW() - INTERVAL 7 DAY")->fetchColumn();
-$dl_30d = $pdo->query("SELECT COUNT(*) FROM lead_downloads WHERE downloaded_at >= NOW() - INTERVAL 30 DAY")->fetchColumn();
+$dl_hoje = safe_count($pdo, "SELECT COUNT(*) FROM lead_downloads WHERE DATE(downloaded_at) = CURDATE()");
+$dl_7d = safe_count($pdo, "SELECT COUNT(*) FROM lead_downloads WHERE downloaded_at >= NOW() - INTERVAL 7 DAY");
+$dl_30d = safe_count($pdo, "SELECT COUNT(*) FROM lead_downloads WHERE downloaded_at >= NOW() - INTERVAL 30 DAY");
 
 // Funil de Analytics (free_video_events)
-$evt_views = $pdo->query("SELECT COUNT(*) FROM free_video_events WHERE event_type='video_accessed'")->fetchColumn();
-$evt_requests = $pdo->query("SELECT COUNT(*) FROM free_video_events WHERE event_type='material_requested'")->fetchColumn();
-$evt_leads = $pdo->query("SELECT COUNT(*) FROM free_video_events WHERE event_type='lead_captured'")->fetchColumn();
-$evt_downloads = $pdo->query("SELECT COUNT(*) FROM free_video_events WHERE event_type='material_downloaded'")->fetchColumn();
+$evt_views = safe_count($pdo, "SELECT COUNT(*) FROM free_video_events WHERE event_type='video_accessed'");
+$evt_requests = safe_count($pdo, "SELECT COUNT(*) FROM free_video_events WHERE event_type='material_requested'");
+$evt_leads = safe_count($pdo, "SELECT COUNT(*) FROM free_video_events WHERE event_type='lead_captured'");
+$evt_downloads = safe_count($pdo, "SELECT COUNT(*) FROM free_video_events WHERE event_type='material_downloaded'");
 
 // Taxas de conversão
 $taxa_view_req = $evt_views > 0 ? round(($evt_requests / $evt_views) * 100, 1) : 0;
