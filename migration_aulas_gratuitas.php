@@ -128,14 +128,16 @@ try {
     $pdo->exec($sqlVideos);
     echo "[OK] Tabela 'free_videos' verificada/criada.\n";
 
-    // 7. Materiais Complementares (PDFs)
+    // 7. Materiais Complementares (PDFs / Links do Google Drive)
     $sqlMateriais = "CREATE TABLE IF NOT EXISTS free_materials (
         id INT AUTO_INCREMENT PRIMARY KEY,
         video_id INT NOT NULL,
         title VARCHAR(255) NOT NULL,
         description TEXT,
-        file_path VARCHAR(255) NOT NULL,
-        original_filename VARCHAR(255) NOT NULL,
+        file_path VARCHAR(255) DEFAULT '',
+        external_url VARCHAR(500) DEFAULT '',
+        material_type ENUM('file', 'external_url') DEFAULT 'file',
+        original_filename VARCHAR(255) DEFAULT '',
         mime_type VARCHAR(100) DEFAULT 'application/pdf',
         file_size INT DEFAULT 0,
         active TINYINT(1) DEFAULT 1,

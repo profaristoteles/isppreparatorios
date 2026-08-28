@@ -1,9 +1,9 @@
 <?php
 /**
- * Rota Controlada de Download Seguro de Material PDF
+ * Rota Controlada de Download Seguro de Material PDF / Redirecionamento Google Drive
  * 
  * Valida a assinatura HMAC do token, registra o histórico do download
- * e realiza o streaming binário do PDF armazenado na pasta protegida.
+ * e realiza o streaming binário do PDF local ou redirecionamento seguro para o Google Drive.
  */
 
 require_once __DIR__ . '/includes/aulas_gratuitas_utils.php';
@@ -41,7 +41,28 @@ if (!$material) {
     die("<h1>404 - Material Não Encontrado</h1><p>O arquivo solicitado não está disponível ou a aula não foi publicada.</p>");
 }
 
-// Caminho absoluto para a pasta protegida e prevenção contra Path Traversal
+// 1. Registrar o download no histórico de downloads (lead_downloads)
+$ip = $_SERVER['REMOTE_ADDR'] ?? '';
+$ua = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255);
+
+$stmtDL = $pdo->prepare("INSERT INTO lead_downloads (subject_type, subject_id, material_id, video_id, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)");
+$stmtDL->execute([$subject_type, $subject_id, $material_id, $video_id, $ip, $ua]);
+
+// 2. Registrar evento analítico 'material_downloaded' em free_video_events
+$lead_id_event = ($subject_type === 'lead') ? $subject_id : null;
+log_free_video_event($pdo, $video_id, 'material_downloaded', $lead_id_event, [
+    'material_id' => $material_id,
+    'subject_type' => $subject_type,
+    'subject_id' => $subject_id
+]);
+
+// 3. Se for material hospedado externamente (Google Drive, Dropbox, OneDrive), realizar redirecionamento direto
+if (($material['material_type'] ?? '') === 'external_url' || (!empty($material['external_url']) && empty($material['file_path']))) {
+    header("Location: " . $material['external_url']);
+    exit;
+}
+
+// 4. Se for arquivo local no servidor VPS, realizar validações de segurança do arquivo físico
 $protected_dir = __DIR__ . '/uploads/materiais_protegidos/';
 $file_path = $protected_dir . basename($material['file_path']);
 
@@ -66,27 +87,10 @@ if (!$realPath || ($realProtectedDir && strpos($realPath, $realProtectedDir) !==
     die("<h1>403 - Acesso Negado</h1><p>Caminho de arquivo inválido.</p>");
 }
 
-// 1. Registrar o download no histórico de downloads (lead_downloads)
-$ip = $_SERVER['REMOTE_ADDR'] ?? '';
-$ua = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255);
-
-$stmtDL = $pdo->prepare("INSERT INTO lead_downloads (subject_type, subject_id, material_id, video_id, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)");
-$stmtDL->execute([$subject_type, $subject_id, $material_id, $video_id, $ip, $ua]);
-
-// 2. Registrar evento analítico 'material_downloaded' em free_video_events
-// Se for conflict, lead_id é gravado como NULL (não atribui arbitrariamente a Lead A nem B)
-$lead_id_event = ($subject_type === 'lead') ? $subject_id : null;
-log_free_video_event($pdo, $video_id, 'material_downloaded', $lead_id_event, [
-    'material_id' => $material_id,
-    'subject_type' => $subject_type,
-    'subject_id' => $subject_id
-]);
-
-// Configurar cabeçalhos para download seguro e binário do PDF
+// Configurar cabeçalhos para download seguro e binário do PDF local
 $mime = !empty($material['mime_type']) ? $material['mime_type'] : 'application/pdf';
 $filename = !empty($material['original_filename']) ? $material['original_filename'] : basename($file_path);
 
-// Limpar buffers de saída prévios
 if (ob_get_level()) {
     ob_end_clean();
 }

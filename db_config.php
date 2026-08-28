@@ -51,6 +51,15 @@ try {
         require_once __DIR__ . '/migration_aulas_gratuitas.php';
         ob_end_clean();
     }
+    
+    // Auto-migration para suporte a Google Drive / Links Externos em free_materials
+    $colsMat = $pdo->query("SHOW COLUMNS FROM free_materials LIKE 'external_url'")->fetchAll();
+    if (empty($colsMat)) {
+        $pdo->exec("ALTER TABLE free_materials ADD COLUMN external_url VARCHAR(500) DEFAULT '' AFTER file_path");
+        $pdo->exec("ALTER TABLE free_materials ADD COLUMN material_type ENUM('file', 'external_url') DEFAULT 'file' AFTER external_url");
+        $pdo->exec("ALTER TABLE free_materials MODIFY COLUMN file_path VARCHAR(255) DEFAULT ''");
+        $pdo->exec("ALTER TABLE free_materials MODIFY COLUMN original_filename VARCHAR(255) DEFAULT ''");
+    }
 } catch (Exception $e) { /* Auto-migração concluída ou em andamento */ }
 
 
