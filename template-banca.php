@@ -67,7 +67,7 @@ $disciplinesList = $stmtDisciplines->fetchAll();
 
     <!-- Header da Banca -->
     <section class="card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 8px; padding: 2rem; margin-bottom: 3rem;">
-        <div style="display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
+        <div class="banca-header-box" style="display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
             <?php if (!empty($banca['logo'])): ?>
                 <div style="background: #fff; padding: 1rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 120px; height: 80px;">
                     <img src="/uploads/<?= htmlspecialchars($banca['logo']) ?>" alt="Logo <?= htmlspecialchars($banca['name']) ?>" style="max-width: 100%; max-height: 100%; object-fit: contain;">
@@ -135,7 +135,7 @@ $disciplinesList = $stmtDisciplines->fetchAll();
                 <p style="color: var(--text-secondary);">Fique atento às nossas atualizações diárias.</p>
             </div>
         <?php else: ?>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 1.5rem;">
                 <?php foreach ($videosList as $v): ?>
                     <article style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;">
                         <div style="position: relative; aspect-ratio: 16/9; background: #000; overflow: hidden;">

@@ -704,3 +704,170 @@ footer a:hover {
     margin-bottom: 1.5rem;
 }
 
+/* ============================================
+   RESPONSIVIDADE - AULAS GRATUITAS
+   ============================================ */
+
+/* Layout Principal da Videoaula Individual (template-aula.php) */
+.aula-grid-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+.aula-header-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 1rem;
+}
+
+/* Material Item Responsivo */
+.aula-material-item {
+    background: rgba(0,0,0,0.3);
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    margin-bottom: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* YouTube CTA Banner Responsivo */
+.yt-banner-cta {
+    background: linear-gradient(135deg, rgba(255,0,0,0.15), rgba(3,4,94,0.85));
+    border: 2px solid #FF0000;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    box-shadow: 0 10px 30px rgba(255,0,0,0.25);
+}
+
+/* Modal de Captura Lead Responsivo */
+#lead-modal-overlay {
+    padding: 1rem;
+}
+#lead-modal-dialog {
+    background: #0d1117;
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    padding: 2rem;
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Breakpoints de Responsividade para Aulas Gratuitas */
+@media (max-width: 992px) {
+    .aula-grid-layout {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .aula-header-meta {
+        gap: 0.8rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    .yt-banner-cta {
+        flex-direction: column !important;
+        text-align: center !important;
+        padding: 1.5rem !important;
+    }
+    .yt-banner-cta a,
+    .yt-banner-cta button {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .canal-header-content {
+        flex-direction: column !important;
+        text-align: center !important;
+        align-items: center !important;
+    }
+    .canal-header-content a {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .canal-filter-form {
+        flex-direction: column !important;
+    }
+    .canal-filter-form > div,
+    .canal-filter-form > button {
+        width: 100% !important;
+        flex: auto !important;
+    }
+
+    .banca-header-box {
+        flex-direction: column !important;
+        text-align: center !important;
+        gap: 1rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    #lead-modal-dialog {
+        padding: 1.25rem 1rem !important;
+    }
+
+    .aula-material-item {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        text-align: left !important;
+    }
+    .aula-material-item button,
+    .btn-material-trigger {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .filters-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.6rem !important;
+    }
+
+    .filter-actions {
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+    .filter-actions a,
+    .filter-actions button {
+        width: 100% !important;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+
+    .hero-actions {
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+    .hero-actions a {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .filters-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+

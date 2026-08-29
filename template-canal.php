@@ -120,7 +120,7 @@ $selectBoardsList = $selectBoards->fetchAll();
         <?php endif; ?>
         
         <div style="padding: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1rem;">
+            <div class="canal-header-content" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1rem;">
                 <div>
                     <span style="color: var(--brand-orange); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">CANAL OFICIAL</span>
                     <h1 style="font-size: 2.2rem; color: #fff; font-weight: 800; margin: 0.2rem 0 0.4rem 0;"><?= htmlspecialchars($canal['name']) ?></h1>
@@ -144,7 +144,7 @@ $selectBoardsList = $selectBoards->fetchAll();
 
     <!-- Barra de Busca e Filtros do Canal (Alto Contraste) -->
     <section style="margin-bottom: 2.5rem; background: rgba(10, 15, 50, 0.85); padding: 1.5rem; border-radius: 10px; border: 1px solid var(--glass-border);">
-        <form method="GET" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <form method="GET" class="canal-filter-form" style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <div style="flex: 2; min-width: 240px;">
                 <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Buscar aulas neste canal..." style="width: 100%; padding: 0.75rem 1rem; background: #06092b; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; color: #ffffff; font-size: 0.9rem; font-weight: 500;">
             </div>
@@ -189,7 +189,7 @@ $selectBoardsList = $selectBoards->fetchAll();
                 </a>
             </div>
         <?php else: ?>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 1.5rem;">
                 <?php foreach ($videosList as $v): ?>
                     <article style="background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 8px 25px rgba(0,0,0,0.3);">
                         <div style="position: relative; aspect-ratio: 16/9; background: #000; overflow: hidden;">

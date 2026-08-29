@@ -126,7 +126,7 @@ require_once 'includes/header.php';
         </h1>
 
         <!-- Metadados da Aula -->
-        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; color: var(--text-secondary); border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+        <div class="aula-header-meta">
             <?php if (!empty($v['teacher_name'])): ?>
                 <div><i class="fas fa-user-circle" style="color: var(--brand-orange);" aria-hidden="true"></i> Professor(a): <strong><?= htmlspecialchars($v['teacher_name']) ?></strong></div>
             <?php endif; ?>
@@ -168,7 +168,7 @@ require_once 'includes/header.php';
     </div>
 
     <!-- Seção de Ações: Material Gratuito / Grupo VIP / Compartilhamento -->
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 3rem;">
+    <div class="aula-grid-layout" style="margin-bottom: 3rem;">
         
         <!-- Coluna Esquerda: Descrição e Material -->
         <div>
@@ -187,7 +187,7 @@ require_once 'includes/header.php';
                             </p>
                             
                             <?php foreach ($materiaisList as $mat): ?>
-                                <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 6px; border: 1px solid var(--glass-border); margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                                <div class="aula-material-item">
                                     <div>
                                         <strong style="color: #fff; font-size: 0.95rem; display: block;"><?= htmlspecialchars($mat['title']) ?></strong>
                                         <?php if (!empty($mat['description'])): ?>

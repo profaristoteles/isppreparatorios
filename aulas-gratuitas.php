@@ -121,7 +121,7 @@ $videosList = $stmtVideos->fetchAll();
             Estude com a equipe de professores do ISP Preparatórios. Videoaulas, resolução de questões e cadernos de estudo em PDF totalmente gratuitos.
         </p>
         
-        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <div class="hero-actions" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
             <a href="<?= htmlspecialchars($youtube_channel_url) ?>" target="_blank" rel="noopener noreferrer" class="btn" style="padding: 0.9rem 1.8rem; font-size: 0.95rem; background: #FF0000; color: #fff; border-color: #FF0000; font-weight: 800; text-decoration: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 15px rgba(255,0,0,0.4);">
                 <i class="fab fa-youtube" style="font-size: 1.2rem;" aria-hidden="true"></i> INSCREVER-SE NO YOUTUBE
             </a>
@@ -135,7 +135,7 @@ $videosList = $stmtVideos->fetchAll();
 <div class="container section-padding" style="padding: 2.5rem 5%;">
 
     <!-- Banner de Destaque: Inscrição Direta no Canal do YouTube -->
-    <div style="background: linear-gradient(135deg, rgba(255,0,0,0.15), rgba(3,4,94,0.85)); border: 2px solid #FF0000; border-radius: 12px; padding: 2rem; margin-bottom: 2.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; box-shadow: 0 10px 30px rgba(255,0,0,0.25);">
+    <div class="yt-banner-cta">
         <div style="flex: 1; min-width: 280px;">
             <span style="background: #FF0000; color: #fff; font-size: 0.75rem; padding: 0.25rem 0.7rem; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem;">
                 <i class="fab fa-youtube" style="font-size: 1rem;"></i> CANAL OFICIAL NO YOUTUBE
@@ -164,7 +164,7 @@ $videosList = $stmtVideos->fetchAll();
             </div>
 
             <!-- Filtros em Selects -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.8rem; margin-bottom: 1.4rem;">
+            <div class="filters-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.8rem; margin-bottom: 1.4rem;">
                 <div>
                     <label for="filter-canal" style="display: block; font-size: 0.8rem; color: #ffffff; margin-bottom: 0.3rem; font-weight: 700;">Canal</label>
                     <select id="filter-canal" name="canal" style="width: 100%; padding: 0.65rem; background: #06092b; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; color: #ffffff; font-size: 0.85rem; font-weight: 500;">
@@ -228,7 +228,7 @@ $videosList = $stmtVideos->fetchAll();
                 <?php endif; ?>
             </div>
 
-            <div style="display: flex; gap: 0.8rem; justify-content: flex-end;">
+            <div class="filter-actions" style="display: flex; gap: 0.8rem; justify-content: flex-end;">
                 <a href="/aulas-gratuitas" style="padding: 0.6rem 1.2rem; background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600;">LIMPAR FILTROS</a>
                 <button type="submit" style="padding: 0.6rem 1.6rem; background: var(--brand-orange); color: #fff; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 0.85rem;"><i class="fas fa-filter"></i> FILTRAR AULAS</button>
             </div>
@@ -243,7 +243,7 @@ $videosList = $stmtVideos->fetchAll();
             <h2 style="font-size: 1.8rem; color: #fff; font-weight: 800;">Canais de Aulas</h2>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 1.5rem;">
             <?php foreach ($canaisDestaque as $canal): ?>
             <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease, border-color 0.3s ease; box-shadow: 0 8px 25px rgba(0,0,0,0.3);">
                 <?php if (!empty($canal['cover_image'])): ?>
@@ -308,7 +308,7 @@ $videosList = $stmtVideos->fetchAll();
                 </div>
             </div>
         <?php else: ?>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 1.5rem;">
                 <?php foreach ($videosList as $v): ?>
                     <article style="background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 8px 25px rgba(0,0,0,0.3);">
                         <!-- Thumbnail Container -->
