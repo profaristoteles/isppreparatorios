@@ -1,0 +1,77 @@
+services:
+
+  db:
+    image: mysql:8.0
+    container_name: isp_db
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE: isp_db
+      MYSQL_USER: isp_user
+      MYSQL_PASSWORD: ${ISP_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${ISP_DB_ROOT_PASSWORD}
+
+    volumes:
+      - isp_mysql_data:/var/lib/mysql
+
+    networks:
+      - isp_internal
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h 127.0.0.1 -u isp_user -p"$${MYSQL_PASSWORD}" --silent
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  web:
+    image: ghcr.io/profaristoteles/isppreparatorios:latest
+    pull_policy: always
+    container_name: isp_web
+    restart: unless-stopped
+
+    environment:
+      DB_HOST: db
+      DB_NAME: isp_db
+      DB_USER: isp_user
+      DB_PASS: ${ISP_DB_PASSWORD}
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    volumes:
+      - isp_uploads_data:/var/www/html/uploads
+
+    networks:
+      - isp_internal
+      - traefik_network
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.routers.isp-web.entrypoints=websecure"
+      - "traefik.http.routers.isp-web.rule=Host(`isppreparatorios.com.br`) || Host(`www.isppreparatorios.com.br`) || Host(`ispprepratorios.com.br`) || Host(`www.ispprepratorios.com.br`)"
+      - "traefik.http.routers.isp-web.tls=true"
+      - "traefik.http.routers.isp-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.isp-web.loadbalancer.server.port=80"
+
+networks:
+
+  isp_internal:
+    internal: true
+
+  traefik_network:
+    external: true
+
+volumes:
+
+  isp_mysql_data:
+    external: true
+    name: isp-preparatorios_isp_mysql_data
+
+  isp_uploads_data:
+    external: true
+    name: isp-preparatorios_isp_uploads_data
