@@ -53,7 +53,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_network"
       - "traefik.http.routers.isp-web.entrypoints=websecure"
-      - "traefik.http.routers.isp-web.rule=Host(`isppreparatorios.com.br`) || Host(`www.isppreparatorios.com.br`) || Host(`ispprepratorios.com.br`) || Host(`www.ispprepratorios.com.br`)"
+      - "traefik.http.routers.isp-web.rule=Host(`isppreparatorios.com.br`) || Host(`www.isppreparatorios.com.br`)"
       - "traefik.http.routers.isp-web.tls=true"
       - "traefik.http.routers.isp-web.tls.certresolver=letsencrypt"
       - "traefik.http.services.isp-web.loadbalancer.server.port=80"
