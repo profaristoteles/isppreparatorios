@@ -899,4 +899,181 @@ class ReservationService {
             return date('d/m/Y', $ts);
         }
     }
+
+    /**
+     * Exclui uma reserva e suas tabelas filhas (notas, histórico, fila pendente)
+     */
+    public static function deleteReservation($pdo, $reservationId, $adminId = null, $adminName = 'Administrador') {
+        $reservationId = (int)$reservationId;
+        if ($reservationId <= 0) {
+            return ['success' => false, 'message' => 'ID de reserva inválido.'];
+        }
+
+        try {
+            if (!$pdo->inTransaction()) {
+                $pdo->beginTransaction();
+            }
+
+            // 1. Verificar se reserva existe
+            $stmtCheck = $pdo->prepare("SELECT r.id, r.lead_id, l.name as lead_name FROM reservations r LEFT JOIN leads l ON r.lead_id = l.id WHERE r.id = ? LIMIT 1");
+            $stmtCheck->execute([$reservationId]);
+            $reserva = $stmtCheck->fetch();
+
+            if (!$reserva) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                return ['success' => false, 'message' => 'Reserva não encontrada ou já excluída.'];
+            }
+
+            // 2. Excluir notas internas associadas
+            $stmtDelNotes = $pdo->prepare("DELETE FROM reservation_notes WHERE reservation_id = ?");
+            $stmtDelNotes->execute([$reservationId]);
+
+            // 3. Excluir histórico de ações
+            $stmtDelHist = $pdo->prepare("DELETE FROM reservation_history WHERE reservation_id = ?");
+            $stmtDelHist->execute([$reservationId]);
+
+            // 4. Excluir jobs pendentes na integration_queue para esta reserva
+            $stmtDelQueue = $pdo->prepare("DELETE FROM integration_queue WHERE entity_type = 'reservation' AND entity_id = ?");
+            $stmtDelQueue->execute([$reservationId]);
+
+            // 5. Excluir a reserva
+            $stmtDelRes = $pdo->prepare("DELETE FROM reservations WHERE id = ?");
+            $stmtDelRes->execute([$reservationId]);
+
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
+
+            return [
+                'success' => true,
+                'message' => "Reserva #{$reservationId} (" . ($reserva['lead_name'] ?: 'Lead') . ") excluída com sucesso!"
+            ];
+        } catch (PDOException $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            return [
+                'success' => false,
+                'message' => 'Erro ao excluir reserva: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Atualiza os dados cadastrais da reserva e do lead correspondente
+     */
+    public static function updateReservationData($pdo, $reservationId, array $data, $adminId = null, $adminName = 'Administrador') {
+        $reservationId = (int)$reservationId;
+        if ($reservationId <= 0) {
+            return ['success' => false, 'message' => 'ID de reserva inválido.'];
+        }
+
+        $leadName = trim($data['name'] ?? '');
+        $leadEmail = strtolower(trim($data['email'] ?? ''));
+        $leadPhone = trim($data['phone'] ?? '');
+        $campaignId = (int)($data['campaign_id'] ?? 0);
+        $modality = trim($data['preferred_modality'] ?? 'presencial');
+        $city = trim($data['city'] ?? '');
+        $state = strtoupper(trim($data['state'] ?? ''));
+        $status = trim($data['status'] ?? 'nova');
+        $isWaitingList = !empty($data['is_waiting_list']) ? 1 : 0;
+
+        if (empty($leadName)) {
+            return ['success' => false, 'message' => 'O nome do interessado não pode ficar vazio.'];
+        }
+        if (empty($leadEmail) || !filter_var($leadEmail, FILTER_VALIDATE_EMAIL)) {
+            return ['success' => false, 'message' => 'Por favor, informe um e-mail válido.'];
+        }
+        $phoneNormalized = normalize_phone_number($leadPhone);
+        if (empty($phoneNormalized)) {
+            return ['success' => false, 'message' => 'Por favor, informe um número de telefone/WhatsApp válido.'];
+        }
+
+        $validModalities = ['presencial', 'online', 'ambas'];
+        if (!in_array($modality, $validModalities)) {
+            $modality = 'presencial';
+        }
+
+        $validStatuses = array_keys(self::getReservationStatusLabels());
+        if (!in_array($status, $validStatuses)) {
+            $status = 'nova';
+        }
+
+        try {
+            if (!$pdo->inTransaction()) {
+                $pdo->beginTransaction();
+            }
+
+            // 1. Obter reserva e lead atual
+            $stmtRes = $pdo->prepare("SELECT r.*, l.name as cur_name, l.email as cur_email, l.phone_original as cur_phone 
+                                      FROM reservations r 
+                                      JOIN leads l ON r.lead_id = l.id 
+                                      WHERE r.id = ? LIMIT 1");
+            $stmtRes->execute([$reservationId]);
+            $current = $stmtRes->fetch();
+
+            if (!$current) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                return ['success' => false, 'message' => 'Reserva não encontrada.'];
+            }
+
+            $leadId = (int)$current['lead_id'];
+
+            // 2. Atualizar Lead em `leads`
+            $stmtUpLead = $pdo->prepare("UPDATE leads SET name = ?, email = ?, phone_original = ?, phone_normalized = ? WHERE id = ?");
+            $stmtUpLead->execute([$leadName, $leadEmail, $leadPhone, $phoneNormalized, $leadId]);
+
+            // 3. Atualizar Reserva em `reservations`
+            $targetCampaignId = $campaignId > 0 ? $campaignId : (int)$current['campaign_id'];
+
+            $stmtUpRes = $pdo->prepare("UPDATE reservations SET 
+                                        campaign_id = ?, 
+                                        preferred_modality = ?, 
+                                        city = ?, 
+                                        state = ?, 
+                                        status = ?, 
+                                        is_waiting_list = ? 
+                                        WHERE id = ?");
+            $stmtUpRes->execute([$targetCampaignId, $modality, $city, $state, $status, $isWaitingList, $reservationId]);
+
+            // 4. Registrar no histórico de auditoria
+            $changes = [];
+            if ($current['cur_name'] !== $leadName) $changes[] = "Nome: '{$current['cur_name']}' → '{$leadName}'";
+            if ($current['cur_phone'] !== $leadPhone) $changes[] = "Telefone: '{$current['cur_phone']}' → '{$leadPhone}'";
+            if ($current['cur_email'] !== $leadEmail) $changes[] = "E-mail: '{$current['cur_email']}' → '{$leadEmail}'";
+            if ($current['preferred_modality'] !== $modality) $changes[] = "Modalidade: '{$current['preferred_modality']}' → '{$modality}'";
+            if ($current['status'] !== $status) $changes[] = "Status: '{$current['status']}' → '{$status}'";
+            if ((int)$current['is_waiting_list'] !== $isWaitingList) $changes[] = $isWaitingList ? "Movido para Lista de Espera" : "Movido para Vaga Regular";
+
+            $desc = !empty($changes) 
+                ? "Dados da reserva editados por {$adminName}: " . implode(', ', $changes) . "." 
+                : "Dados da reserva salvos por {$adminName} sem alterações estruturais.";
+
+            $stmtHist = $pdo->prepare("INSERT INTO reservation_history (reservation_id, admin_id, action_type, old_status, new_status, description) 
+                                       VALUES (?, ?, 'edicao_dados', ?, ?, ?)");
+            $stmtHist->execute([$reservationId, $adminId, $current['status'], $status, $desc]);
+
+            // 5. Reenfileirar no EvoCRM se dados de contato mudaram
+            if ($current['cur_name'] !== $leadName || $current['cur_phone'] !== $leadPhone || $current['cur_email'] !== $leadEmail) {
+                self::reenqueueEvoCRM($pdo, $reservationId);
+            }
+
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
+
+            return [
+                'success' => true,
+                'message' => "Reserva #{$reservationId} atualizada com sucesso!"
+            ];
+        } catch (PDOException $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            return [
+                'success' => false,
+                'message' => 'Erro ao atualizar reserva: ' . $e->getMessage()
+            ];
+        }
+    }
 }

@@ -90,6 +90,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: reserva-detalhes.php?id=" . $reservationId);
         exit;
     }
+
+    if ($action === 'delete_reservation') {
+        $res = ReservationService::deleteReservation($pdo, $reservationId, $adminId, $adminName);
+        if ($res['success']) {
+            $_SESSION['msg'] = $res['message'];
+            header("Location: gerenciar-reservas.php");
+            exit;
+        } else {
+            $_SESSION['erro'] = $res['message'];
+            header("Location: reserva-detalhes.php?id=" . $reservationId);
+            exit;
+        }
+    }
+
+    if ($action === 'edit_reservation') {
+        $res = ReservationService::updateReservationData($pdo, $reservationId, $_POST, $adminId, $adminName);
+        if ($res['success']) {
+            $_SESSION['msg'] = $res['message'];
+        } else {
+            $_SESSION['erro'] = $res['message'];
+        }
+        header("Location: reserva-detalhes.php?id=" . $reservationId);
+        exit;
+    }
 }
 
 // Carregar Reserva com Lead e Campanha
@@ -145,6 +169,8 @@ $lastContactFormatted = ReservationService::formatContactDate($lastContactAt);
 $nextFollowUpFormatted = !empty($reservation['next_follow_up_at']) ? date('d/m/Y \à\s H:i', strtotime($reservation['next_follow_up_at'])) : 'Nunca agendado';
 $nextFollowUpInputValue = !empty($reservation['next_follow_up_at']) ? date('Y-m-d\TH:i', strtotime($reservation['next_follow_up_at'])) : '';
 
+$campaignsSelect = $pdo->query("SELECT id, title FROM reservation_campaigns ORDER BY id DESC")->fetchAll();
+
 require_once 'includes/header.php';
 ?>
 
@@ -153,13 +179,19 @@ require_once 'includes/header.php';
         <h2><i class="fas fa-id-card"></i> Reserva #<?= $reservation['id'] ?>: <?= htmlspecialchars($reservation['lead_name']) ?></h2>
         <p style="color: #666; margin: 0; font-size: 0.9rem;">Campanha: <strong><?= htmlspecialchars($reservation['campaign_title']) ?></strong></p>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button type="button" onclick="openEditModal()" class="btn btn-primary" style="background: #0077b6; border-color: #0077b6;">
+            <i class="fas fa-edit"></i> Editar Dados
+        </button>
         <a href="<?= htmlspecialchars($whatsappLink) ?>" target="_blank" class="btn btn-success" style="background: #25d366;">
             <i class="fab fa-whatsapp"></i> Conversar no WhatsApp
         </a>
         <a href="mailto:<?= htmlspecialchars($reservation['lead_email']) ?>" class="btn btn-secondary">
             <i class="fas fa-envelope"></i> Enviar E-mail
         </a>
+        <button type="button" onclick="confirmDeleteReservation()" class="btn btn-danger" style="background: #e63946; border-color: #e63946;">
+            <i class="fas fa-trash-alt"></i> Excluir Reserva
+        </button>
         <a href="gerenciar-reservas.php" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Voltar
         </a>
@@ -515,5 +547,131 @@ require_once 'includes/header.php';
     </div>
 
 </div>
+
+<!-- Formulário Oculto para Excluir Reserva -->
+<form id="formDeleteReservation" method="POST" style="display: none;">
+    <?= csrf_field() ?>
+    <input type="hidden" name="action" value="delete_reservation">
+    <input type="hidden" name="reservation_id" value="<?= $reservation['id'] ?>">
+</form>
+
+<!-- Modal de Edição de Reserva -->
+<div id="modalEditReservation" style="display: none; position: fixed; inset: 0; background: rgba(3, 4, 94, 0.6); backdrop-filter: blur(4px); z-index: 99999; overflow-y: auto; padding: 20px;">
+    <div style="background: #fff; max-width: 600px; margin: 30px auto; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.25); overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #03045e, #0077b6); color: #fff; padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-edit"></i> Editar Reserva <span style="color: #ffb703;">#<?= $reservation['id'] ?></span>
+            </h3>
+            <button type="button" onclick="closeEditModal()" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+        
+        <form method="POST" style="padding: 1.5rem;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="edit_reservation">
+            <input type="hidden" name="reservation_id" value="<?= $reservation['id'] ?>">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group" style="grid-column: span 2; margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">Nome do Interessado *</label>
+                    <input type="text" name="name" value="<?= htmlspecialchars($reservation['lead_name']) ?>" class="form-control" required style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">WhatsApp / Telefone *</label>
+                    <input type="text" name="phone" value="<?= htmlspecialchars($reservation['lead_phone']) ?>" class="form-control" required style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">E-mail *</label>
+                    <input type="email" name="email" value="<?= htmlspecialchars($reservation['lead_email']) ?>" class="form-control" required style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="font-weight: 600; font-size: 0.85rem; color: #333;">Campanha / Turma *</label>
+                <select name="campaign_id" class="form-control" required style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                    <?php foreach ($campaignsSelect as $c): ?>
+                        <option value="<?= $c['id'] ?>" <?= $reservation['campaign_id'] == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['title']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">Modalidade Preferida</label>
+                    <select name="preferred_modality" class="form-control" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                        <option value="presencial" <?= $reservation['preferred_modality'] === 'presencial' ? 'selected' : '' ?>>Presencial</option>
+                        <option value="online" <?= $reservation['preferred_modality'] === 'online' ? 'selected' : '' ?>>Online</option>
+                        <option value="ambas" <?= $reservation['preferred_modality'] === 'ambas' ? 'selected' : '' ?>>Ambas (Sem preferência)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">Status Comercial</label>
+                    <select name="status" class="form-control" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                        <?php foreach ($statusLabels as $sVal => $sLbl): ?>
+                            <option value="<?= $sVal ?>" <?= $reservation['status'] === $sVal ? 'selected' : '' ?>><?= $sLbl ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">Cidade</label>
+                    <input type="text" name="city" value="<?= htmlspecialchars($reservation['city'] ?: '') ?>" class="form-control" placeholder="Ex: Caxias" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">UF</label>
+                    <input type="text" name="state" value="<?= htmlspecialchars($reservation['state'] ?: '') ?>" class="form-control" maxlength="2" placeholder="MA" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px; text-transform: uppercase;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem; background: #f8f9fa; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid #e9ecef;">
+                <label style="font-weight: 600; font-size: 0.85rem; color: #333; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin: 0;">
+                    <input type="checkbox" name="is_waiting_list" value="1" <?= $reservation['is_waiting_list'] ? 'checked' : '' ?> style="width: 16px; height: 16px; cursor: pointer;">
+                    <span>Colocar na <strong>Lista de Espera</strong> (sem vaga imediata garantida)</span>
+                </label>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary" style="padding: 0.5rem 1.2rem;">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.4rem; background: #03045e; border-color: #03045e;">
+                    <i class="fas fa-save"></i> Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditModal() {
+    document.getElementById('modalEditReservation').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+    document.getElementById('modalEditReservation').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function confirmDeleteReservation() {
+    const msg = "⚠️ ATENÇÃO: Deseja realmente EXCLUIR permanentemente a reserva #<?= $reservation['id'] ?> (<?= htmlspecialchars(addslashes($reservation['lead_name'])) ?>)?\n\nEsta ação apagará permanentemente a reserva, notas internas e todo o histórico de contatos associados. Não poderá ser desfeita!";
+    if (confirm(msg)) {
+        document.getElementById('formDeleteReservation').submit();
+    }
+}
+
+// Fechar modal ao clicar fora da caixa branca
+window.addEventListener('click', function(e) {
+    const modal = document.getElementById('modalEditReservation');
+    if (e.target === modal) {
+        closeEditModal();
+    }
+});
+</script>
 
 <?php require_once 'includes/footer.php'; ?>

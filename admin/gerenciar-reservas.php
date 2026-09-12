@@ -45,6 +45,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($action === 'delete_reservation') {
+        $reservationId = (int)($_POST['reservation_id'] ?? 0);
+        $res = ReservationService::deleteReservation($pdo, $reservationId, $adminId, $adminName);
+        if ($res['success']) {
+            $_SESSION['msg'] = $res['message'];
+        } else {
+            $_SESSION['erro'] = $res['message'];
+        }
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+
+    if ($action === 'edit_reservation') {
+        $reservationId = (int)($_POST['reservation_id'] ?? 0);
+        $res = ReservationService::updateReservationData($pdo, $reservationId, $_POST, $adminId, $adminName);
+        if ($res['success']) {
+            $_SESSION['msg'] = $res['message'];
+        } else {
+            $_SESSION['erro'] = $res['message'];
+        }
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+
     // Ações em massa
     if ($action === 'bulk_action') {
         $selectedIds = $_POST['selected_reservations'] ?? [];
@@ -67,6 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $count++;
                 }
                 $_SESSION['msg'] = "{$count} reserva(s) reenfileirada(s) com sucesso para o EvoCRM.";
+            } elseif ($bulkOperation === 'delete_selected') {
+                foreach ($selectedIds as $rId) {
+                    ReservationService::deleteReservation($pdo, (int)$rId, $adminId, $adminName);
+                    $count++;
+                }
+                $_SESSION['msg'] = "{$count} reserva(s) excluída(s) com sucesso.";
             }
         }
         header("Location: " . $_SERVER['REQUEST_URI']);
@@ -307,8 +337,11 @@ require_once 'includes/header.php';
                 <optgroup label="Integrações">
                     <option value="resync_crm">Reenviar Selecionadas ao EvoCRM</option>
                 </optgroup>
+                <optgroup label="Ações Destrutivas">
+                    <option value="delete_selected" style="color: #dc3545; font-weight: 700;">🗑️ Excluir Selecionadas Permanentemente</option>
+                </optgroup>
             </select>
-            <button type="submit" class="btn btn-sm" onclick="return confirm('Deseja aplicar esta ação nas reservas selecionadas?');">
+            <button type="submit" class="btn btn-sm" onclick="return handleBulkSubmit();">
                 Aplicar às Selecionadas
             </button>
         </div>
@@ -335,7 +368,7 @@ require_once 'includes/header.php';
                         <th>Próximo Contato</th>
                         <th>Status Comercial</th>
                         <th>CRM</th>
-                        <th style="text-align: right; width: 130px;">Ações</th>
+                        <th style="text-align: right; width: 160px; white-space: nowrap;">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -434,13 +467,19 @@ require_once 'includes/header.php';
                                     <span class="badge badge-secondary" title="Aguardando fila"><i class="fas fa-minus"></i> -</span>
                                 <?php endif; ?>
                             </td>
-                            <td style="text-align: right;">
-                                <a href="reserva-detalhes.php?id=<?= $r['id'] ?>" class="btn btn-sm btn-secondary" title="Ver Detalhes e Histórico">
+                            <td style="text-align: right; white-space: nowrap;">
+                                <a href="reserva-detalhes.php?id=<?= $r['id'] ?>" class="btn btn-sm btn-secondary" title="Ver Detalhes e Histórico" style="padding: 0.25rem 0.45rem;">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="<?= htmlspecialchars($whatsappLink) ?>" target="_blank" class="btn btn-sm btn-success" title="WhatsApp Rápido">
+                                <button type="button" class="btn btn-sm" onclick='openEditModal(<?= json_encode($r, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)' title="Editar Reserva" style="padding: 0.25rem 0.45rem; background: #0077b6; border-color: #0077b6; color: #fff;">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <a href="<?= htmlspecialchars($whatsappLink) ?>" target="_blank" class="btn btn-sm btn-success" title="WhatsApp Rápido" style="padding: 0.25rem 0.45rem;">
                                     <i class="fab fa-whatsapp"></i>
                                 </a>
+                                <button type="button" class="btn btn-sm" onclick="confirmDeleteReservation(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['lead_name'])) ?>')" title="Excluir Reserva" style="padding: 0.25rem 0.45rem; background: #e63946; border-color: #e63946; color: #fff;">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                             </td>
                         </tr>
                     <?php endforeach; endif; ?>
@@ -471,6 +510,105 @@ require_once 'includes/header.php';
     </div>
 <?php endif; ?>
 
+<!-- Formulário Oculto para Excluir Reserva -->
+<form id="formDeleteReservation" method="POST" style="display: none;">
+    <?= csrf_field() ?>
+    <input type="hidden" name="action" value="delete_reservation">
+    <input type="hidden" name="reservation_id" id="deleteReservationId">
+</form>
+
+<!-- Modal de Edição de Reserva -->
+<div id="modalEditReservation" style="display: none; position: fixed; inset: 0; background: rgba(3, 4, 94, 0.6); backdrop-filter: blur(4px); z-index: 99999; overflow-y: auto; padding: 20px;">
+    <div style="background: #fff; max-width: 600px; margin: 30px auto; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.25); overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #03045e, #0077b6); color: #fff; padding: 1.2rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-edit"></i> Editar Reserva <span id="editModalResIdTitle" style="color: #ffb703;"></span>
+            </h3>
+            <button type="button" onclick="closeEditModal()" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+        
+        <form method="POST" id="formEditReservation" style="padding: 1.5rem;">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="edit_reservation">
+            <input type="hidden" name="reservation_id" id="edit_reservation_id">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group" style="grid-column: span 2; margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">Nome do Interessado *</label>
+                    <input type="text" name="name" id="edit_name" class="form-control" required style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">WhatsApp / Telefone *</label>
+                    <input type="text" name="phone" id="edit_phone" class="form-control" required style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">E-mail *</label>
+                    <input type="email" name="email" id="edit_email" class="form-control" required style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="font-weight: 600; font-size: 0.85rem; color: #333;">Campanha / Turma *</label>
+                <select name="campaign_id" id="edit_campaign_id" class="form-control" required style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                    <?php foreach ($campaignsSelect as $c): ?>
+                        <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['title']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">Modalidade Preferida</label>
+                    <select name="preferred_modality" id="edit_preferred_modality" class="form-control" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                        <option value="presencial">Presencial</option>
+                        <option value="online">Online</option>
+                        <option value="ambas">Ambas (Sem preferência)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">Status Comercial</label>
+                    <select name="status" id="edit_status" class="form-control" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                        <?php foreach ($statusLabels as $sVal => $sLbl): ?>
+                            <option value="<?= $sVal ?>"><?= $sLbl ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">Cidade</label>
+                    <input type="text" name="city" id="edit_city" class="form-control" placeholder="Ex: Caxias" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: #333;">UF</label>
+                    <input type="text" name="state" id="edit_state" class="form-control" maxlength="2" placeholder="MA" style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ced4da; border-radius: 6px; text-transform: uppercase;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem; background: #f8f9fa; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid #e9ecef;">
+                <label style="font-weight: 600; font-size: 0.85rem; color: #333; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin: 0;">
+                    <input type="checkbox" name="is_waiting_list" id="edit_is_waiting_list" value="1" style="width: 16px; height: 16px; cursor: pointer;">
+                    <span>Colocar na <strong>Lista de Espera</strong> (sem vaga imediata garantida)</span>
+                </label>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary" style="padding: 0.5rem 1.2rem;">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.4rem; background: #03045e; border-color: #03045e;">
+                    <i class="fas fa-save"></i> Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function toggleSelectAll(master) {
     const checkboxes = document.querySelectorAll('.resCheckbox');
@@ -482,6 +620,61 @@ function changeStatus(reservationId, newStatus) {
     document.getElementById('quickNewStatus').value = newStatus;
     document.getElementById('formQuickStatus').submit();
 }
+
+function openEditModal(r) {
+    document.getElementById('edit_reservation_id').value = r.id;
+    document.getElementById('editModalResIdTitle').innerText = '#' + r.id;
+    document.getElementById('edit_name').value = r.lead_name || '';
+    document.getElementById('edit_phone').value = r.lead_phone || '';
+    document.getElementById('edit_email').value = r.lead_email || '';
+    document.getElementById('edit_campaign_id').value = r.campaign_id || '';
+    document.getElementById('edit_preferred_modality').value = r.preferred_modality || 'presencial';
+    document.getElementById('edit_status').value = r.status || 'nova';
+    document.getElementById('edit_city').value = r.city || '';
+    document.getElementById('edit_state').value = r.state || '';
+    document.getElementById('edit_is_waiting_list').checked = (parseInt(r.is_waiting_list) === 1);
+
+    document.getElementById('modalEditReservation').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+    document.getElementById('modalEditReservation').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function confirmDeleteReservation(reservationId, leadName) {
+    const msg = "⚠️ ATENÇÃO: Deseja realmente EXCLUIR a reserva #" + reservationId + " (" + leadName + ")?\n\nEsta ação apagará permanentemente a reserva, notas internas e histórico de contatos associados. Não poderá ser desfeita!";
+    if (confirm(msg)) {
+        document.getElementById('deleteReservationId').value = reservationId;
+        document.getElementById('formDeleteReservation').submit();
+    }
+}
+
+function handleBulkSubmit() {
+    const op = document.querySelector('select[name="bulk_operation"]').value;
+    if (!op) {
+        alert('Por favor, selecione uma ação para aplicar.');
+        return false;
+    }
+    const checked = document.querySelectorAll('.resCheckbox:checked');
+    if (checked.length === 0) {
+        alert('Selecione pelo menos uma reserva na tabela marcando a caixa de seleção.');
+        return false;
+    }
+    if (op === 'delete_selected') {
+        return confirm('⚠️ ATENÇÃO: Deseja realmente EXCLUIR permanentemente as ' + checked.length + ' reserva(s) selecionada(s)?\n\nEsta ação apagará permanentemente as reservas, históricos e notas associadas. Não poderá ser desfeita!');
+    }
+    return confirm('Deseja aplicar esta ação nas ' + checked.length + ' reserva(s) selecionada(s)?');
+}
+
+// Fechar modal ao clicar fora da caixa branca
+window.addEventListener('click', function(e) {
+    const modal = document.getElementById('modalEditReservation');
+    if (e.target === modal) {
+        closeEditModal();
+    }
+});
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
