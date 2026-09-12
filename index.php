@@ -3,6 +3,7 @@ require_once 'db_config.php';
 require_once 'includes/header.php';
 
 $cursos_destaque = $pdo->query("SELECT * FROM cursos WHERE active=1 ORDER BY id DESC LIMIT 3")->fetchAll();
+$campanhas_destaque = $pdo->query("SELECT * FROM reservation_campaigns WHERE active=1 AND status NOT IN ('cancelada', 'rascunho') ORDER BY order_index ASC, id DESC LIMIT 2")->fetchAll();
 $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id DESC")->fetchAll();
 ?>
 
@@ -98,6 +99,58 @@ $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id
             </div>
             
             <div class="grid">
+                <?php if(!empty($campanhas_destaque)): ?>
+                    <?php foreach($campanhas_destaque as $camp): 
+                        $status_label = '🔥 PRÉ-RESERVA ABERTA';
+                        $status_color = 'var(--brand-orange)';
+                        if ($camp['status'] === 'turma_confirmada') {
+                            $status_label = '✅ TURMA CONFIRMADA';
+                            $status_color = '#10b981';
+                        } elseif ($camp['status'] === 'matriculas_abertas') {
+                            $status_label = '🚀 MATRÍCULAS ABERTAS';
+                            $status_color = '#3b82f6';
+                        }
+                        $modality_str = 'Presencial e Online';
+                        if ($camp['allows_presencial'] && !$camp['allows_online']) $modality_str = 'Presencial';
+                        elseif (!$camp['allows_presencial'] && $camp['allows_online']) $modality_str = 'Online / Ao Vivo';
+                    ?>
+                    <div class="feature-card reveal" style="display: flex; flex-direction: column; padding: 1.2rem; border: 1px solid rgba(255, 128, 0, 0.4); background: radial-gradient(circle at top left, rgba(255, 128, 0, 0.08) 0%, rgba(2, 2, 58, 0.7) 100%);">
+                        <div style="position: relative; margin-bottom: 1.2rem; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 128, 0, 0.25);">
+                            <?php if(!empty($camp['image'])): ?>
+                                <img src="uploads/<?= htmlspecialchars($camp['image']) ?>" alt="<?= htmlspecialchars($camp['title']) ?>" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block;">
+                            <?php else: ?>
+                                <div style="width: 100%; aspect-ratio: 16/9; background: linear-gradient(135deg, #03045e, #001845); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; text-align: center;">
+                                    <span style="font-size: 2rem; margin-bottom: 0.3rem;">🎯</span>
+                                    <span style="color: #ff9d3b; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;">NOVA TURMA PREVISTA</span>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <div style="position: absolute; top: 10px; left: 10px; right: 10px; display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                <span style="background: <?= $status_color ?>; color: #fff; font-size: 0.68rem; font-family: var(--font-mono); padding: 0.3rem 0.6rem; border-radius: 20px; font-weight: 800; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                                    <?= $status_label ?>
+                                </span>
+                                <span style="background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); color: #fff; font-size: 0.68rem; font-family: var(--font-mono); padding: 0.3rem 0.6rem; border-radius: 20px; font-weight: 500; border: 1px solid rgba(255,255,255,0.15);">
+                                    📍 <?= htmlspecialchars($camp['city'] ?: 'ISP Unidade') ?>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.4rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                            <span style="background: rgba(255, 128, 0, 0.15); color: #ff9d3b; font-size: 0.68rem; font-family: var(--font-mono); padding: 0.2rem 0.5rem; border-radius: 6px; font-weight: 600;">
+                                🎓 <?= $modality_str ?>
+                            </span>
+                        </div>
+                        
+                        <h3 style="font-size: 1.2rem; margin-bottom: 0.8rem; flex-grow: 1; line-height: 1.4; color: #fff;"><?= htmlspecialchars($camp['title']) ?></h3>
+                        
+                        <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 128, 0, 0.2); padding-top: 1rem; gap: 0.5rem; flex-wrap: wrap;">
+                            <span style="font-family: var(--font-mono); color: #10b981; font-size: 0.85rem; font-weight: 700;">Reserva Gratuita</span>
+                            <a href="/reserva/<?= htmlspecialchars($camp['slug']) ?>" class="btn" style="flex: 1; min-width: 110px; text-align: center; padding: 0.7rem 1rem; font-size: 0.82rem; font-weight: 700; background: linear-gradient(135deg, #ff8000, #e65100); color: #fff; border: none; border-radius: 6px; box-shadow: 0 4px 10px rgba(255, 128, 0, 0.3);">Garantir Vaga &rarr;</a>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+
                 <?php foreach($cursos_destaque as $c): ?>
                 <?php $is_reserva = ($c['status'] ?? 'Disponível') == 'Pegando Reserva'; ?>
                 <div class="feature-card reveal" style="display: flex; flex-direction: column; padding: 1.2rem;">
