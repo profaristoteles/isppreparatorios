@@ -359,9 +359,56 @@ require_once 'includes/header.php';
             <textarea name="short_description" class="form-control" rows="2" placeholder="Resumo atrativo para os candidatos interessados..."><?= htmlspecialchars($editCampaign['short_description'] ?? '') ?></textarea>
         </div>
 
+        <!-- Editor Moderno para Descrição Completa / Detalhes da Turma -->
         <div class="form-group" style="margin: 0;">
-            <label>Descrição Completa / Detalhes da Turma (HTML ou Texto)</label>
-            <textarea name="description" class="form-control" rows="5" placeholder="Disciplinas previstas, corpo docente, carga horária estimada, diferenciais..."><?= htmlspecialchars($editCampaign['description'] ?? '') ?></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+                <label style="margin: 0; font-weight: 700; color: #03045e; font-size: 0.95rem;">
+                    <i class="fas fa-edit"></i> Descrição Completa / Detalhes da Turma
+                </label>
+                <!-- Abas de Alternância: Visual, Código HTML e Preview -->
+                <div class="editor-tabs-group" style="display: flex; gap: 0.3rem; background: #e9ecef; padding: 3px; border-radius: 6px;">
+                    <button type="button" class="editor-tab-btn active" id="tabBtnVisual" onclick="switchEditorMode('visual')">
+                        <i class="fas fa-pen-nib"></i> Editor Visual
+                    </button>
+                    <button type="button" class="editor-tab-btn" id="tabBtnCode" onclick="switchEditorMode('code')">
+                        <i class="fas fa-code"></i> Código HTML
+                    </button>
+                    <button type="button" class="editor-tab-btn" id="tabBtnPreview" onclick="switchEditorMode('preview')">
+                        <i class="fas fa-eye"></i> Visualização Real (Preview)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Painel 1: Editor Visual (TinyMCE) -->
+            <div id="editorPanelVisual">
+                <textarea name="description" id="campaign_description" class="form-control" rows="10"><?= htmlspecialchars($editCampaign['description'] ?? '') ?></textarea>
+            </div>
+
+            <!-- Painel 2: Código HTML com visual moderno de código -->
+            <div id="editorPanelCode" style="display: none;">
+                <div style="background: #1e1e2f; color: #a6accd; padding: 0.5rem 1rem; border-radius: 6px 6px 0 0; font-family: monospace; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; border-bottom: none;">
+                    <span><i class="fas fa-file-code" style="color: #ff8000;"></i> Editor de Código-Fonte HTML</span>
+                    <small style="color: #888;">Edite as tags diretamente e volte para o Visual a qualquer momento</small>
+                </div>
+                <textarea id="rawHtmlEditor" class="form-control" rows="14" style="background: #151522; color: #64b5f6; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9rem; line-height: 1.5; border-radius: 0 0 6px 6px; border: 1px solid #333; resize: vertical; tab-size: 2;" placeholder="Digite ou cole tags HTML aqui..."></textarea>
+            </div>
+
+            <!-- Painel 3: Visualização Real (Como aparece na Landing Page do ISP) -->
+            <div id="editorPanelPreview" style="display: none;">
+                <div style="background: #00022e; color: #ff8000; padding: 0.6rem 1rem; border-radius: 8px 8px 0 0; font-size: 0.85rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="fas fa-tv"></i> Prévia Instantânea — Estilo Exato da Landing Page de Reservas</span>
+                    <button type="button" onclick="updateLivePreview()" class="btn btn-sm" style="background: #ff8000; color: #fff; padding: 0.2rem 0.6rem; font-size: 0.75rem;">
+                        <i class="fas fa-sync-alt"></i> Atualizar Prévia
+                    </button>
+                </div>
+                <div id="livePreviewContainer" style="background: #030438; color: #ffffff; padding: 2rem; border-radius: 0 0 8px 8px; min-height: 250px; font-family: 'Poppins', sans-serif; border: 1px solid rgba(255,255,255,0.1); border-top: none;">
+                    <!-- Renderizado dinamicamente via JS -->
+                </div>
+            </div>
+
+            <small style="display: block; color: #666; margin-top: 0.5rem;">
+                <i class="fas fa-info-circle"></i> Use o <strong>Editor Visual</strong> para formatar textos e listas facilmente, o <strong>Código HTML</strong> para inspecionar/editar tags, ou a <strong>Visualização Real</strong> para ver a renderização exata na Landing Page.
+            </small>
         </div>
 
         <!-- Localidade e Público -->
@@ -479,5 +526,244 @@ require_once 'includes/header.php';
         </div>
     </form>
 </div>
+
+<!-- Estilos e Scripts do Editor Moderno de Campanhas -->
+<style>
+.editor-tab-btn {
+    border: none;
+    background: transparent;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #495057;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.2s ease;
+}
+.editor-tab-btn:hover {
+    background: rgba(0,0,0,0.06);
+    color: #03045e;
+}
+.editor-tab-btn.active {
+    background: #03045e;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* Estilização da Prévia da Landing Page dentro do Admin */
+#livePreviewContainer {
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+}
+#livePreviewContainer h1, 
+#livePreviewContainer h2, 
+#livePreviewContainer h3, 
+#livePreviewContainer h4 {
+    color: #ffffff;
+    margin-top: 1rem;
+    margin-bottom: 0.6rem;
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+}
+#livePreviewContainer h4 {
+    color: #ff9d3b;
+    border-bottom: 1px solid rgba(255,128,0,0.3);
+    padding-bottom: 0.4rem;
+    font-size: 1.05rem;
+}
+#livePreviewContainer p {
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin-bottom: 0.8rem;
+}
+#livePreviewContainer ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.8rem 0;
+}
+#livePreviewContainer ul li {
+    position: relative;
+    padding-left: 1.8rem;
+    margin-bottom: 0.5rem;
+    color: #e2e8f0;
+    line-height: 1.5;
+}
+#livePreviewContainer ul li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #ff8000;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+#livePreviewContainer ol {
+    padding-left: 1.5rem;
+    color: #cbd5e1;
+    margin: 0.8rem 0;
+}
+#livePreviewContainer table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+#livePreviewContainer table th, 
+#livePreviewContainer table td {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+#livePreviewContainer table th {
+    background: rgba(255,128,0,0.15);
+    color: #ff9d3b;
+}
+</style>
+
+<!-- TinyMCE 6 CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js" referrerpolicy="origin"></script>
+
+<script>
+let currentEditorMode = 'visual';
+
+// Inicializa o TinyMCE 6 para a descrição da campanha
+tinymce.init({
+    selector: '#campaign_description',
+    plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount code preview',
+    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline forecolor backcolor | align lineheight | bullist numlist outdent indent | table link | emoticons removeformat | code preview',
+    height: 380,
+    language: 'pt_BR',
+    branding: false,
+    promotion: false,
+    content_style: 'body { font-family: "Poppins", Helvetica, Arial, sans-serif; font-size: 15px; color: #2d3748; line-height: 1.6; padding: 12px; } h2, h3, h4 { color: #03045e; font-weight: 700; } ul, ol { padding-left: 22px; }',
+    setup: function(editor) {
+        editor.on('change keyup input', function() {
+            editor.save();
+        });
+    }
+});
+
+// Alterna entre Editor Visual, Código HTML e Prévia Real da LP
+function switchEditorMode(mode) {
+    const visualPanel = document.getElementById('editorPanelVisual');
+    const codePanel = document.getElementById('editorPanelCode');
+    const previewPanel = document.getElementById('editorPanelPreview');
+    const rawHtml = document.getElementById('rawHtmlEditor');
+
+    // Atualiza classes das abas
+    document.getElementById('tabBtnVisual').classList.remove('active');
+    document.getElementById('tabBtnCode').classList.remove('active');
+    document.getElementById('tabBtnPreview').classList.remove('active');
+
+    // Captura o conteúdo do modo anterior
+    let content = '';
+    if (currentEditorMode === 'visual') {
+        content = tinymce.get('campaign_description') ? tinymce.get('campaign_description').getContent() : document.getElementById('campaign_description').value;
+    } else if (currentEditorMode === 'code') {
+        content = rawHtml.value;
+    } else {
+        content = tinymce.get('campaign_description') ? tinymce.get('campaign_description').getContent() : rawHtml.value;
+    }
+
+    currentEditorMode = mode;
+
+    if (mode === 'visual') {
+        document.getElementById('tabBtnVisual').classList.add('active');
+        visualPanel.style.display = 'block';
+        codePanel.style.display = 'none';
+        previewPanel.style.display = 'none';
+
+        if (tinymce.get('campaign_description')) {
+            tinymce.get('campaign_description').setContent(content);
+        } else {
+            document.getElementById('campaign_description').value = content;
+        }
+    } else if (mode === 'code') {
+        document.getElementById('tabBtnCode').classList.add('active');
+        visualPanel.style.display = 'none';
+        codePanel.style.display = 'block';
+        previewPanel.style.display = 'none';
+
+        rawHtml.value = content;
+        rawHtml.focus();
+    } else if (mode === 'preview') {
+        document.getElementById('tabBtnPreview').classList.add('active');
+        visualPanel.style.display = 'none';
+        codePanel.style.display = 'none';
+        previewPanel.style.display = 'block';
+
+        updateLivePreview(content);
+    }
+}
+
+// Renderiza a prévia instantânea no estilo da Landing Page
+function updateLivePreview(customContent) {
+    let content = customContent;
+    if (typeof content !== 'string') {
+        if (currentEditorMode === 'code') {
+            content = document.getElementById('rawHtmlEditor').value;
+        } else {
+            content = tinymce.get('campaign_description') ? tinymce.get('campaign_description').getContent() : document.getElementById('campaign_description').value;
+        }
+    }
+
+    const preview = document.getElementById('livePreviewContainer');
+    const trimmed = content.trim();
+
+    if (!trimmed) {
+        preview.innerHTML = '<div style="text-align: center; color: #888; padding: 2rem;"><em>Nenhum conteúdo inserido ainda. Escreva no <strong>Editor Visual</strong> ou no <strong>Código HTML</strong> para visualizar aqui o resultado exato da Landing Page.</em></div>';
+        return;
+    }
+
+    // Se já contém tags HTML (<p>, <div>, <ul>, etc.), exibe diretamente
+    if (/<[a-z][\s\S]*>/i.test(trimmed)) {
+        preview.innerHTML = trimmed;
+    } else {
+        // Se for texto com quebras e marcadores simples, converte para visualização
+        const lines = trimmed.split('\n');
+        let html = '';
+        let inList = false;
+
+        lines.forEach(line => {
+            const l = line.trim();
+            if (!l) {
+                if (inList) { html += '</ul>'; inList = false; }
+                return;
+            }
+            if (/^[•\-\*]\s*(.+)$/.test(l)) {
+                if (!inList) { html += '<ul>'; inList = true; }
+                html += '<li>' + l.replace(/^[•\-\*]\s*/, '') + '</li>';
+            } else {
+                if (inList) { html += '</ul>'; inList = false; }
+                if (/^(Disciplinas|Horários|Pacotes|Bônus|Modalidades|Público-alvo)[\w\s]*:/i.test(l)) {
+                    html += '<h4>' + l + '</h4>';
+                } else {
+                    html += '<p>' + l + '</p>';
+                }
+            }
+        });
+        if (inList) html += '</ul>';
+        preview.innerHTML = html;
+    }
+}
+
+// Sincronização garantida antes do submit do formulário
+const formCampanha = document.querySelector('#formCampanhaCard form');
+if (formCampanha) {
+    formCampanha.addEventListener('submit', function() {
+        if (currentEditorMode === 'code') {
+            const rawContent = document.getElementById('rawHtmlEditor').value;
+            if (tinymce.get('campaign_description')) {
+                tinymce.get('campaign_description').setContent(rawContent);
+            }
+            document.getElementById('campaign_description').value = rawContent;
+        }
+        if (typeof tinymce !== 'undefined') {
+            tinymce.triggerSave();
+        }
+    });
+}
+</script>
 
 <?php require_once 'includes/footer.php'; ?>
