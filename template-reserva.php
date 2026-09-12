@@ -125,6 +125,7 @@ function render_formatted_description($rawText) {
     color: #ffffff;
     font-family: 'Poppins', sans-serif;
     min-height: 100vh;
+    padding-top: 95px; /* Espaço para não encavalar com o menu fixo */
     padding-bottom: 6rem;
     position: relative;
     overflow-x: hidden;
@@ -152,7 +153,7 @@ function render_formatted_description($rawText) {
 
 /* Hero Section */
 .reserva-hero-section {
-    padding: 7rem 0 4rem;
+    padding: 2.5rem 0 3.5rem;
 }
 
 .reserva-hero-grid {
@@ -163,6 +164,12 @@ function render_formatted_description($rawText) {
 }
 
 @media (max-width: 992px) {
+    .reserva-page-wrapper {
+        padding-top: 85px;
+    }
+    .reserva-hero-section {
+        padding: 1.5rem 0 2.5rem;
+    }
     .reserva-hero-grid {
         grid-template-columns: 1fr;
         gap: 2.5rem;
@@ -498,17 +505,23 @@ function render_formatted_description($rawText) {
 }
 
 .modality-cards-group {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.65rem;
+}
+
+@media (max-width: 480px) {
+    .modality-cards-group {
+        grid-template-columns: 1fr;
+    }
 }
 
 .modality-card-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.8rem;
-    padding: 0.85rem 1rem;
+    gap: 0.6rem;
+    padding: 0.75rem 0.85rem;
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.04);
     border: 1.5px solid rgba(255, 255, 255, 0.12);
@@ -1039,6 +1052,19 @@ function render_formatted_description($rawText) {
                         <?php endif; ?>
                     </div>
 
+                    <!-- Descrição Detalhada da Turma (Integrada ao Hero para preencher a coluna e eliminar o vão vazio) -->
+                    <?php if (!empty($campaign['description'])): ?>
+                        <div class="reserva-hero-description-block" style="margin: 2rem 0 1.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;">
+                                <span style="background: rgba(255, 128, 0, 0.2); color: #ff9d3b; width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">📋</span>
+                                <h3 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin: 0;">Estrutura e Informações da Turma</h3>
+                            </div>
+                            <div class="reserva-formatted-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 1.6rem; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                                <?= render_formatted_description($campaign['description']) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <!-- Aviso de Segurança e Compromisso Zero -->
                     <div class="reserva-info-banner">
                         <i class="fas fa-shield-alt"></i>
@@ -1141,11 +1167,11 @@ function render_formatted_description($rawText) {
                                         </div>
                                     </div>
 
-                                    <!-- Seletor de Modalidade (Cards Interativos Estilizados) -->
+                                    <!-- Seletor de Modalidade (Apenas Presencial e Online) -->
                                     <?php if ($allowsPresencial && $allowsOnline): ?>
                                         <div class="modality-selector-container">
                                             <div class="modality-selector-label">
-                                                <i class="fas fa-graduation-cap"></i> Como você pretende participar? *
+                                                <i class="fas fa-graduation-cap"></i> Modalidade de Estudo *
                                             </div>
                                             <input type="hidden" name="preferred_modality" id="selectedModality" value="presencial" required>
 
@@ -1155,8 +1181,8 @@ function render_formatted_description($rawText) {
                                                     <div class="modality-card-left">
                                                         <span class="modality-badge-icon">🏫</span>
                                                         <div class="modality-card-text">
-                                                            <span class="modality-card-title">Presencial em Sala de Aula</span>
-                                                            <span class="modality-card-desc">Aulas no polo em Caxias - Vagas limitadas</span>
+                                                            <span class="modality-card-title">Presencial</span>
+                                                            <span class="modality-card-desc">Em sala de aula</span>
                                                         </div>
                                                     </div>
                                                     <div class="modality-radio-indicator"><div class="dot"></div></div>
@@ -1167,20 +1193,8 @@ function render_formatted_description($rawText) {
                                                     <div class="modality-card-left">
                                                         <span class="modality-badge-icon">💻</span>
                                                         <div class="modality-card-text">
-                                                            <span class="modality-card-title">Online / Ao Vivo</span>
-                                                            <span class="modality-card-desc">Transmissão interativa + plataforma de estudos</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modality-radio-indicator"><div class="dot"></div></div>
-                                                </div>
-
-                                                <!-- Card Ambas -->
-                                                <div class="modality-card-item" data-value="ambas" onclick="selectModality('ambas')">
-                                                    <div class="modality-card-left">
-                                                        <span class="modality-badge-icon">⭐</span>
-                                                        <div class="modality-card-text">
-                                                            <span class="modality-card-title">Tenho Interesse em Ambas</span>
-                                                            <span class="modality-card-desc">Quero avaliar presencial e online</span>
+                                                            <span class="modality-card-title">Online</span>
+                                                            <span class="modality-card-desc">Ao vivo / Plataforma</span>
                                                         </div>
                                                     </div>
                                                     <div class="modality-radio-indicator"><div class="dot"></div></div>
@@ -1197,9 +1211,15 @@ function render_formatted_description($rawText) {
 
                                     <!-- Perguntas Customizadas Opcionais -->
                                     <?php if (!empty($customFields)): ?>
-                                        <?php foreach ($customFields as $fKey => $fConfig): ?>
+                                        <?php foreach ($customFields as $fKey => $fConfig): 
+                                            $fieldLabel = $fConfig['label'] ?? $fKey;
+                                            // Se o seletor acima já capturou a modalidade, ignorar pergunta customizada duplicada
+                                            if ($allowsPresencial && $allowsOnline && stripos($fieldLabel, 'modalidade') !== false) {
+                                                continue;
+                                            }
+                                        ?>
                                             <div class="reserva-form-group">
-                                                <label><?= htmlspecialchars($fConfig['label'] ?? $fKey) ?></label>
+                                                <label><?= htmlspecialchars($fieldLabel) ?></label>
                                                 <?php if (!empty($fConfig['options']) && is_array($fConfig['options'])): ?>
                                                     <select name="custom_<?= htmlspecialchars($fKey) ?>" class="reserva-control" style="background: #111728;">
                                                         <option value="">Selecione uma opção...</option>
@@ -1313,18 +1333,6 @@ function render_formatted_description($rawText) {
                     <p>Cadernos de questões comentadas, resumos estratégicos e banco exclusivo de exercícios para fixação prática.</p>
                 </div>
             </div>
-
-            <!-- Descrição Completa e Formatada da Campanha -->
-            <?php if (!empty($campaign['description'])): ?>
-                <div class="reserva-section-heading" style="margin-bottom: 2rem;">
-                    <span class="section-pretitle">Informações Detalhadas</span>
-                    <h3>O Que Você Precisa Saber Sobre a Turma</h3>
-                </div>
-
-                <div class="reserva-formatted-card">
-                    <?= render_formatted_description($campaign['description']) ?>
-                </div>
-            <?php endif; ?>
 
             <!-- Como Funciona o Processo da Pré-Reserva -->
             <div class="reserva-section-heading">
