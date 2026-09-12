@@ -59,16 +59,24 @@ try {
     foreach ($jobs as $job) {
         $jobId = (int)$job['id'];
         $integration = $job['integration'];
+        $entityType = $job['entity_type'] ?? '';
+        $action = $job['action'] ?? '';
         $payload = json_decode($job['payload'], true) ?: [];
         $attempts = (int)$job['attempts'] + 1;
         $maxAttempts = (int)$job['max_attempts'];
 
-        echo "[" . date('Y-m-d H:i:s') . "] [$worker_id] Processando Job #$jobId (Integração: $integration, Tentativa: $attempts/$maxAttempts)...\n";
+        echo "[" . date('Y-m-d H:i:s') . "] [$worker_id] Processando Job #$jobId (Integração: $integration, Entidade: $entityType, Ação: $action, Tentativa: $attempts/$maxAttempts)...\n";
 
         $result = ['success' => false, 'message' => 'Integração desconhecida'];
+        $isPermanentError = false;
 
         if ($integration === 'evocrm') {
-            $result = EvoCRMService::upsertContact($payload);
+            if ($action === 'upsert_contact') {
+                $result = EvoCRMService::upsertContact($payload);
+            } else {
+                $result = ['success' => false, 'message' => "Ação de integração não suportada: {$action}"];
+                $isPermanentError = true;
+            }
         } else {
             $result = ['success' => true, 'message' => 'Driver mantido como stub para integrações futuras.'];
         }
@@ -78,19 +86,44 @@ try {
             $stmtDone = $pdo->prepare("UPDATE integration_queue SET status = 'synced', attempts = ?, locked_at = NULL, worker_id = NULL, last_error = NULL WHERE id = ?");
             $stmtDone->execute([$attempts, $jobId]);
             echo "[" . date('Y-m-d H:i:s') . "] [$worker_id] Job #$jobId sincronizado com sucesso!\n";
+
+            // Se for reserva, registrar sucesso no histórico de auditoria
+            if ($entityType === 'reservation') {
+                try {
+                    $stmtHist = $pdo->prepare("INSERT INTO reservation_history (reservation_id, admin_id, action_type, old_status, new_status, description) VALUES (?, NULL, 'envio_crm', NULL, NULL, 'Contato sincronizado com sucesso no EvoCRM via worker.')");
+                    $stmtHist->execute([(int)$job['entity_id']]);
+                } catch (Exception $eHist) { /* auditoria */ }
+            }
         } else {
-            // Falha: calcular backoff exponencial para próxima tentativa
-            $retryMinutes = 5;
-            if ($attempts === 2) $retryMinutes = 30;
-            if ($attempts === 3) $retryMinutes = 120;
-            if ($attempts >= 4) $retryMinutes = 1440; // 24 horas
+            if ($isPermanentError) {
+                // Erro permanente (ex: action desconhecida): encerra tentativas imediatamente sem agendar retentativa
+                $cleanError = $result['message'];
+                $stmtErr = $pdo->prepare("UPDATE integration_queue SET status = 'error', attempts = ?, locked_at = NULL, worker_id = NULL, last_error = ?, next_retry_at = NULL WHERE id = ?");
+                $stmtErr->execute([$maxAttempts, $cleanError, $jobId]);
 
-            $cleanError = preg_replace('/(Bearer|Key|Token|Password)\s+[A-Za-z0-9._-]+/i', '$1 [REDACTED]', $result['message']);
-            
-            $stmtErr = $pdo->prepare("UPDATE integration_queue SET status = 'error', attempts = ?, locked_at = NULL, worker_id = NULL, last_error = ?, next_retry_at = NOW() + INTERVAL ? MINUTE WHERE id = ?");
-            $stmtErr->execute([$attempts, $cleanError, $retryMinutes, $jobId]);
+                echo "[" . date('Y-m-d H:i:s') . "] [$worker_id] Job #$jobId falhou com erro permanente: $cleanError (Sem retentativas automáticas).\n";
+            } else {
+                // Falha temporária da API: calcular backoff exponencial para próxima tentativa
+                $retryMinutes = 5;
+                if ($attempts === 2) $retryMinutes = 30;
+                if ($attempts === 3) $retryMinutes = 120;
+                if ($attempts >= 4) $retryMinutes = 1440; // 24 horas
 
-            echo "[" . date('Y-m-d H:i:s') . "] [$worker_id] Job #$jobId falhou: $cleanError (Próxima tentativa em $retryMinutes min).\n";
+                $cleanError = preg_replace('/(Bearer|Key|Token|Password)\s+[A-Za-z0-9._-]+/i', '$1 [REDACTED]', $result['message']);
+                
+                $stmtErr = $pdo->prepare("UPDATE integration_queue SET status = 'error', attempts = ?, locked_at = NULL, worker_id = NULL, last_error = ?, next_retry_at = NOW() + INTERVAL ? MINUTE WHERE id = ?");
+                $stmtErr->execute([$attempts, $cleanError, $retryMinutes, $jobId]);
+
+                echo "[" . date('Y-m-d H:i:s') . "] [$worker_id] Job #$jobId falhou temporariamente: $cleanError (Próxima tentativa em $retryMinutes min).\n";
+            }
+
+            // Se for reserva, registrar aviso de falha no histórico
+            if ($entityType === 'reservation') {
+                try {
+                    $stmtHist = $pdo->prepare("INSERT INTO reservation_history (reservation_id, admin_id, action_type, old_status, new_status, description) VALUES (?, NULL, 'erro_crm', NULL, NULL, ?)");
+                    $stmtHist->execute([(int)$job['entity_id'], "Falha ao enviar ao EvoCRM: " . substr($cleanError, 0, 200)]);
+                } catch (Exception $eHist) { /* auditoria */ }
+            }
         }
     }
 

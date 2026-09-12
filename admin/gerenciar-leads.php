@@ -66,7 +66,8 @@ $totalPages = ceil($totalLeads / $limit);
 // Consulta paginada
 $sql = "SELECT l.*, 
         (SELECT COUNT(*) FROM lead_tags lt WHERE lt.lead_id = l.id) as tag_count,
-        (SELECT COUNT(*) FROM lead_downloads ld WHERE ld.subject_type = 'lead' AND ld.subject_id = l.id) as dl_count 
+        (SELECT COUNT(*) FROM lead_downloads ld WHERE ld.subject_type = 'lead' AND ld.subject_id = l.id) as dl_count,
+        (SELECT COUNT(*) FROM reservations r WHERE r.lead_id = l.id) as res_count
         FROM leads l $where ORDER BY l.id DESC LIMIT $limit OFFSET $offset";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -192,6 +193,13 @@ require_once 'includes/header.php';
                     <td>
                         <strong><?= htmlspecialchars($lead['name']) ?></strong><br>
                         <small style="color: #666;"><?= htmlspecialchars($lead['email']) ?></small>
+                        <?php if (!empty($lead['res_count'])): ?>
+                            <div style="margin-top: 3px;">
+                                <span class="badge" style="background: #fff3cd; color: #856404; border: 1px solid #ffeeba; font-size: 0.72rem; padding: 0.2rem 0.5rem;">
+                                    <i class="fas fa-bookmark"></i> <?= $lead['res_count'] ?> reserva(s)
+                                </span>
+                            </div>
+                        <?php endif; ?>
                     </td>
                     <td>
                         <i class="fab fa-whatsapp text-success"></i> <?= htmlspecialchars($lead['phone_original']) ?><br>

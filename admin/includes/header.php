@@ -84,6 +84,11 @@
     <a href="conflitos-leads.php"><span><i class="fas fa-exclamation-triangle"></i> Conflitos</span></a>
     <a href="fila-integracoes.php"><span><i class="fas fa-sync"></i> Fila de Integrações</span></a>
 
+    <div class="menu-section-header">Reservas & Novas Turmas</div>
+    <a href="reservas-dashboard.php"><span><i class="fas fa-chart-pie"></i> Dashboard Reservas</span></a>
+    <a href="gerenciar-campanhas-reserva.php"><span><i class="fas fa-bullhorn"></i> Campanhas</span></a>
+    <a href="gerenciar-reservas.php"><span><i class="fas fa-clipboard-list"></i> Reservas</span></a>
+
     <div class="menu-section-header">Geral do Site</div>
     <a href="gerenciar-cursos.php"><span><i class="fas fa-graduation-cap"></i> Cursos</span></a>
     <a href="gerenciar-apostilas.php"><span><i class="fas fa-book-open"></i> Apostilas</span></a>
@@ -104,8 +109,8 @@
     </div>
     
     <?php if(isset($_SESSION['msg'])): ?>
-        <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= $_SESSION['msg']; unset($_SESSION['msg']); ?></div>
+        <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= htmlspecialchars($_SESSION['msg'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['msg']); ?></div>
     <?php endif; ?>
     <?php if(isset($_SESSION['erro'])): ?>
-        <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= $_SESSION['erro']; unset($_SESSION['erro']); ?></div>
+        <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($_SESSION['erro'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['erro']); ?></div>
     <?php endif; ?>

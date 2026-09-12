@@ -34,10 +34,10 @@ class EvoCRMService {
             'phone'         => $payload['phone'] ?? '',
             'tags'          => $payload['tags'] ?? [],
             'campaign_code' => $payload['campaign_code'] ?? '',
-            'custom_fields' => [
-                'source'  => 'Aulas Gratuitas',
+            'custom_fields' => array_merge([
+                'source'  => $payload['source'] ?? 'Aulas Gratuitas',
                 'lead_id' => $payload['lead_id'] ?? ''
-            ]
+            ], is_array($payload['custom_fields'] ?? null) ? $payload['custom_fields'] : [])
         ];
 
         $ch = curl_init($endpoint);

@@ -2,6 +2,7 @@
 require_once 'auth.php';
 require_once '../db_config.php';
 require_once 'includes/admin_security.php';
+require_once '../includes/reservation_service.php';
 
 $lead_id = (int)($_GET['id'] ?? 0);
 if (!$lead_id) {
@@ -44,6 +45,15 @@ $downloadsList = $stmtDLs->fetchAll();
 $stmtQueue = $pdo->prepare("SELECT * FROM integration_queue WHERE entity_type = 'lead' AND entity_id = ? ORDER BY id DESC");
 $stmtQueue->execute([$lead_id]);
 $queueList = $stmtQueue->fetchAll();
+
+// Carregar Reservas do Lead
+$stmtRes = $pdo->prepare("SELECT r.*, c.title as campaign_title, c.slug as campaign_slug 
+                          FROM reservations r 
+                          JOIN reservation_campaigns c ON r.campaign_id = c.id 
+                          WHERE r.lead_id = ? 
+                          ORDER BY r.id DESC");
+$stmtRes->execute([$lead_id]);
+$reservationsList = $stmtRes->fetchAll();
 
 require_once 'includes/header.php';
 ?>
@@ -93,6 +103,65 @@ require_once 'includes/header.php';
             </span>
         <?php endforeach; endif; ?>
     </div>
+</div>
+
+<!-- Reservas em Novas Turmas / Lista de Interesse -->
+<div class="card" style="margin-bottom: 1.5rem; border-left: 4px solid #ff8000;">
+    <h3><i class="fas fa-bookmark text-warning"></i> Reservas em Novas Turmas (<?= count($reservationsList) ?>)</h3>
+    <table class="table" style="margin-top: 0.8rem;">
+        <thead>
+            <tr>
+                <th style="width: 60px;">ID</th>
+                <th>Campanha / Turma</th>
+                <th>Modalidade</th>
+                <th>Status Comercial</th>
+                <th>Fila de Espera</th>
+                <th>Data da Reserva</th>
+                <th style="text-align: right; width: 100px;">Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($reservationsList)): ?>
+                <tr><td colspan="7" style="text-align: center; color: #888;">Este lead não possui reservas registradas.</td></tr>
+            <?php else: foreach ($reservationsList as $resItem): 
+                $resStatusLabels = ReservationService::getReservationStatusLabels();
+                $resModLabels = ReservationService::getModalityLabels();
+
+                $rBadgeClass = 'badge-secondary';
+                if ($resItem['status'] === 'nova') $rBadgeClass = 'badge-info';
+                elseif ($resItem['status'] === 'contatado' || $resItem['status'] === 'interessado') $rBadgeClass = 'badge-warning';
+                elseif ($resItem['status'] === 'matriculado') $rBadgeClass = 'badge-success';
+                elseif ($resItem['status'] === 'aguardando_matricula') $rBadgeClass = 'badge-primary';
+                elseif ($resItem['status'] === 'nao_respondeu' || $resItem['status'] === 'sem_interesse' || $resItem['status'] === 'cancelado') $rBadgeClass = 'badge-danger';
+            ?>
+                <tr>
+                    <td><strong>#<?= $resItem['id'] ?></strong></td>
+                    <td>
+                        <strong><?= htmlspecialchars($resItem['campaign_title']) ?></strong>
+                    </td>
+                    <td>
+                        <span class="badge badge-secondary">
+                            <?= htmlspecialchars($resModLabels[$resItem['preferred_modality']] ?? $resItem['preferred_modality']) ?>
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge <?= $rBadgeClass ?>">
+                            <?= htmlspecialchars($resStatusLabels[$resItem['status']] ?? $resItem['status']) ?>
+                        </span>
+                    </td>
+                    <td>
+                        <?= $resItem['is_waiting_list'] ? '<span class="badge badge-warning">Sim (Lista de Espera)</span>' : '<span class="badge badge-success">Vaga Regular</span>' ?>
+                    </td>
+                    <td><?= date('d/m/Y H:i', strtotime($resItem['created_at'])) ?></td>
+                    <td style="text-align: right;">
+                        <a href="reserva-detalhes.php?id=<?= $resItem['id'] ?>" class="btn btn-sm btn-secondary" title="Ver Detalhes da Reserva">
+                            <i class="fas fa-eye"></i> Detalhes
+                        </a>
+                    </td>
+                </tr>
+            <?php endforeach; endif; ?>
+        </tbody>
+    </table>
 </div>
 
 <!-- Histórico Imutável de Consentimentos LGPD -->

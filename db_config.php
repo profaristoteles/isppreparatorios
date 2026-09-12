@@ -12,14 +12,30 @@ $options = [
     PDO::ATTR_EMULATE_PREPARES   => false,
 ];
 
-try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (\PDOException $e) {
-    // Em produção, não mostramos o erro detalhado por segurança
-    if (getenv('ENVIRONMENT') === 'production') {
-        die("Erro de conexão. Por favor, tente novamente mais tarde.");
+// Configuração centralizada de Timezone para horário de Brasília (UTC-3)
+if (date_default_timezone_get() !== 'America/Sao_Paulo') {
+    date_default_timezone_set('America/Sao_Paulo');
+}
+
+if (!isset($pdo)) {
+    try {
+        $pdo = new PDO($dsn, $user, $pass, $options);
+        // Alinhar fuso horário do MySQL com o fuso brasileiro da aplicação
+        try {
+            $pdo->exec("SET time_zone = '-03:00'");
+        } catch (\Exception $eTz) {
+            // Em caso de restrição de privilégios ou tabela de timezone ausente, prossegue de forma segura
+        }
+    } catch (\PDOException $e) {
+        // Em produção, não mostramos o erro detalhado por segurança
+        if (getenv('ENVIRONMENT') === 'production') {
+            die("Erro de conexão. Por favor, tente novamente mais tarde.");
+        }
+        if (getenv('TEST_MODE') === '1') {
+            return;
+        }
+        die("Erro na conexão com o banco de dados: " . $e->getMessage());
     }
-    die("Erro na conexão com o banco de dados: " . $e->getMessage());
 }
 
 // Auto-migration: coluna status em posts (rascunho/publicado)
@@ -68,6 +84,24 @@ try {
     }
 } catch (Exception $e) { /* Auto-migração concluída ou em andamento */ }
 
+
+// Auto-migration para Campanhas de Reserva / Lista de Interesse (Verifica todas as 4 tabelas)
+try {
+    $tablesNeeded = ['reservation_campaigns', 'reservations', 'reservation_history', 'reservation_notes'];
+    $needsMigration = false;
+    foreach ($tablesNeeded as $tName) {
+        $check = $pdo->query("SHOW TABLES LIKE '{$tName}'")->fetch();
+        if (!$check) {
+            $needsMigration = true;
+            break;
+        }
+    }
+    if ($needsMigration) {
+        ob_start();
+        require_once __DIR__ . '/migration_reservas.php';
+        ob_end_clean();
+    }
+} catch (Exception $e) { /* Auto-migração concluída ou em andamento */ }
 
 // Auto-migration: colunas SEO de posts (meta_title, meta_description, slug, image_alt)
 // Garante que existam E tenham tamanho suficiente (VARCHAR 500)

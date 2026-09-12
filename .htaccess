@@ -24,6 +24,9 @@ RewriteRule ^apostila/([a-z0-9\-]+)/?$ apostila-redirect.php?slug=$1 [L,QSA]
 # Rota para eventos com slug
 RewriteRule ^evento/([a-z0-9\-]+)/?$ evento-redirect.php?slug=$1 [L,QSA]
 
+# Rota para campanhas de reserva com slug
+RewriteRule ^reserva/([a-z0-9\-]+)/?$ reserva-redirect.php?slug=$1 [L,QSA]
+
 <IfModule mod_php.c>
     php_value upload_max_filesize 20M
     php_value post_max_size 25M

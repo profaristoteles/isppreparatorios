@@ -89,4 +89,15 @@ foreach ($eventos as $e) {
     echo '</url>';
 }
 
+// Campanhas de Reserva / Novas Turmas
+try {
+    $campanhas = $pdo->query("SELECT slug FROM reservation_campaigns WHERE active=1 AND status IN ('reservas_abertas', 'matriculas_abertas', 'turma_confirmada')")->fetchAll();
+    foreach ($campanhas as $camp) {
+        echo '<url>';
+        echo '<loc>' . $base_url . 'reserva/' . $camp['slug'] . '</loc>';
+        echo '<priority>0.8</priority>';
+        echo '</url>';
+    }
+} catch (Exception $e) {}
+
 echo '</urlset>';
