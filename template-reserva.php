@@ -15,6 +15,9 @@ if (!isset($campaign)) {
 $dynamic_title = !empty($campaign['meta_title']) ? $campaign['meta_title'] : ($campaign['title'] . " - Reserva de Vagas | ISP Preparatórios");
 $dynamic_desc = !empty($campaign['meta_description']) ? $campaign['meta_description'] : (!empty($campaign['short_description']) ? strip_tags($campaign['short_description']) : "Garanta seu interesse e reserve sua vaga para a nova turma do ISP Preparatórios.");
 
+// Ocultar widget de chat externo na LP de reserva para evitar sobreposição em telas mobile
+$hide_leadconnector_chat = true;
+
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/reservation_service.php';
 
@@ -159,20 +162,46 @@ function render_formatted_description($rawText) {
 .reserva-hero-grid {
     display: grid;
     grid-template-columns: 1.25fr 0.95fr;
-    gap: 3.5rem;
+    grid-template-areas: 
+        "header form"
+        "details form";
+    gap: 2rem 3.5rem;
     align-items: start;
+}
+
+.reserva-hero-header {
+    grid-area: header;
+}
+
+.reserva-hero-details {
+    grid-area: details;
 }
 
 @media (max-width: 992px) {
     .reserva-page-wrapper {
-        padding-top: 85px;
+        padding-top: 80px;
+        padding-bottom: 5rem;
     }
     .reserva-hero-section {
-        padding: 1.5rem 0 2.5rem;
+        padding: 1rem 0 2rem;
     }
     .reserva-hero-grid {
-        grid-template-columns: 1fr;
-        gap: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.8rem;
+    }
+    .reserva-hero-header {
+        order: 1;
+        width: 100%;
+    }
+    .reserva-sticky-col {
+        order: 2;
+        position: static !important;
+        width: 100%;
+    }
+    .reserva-hero-details {
+        order: 3;
+        width: 100%;
     }
 }
 
@@ -281,6 +310,32 @@ function render_formatted_description($rawText) {
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 1rem;
     margin-bottom: 2.5rem;
+}
+
+@media (max-width: 576px) {
+    .reserva-specs-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+        margin-bottom: 1.5rem;
+    }
+    .spec-item-card {
+        padding: 0.75rem 0.65rem !important;
+        gap: 0.6rem !important;
+        border-radius: 10px !important;
+    }
+    .spec-icon-box {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1rem !important;
+        border-radius: 8px !important;
+    }
+    .spec-text-box .spec-label {
+        font-size: 0.68rem !important;
+    }
+    .spec-text-box .spec-value {
+        font-size: 0.85rem !important;
+        word-break: break-word;
+    }
 }
 
 .spec-item-card {
@@ -921,17 +976,115 @@ function render_formatted_description($rawText) {
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(7, 12, 38, 0.95);
+    background: rgba(7, 12, 38, 0.96);
     border-top: 1px solid rgba(255, 128, 0, 0.4);
-    padding: 0.9rem 1.2rem;
-    z-index: 9998;
+    padding: 0.75rem 1rem;
+    z-index: 9995;
     backdrop-filter: blur(12px);
     box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+.mobile-sticky-cta-bar.cta-hidden {
+    transform: translateY(115%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 @media (max-width: 992px) {
     .mobile-sticky-cta-bar {
         display: block;
+    }
+}
+
+/* Otimizações Responsivas Mobile para Formulário e Tipografia */
+.reserva-city-state-row {
+    display: grid;
+    grid-template-columns: 1fr 85px;
+    gap: 0.8rem;
+}
+
+@media (max-width: 600px) {
+    .reserva-container {
+        padding: 0 1rem;
+    }
+    .reserva-main-title {
+        font-size: clamp(1.6rem, 6.5vw, 2.1rem);
+        line-height: 1.2;
+        margin-bottom: 0.9rem;
+    }
+    .reserva-lead-desc {
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 1.2rem;
+    }
+    .reserva-counter-pill {
+        padding: 0.4rem 0.9rem;
+        font-size: 0.82rem;
+        margin-bottom: 1.2rem;
+    }
+    .reserva-form-card {
+        border-radius: 16px;
+    }
+    .reserva-form-banner {
+        height: 130px;
+    }
+    .reserva-form-content {
+        padding: 1.3rem 1rem;
+    }
+    .reserva-form-header {
+        margin-bottom: 1.2rem;
+    }
+    .reserva-form-header h2 {
+        font-size: 1.35rem;
+    }
+    .reserva-form-header p {
+        font-size: 0.82rem;
+    }
+    .reserva-form-group {
+        margin-bottom: 0.95rem;
+    }
+    .reserva-control {
+        font-size: 16px !important; /* Previne auto-zoom no Safari / iOS */
+        padding: 0.75rem 0.85rem;
+        min-height: 48px;
+    }
+    .reserva-input-wrapper .reserva-control {
+        padding-left: 2.5rem;
+    }
+    .reserva-input-wrapper i {
+        left: 0.85rem;
+        font-size: 0.9rem;
+    }
+    .reserva-city-state-row {
+        grid-template-columns: 1fr 72px !important;
+        gap: 0.5rem !important;
+    }
+    .modality-selector-container {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    .modality-cards-group {
+        grid-template-columns: 1fr !important;
+        gap: 0.5rem;
+    }
+    .modality-card-item {
+        padding: 0.75rem 0.85rem;
+        min-height: 48px;
+    }
+    .reserva-lgpd-box {
+        font-size: 0.76rem;
+        gap: 0.6rem;
+        margin: 1rem 0;
+    }
+    .reserva-lgpd-box input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+    .btn-submit-reserva {
+        padding: 0.95rem 1.2rem;
+        font-size: 0.95rem;
+        min-height: 48px;
     }
 }
 </style>
@@ -942,8 +1095,8 @@ function render_formatted_description($rawText) {
         <div class="reserva-container">
             <div class="reserva-hero-grid">
                 
-                <!-- Coluna Esquerda: Informações Principais da Campanha -->
-                <div class="reserva-hero-info">
+                <!-- Bloco 1: Informações Principais e Destaques da Campanha -->
+                <div class="reserva-hero-header">
                     
                     <!-- Badges de Status e Modalidade -->
                     <div class="reserva-badges-row">
@@ -1052,30 +1205,9 @@ function render_formatted_description($rawText) {
                         <?php endif; ?>
                     </div>
 
-                    <!-- Descrição Detalhada da Turma (Integrada ao Hero para preencher a coluna e eliminar o vão vazio) -->
-                    <?php if (!empty($campaign['description'])): ?>
-                        <div class="reserva-hero-description-block" style="margin: 2rem 0 1.5rem;">
-                            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;">
-                                <span style="background: rgba(255, 128, 0, 0.2); color: #ff9d3b; width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">📋</span>
-                                <h3 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin: 0;">Estrutura e Informações da Turma</h3>
-                            </div>
-                            <div class="reserva-formatted-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 1.6rem; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-                                <?= render_formatted_description($campaign['description']) ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Aviso de Segurança e Compromisso Zero -->
-                    <div class="reserva-info-banner">
-                        <i class="fas fa-shield-alt"></i>
-                        <p>
-                            <strong>Compromisso Zero:</strong> A pré-reserva garante sua <strong>prioridade máxima</strong> na formação da turma e acesso aos <strong>descontos de 1º lote</strong>. Não há cobrança antecipada nem dados bancários exigidos neste momento.
-                        </p>
-                    </div>
-
                 </div>
 
-                <!-- Coluna Direita: Formulário Flutuante Sticky -->
+                <!-- Bloco 2: Formulário Lateral de Reserva (No mobile posicionado logo após os destaques) -->
                 <div class="reserva-sticky-col" id="colunaFormulario">
                     <div class="reserva-form-card">
                         
@@ -1130,7 +1262,7 @@ function render_formatted_description($rawText) {
                                         <label for="name_field">Nome Completo *</label>
                                         <div class="reserva-input-wrapper">
                                             <i class="fas fa-user"></i>
-                                            <input type="text" name="name" id="name_field" required class="reserva-control" placeholder="Digite seu nome completo">
+                                            <input type="text" name="name" id="name_field" required class="reserva-control" placeholder="Digite seu nome completo" autocomplete="name" autocapitalize="words">
                                         </div>
                                     </div>
 
@@ -1139,7 +1271,7 @@ function render_formatted_description($rawText) {
                                         <label for="phone_field">WhatsApp com DDD *</label>
                                         <div class="reserva-input-wrapper">
                                             <i class="fab fa-whatsapp" style="font-size: 1.1rem;"></i>
-                                            <input type="tel" name="phone" id="phone_field" required class="reserva-control" placeholder="(99) 99999-9999">
+                                            <input type="tel" name="phone" id="phone_field" required class="reserva-control" placeholder="(99) 99999-9999" inputmode="numeric" autocomplete="tel">
                                         </div>
                                     </div>
 
@@ -1148,22 +1280,22 @@ function render_formatted_description($rawText) {
                                         <label for="email_field">Seu Melhor E-mail *</label>
                                         <div class="reserva-input-wrapper">
                                             <i class="fas fa-envelope"></i>
-                                            <input type="email" name="email" id="email_field" required class="reserva-control" placeholder="exemplo@email.com">
+                                            <input type="email" name="email" id="email_field" required class="reserva-control" placeholder="exemplo@email.com" inputmode="email" autocomplete="email" autocapitalize="none">
                                         </div>
                                     </div>
 
                                     <!-- Cidade e Estado -->
-                                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.8rem;" class="reserva-form-group">
+                                    <div class="reserva-form-group reserva-city-state-row">
                                         <div>
                                             <label for="city_field">Cidade</label>
                                             <div class="reserva-input-wrapper">
                                                 <i class="fas fa-map-marker-alt"></i>
-                                                <input type="text" name="city" id="city_field" class="reserva-control" value="<?= htmlspecialchars($campaign['city']) ?>" placeholder="Sua cidade">
+                                                <input type="text" name="city" id="city_field" class="reserva-control" value="<?= htmlspecialchars($campaign['city']) ?>" placeholder="Sua cidade" autocomplete="address-level2">
                                             </div>
                                         </div>
                                         <div>
                                             <label for="state_field">UF</label>
-                                            <input type="text" name="state" id="state_field" maxlength="2" class="reserva-control" value="<?= htmlspecialchars($campaign['state']) ?>" placeholder="MA" style="text-align: center; text-transform: uppercase;">
+                                            <input type="text" name="state" id="state_field" maxlength="2" class="reserva-control" value="<?= htmlspecialchars($campaign['state']) ?>" placeholder="MA" style="text-align: center; text-transform: uppercase;" autocomplete="address-level1">
                                         </div>
                                     </div>
 
@@ -1298,6 +1430,32 @@ function render_formatted_description($rawText) {
                     </div>
                 </div>
 
+                <!-- Bloco 3: Detalhes Complementares e Estrutura da Turma -->
+                <div class="reserva-hero-details">
+                    
+                    <!-- Aviso de Segurança e Compromisso Zero -->
+                    <div class="reserva-info-banner">
+                        <i class="fas fa-shield-alt"></i>
+                        <p>
+                            <strong>Compromisso Zero:</strong> A pré-reserva garante sua <strong>prioridade máxima</strong> na formação da turma e acesso aos <strong>descontos de 1º lote</strong>. Não há cobrança antecipada nem dados bancários exigidos neste momento.
+                        </p>
+                    </div>
+
+                    <!-- Descrição Detalhada da Turma -->
+                    <?php if (!empty($campaign['description'])): ?>
+                        <div class="reserva-hero-description-block" style="margin: 2rem 0 1.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;">
+                                <span style="background: rgba(255, 128, 0, 0.2); color: #ff9d3b; width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">📋</span>
+                                <h3 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin: 0;">Estrutura e Informações da Turma</h3>
+                            </div>
+                            <div class="reserva-formatted-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 1.6rem; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                                <?= render_formatted_description($campaign['description']) ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                </div>
+
             </div>
         </div>
     </section>
@@ -1430,7 +1588,7 @@ function render_formatted_description($rawText) {
     </section>
 
     <!-- Barra Fixa Flutuante no Mobile (Sticky CTA) -->
-    <div class="mobile-sticky-cta-bar">
+    <div class="mobile-sticky-cta-bar cta-hidden" id="mobileStickyCta">
         <button type="button" onclick="scrollToForm()" class="btn-submit-reserva" style="padding: 0.85rem 1.2rem; font-size: 0.95rem;">
             <span>⚡ <?= $isWaitingList ? 'Entrar na Lista de Espera' : 'Garantir Vaga na Turma' ?></span>
             <i class="fas fa-arrow-up"></i>
@@ -1560,6 +1718,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById('btnWhatsAppISP').href = data.whatsapp_contact_url;
                     }
 
+                    // Ocultar a barra fixa flutuante definitivamente após o sucesso
+                    if (typeof hideMobileStickyPermanently === 'function') {
+                        hideMobileStickyPermanently();
+                    }
+
                     // Rolar até o topo do card para visibilidade do sucesso
                     painelSucesso.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 } else {
@@ -1581,6 +1744,67 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // 7. Controle Inteligente da Barra Fixa Mobile (Sticky CTA)
+    const stickyBar = document.getElementById('mobileStickyCta');
+    const colunaForm = document.getElementById('colunaFormulario');
+    let formSubmittedSuccessfully = false;
+
+    window.hideMobileStickyPermanently = function() {
+        formSubmittedSuccessfully = true;
+        if (stickyBar) {
+            stickyBar.classList.add('cta-hidden');
+            stickyBar.style.display = 'none';
+        }
+    };
+
+    function hideStickyBar() {
+        if (stickyBar) stickyBar.classList.add('cta-hidden');
+    }
+
+    function showStickyBar() {
+        if (stickyBar && !formSubmittedSuccessfully) {
+            stickyBar.classList.remove('cta-hidden');
+        }
+    }
+
+    if (colunaForm && stickyBar && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                // Se o formulário estiver visível no viewport, esconde a barra fixa
+                // para evitar sobrepor o botão real de envio e inputs
+                if (entry.isIntersecting) {
+                    hideStickyBar();
+                } else {
+                    // Se o usuário rolou para baixo do formulário (ex: lendo o FAQ ou autoridade), mostra a barra como atalho
+                    const rect = colunaForm.getBoundingClientRect();
+                    if (rect.bottom < 0) {
+                        showStickyBar();
+                    } else {
+                        hideStickyBar();
+                    }
+                }
+            });
+        }, {
+            threshold: 0.05
+        });
+
+        observer.observe(colunaForm);
+    }
+
+    // Ocultar a barra flutuante ao abrir teclado virtual em qualquer input do form
+    const formInputs = document.querySelectorAll('#formReserva input, #formReserva select, #formReserva textarea');
+    formInputs.forEach(input => {
+        input.addEventListener('focusin', hideStickyBar);
+        input.addEventListener('focusout', () => {
+            setTimeout(() => {
+                if (!formSubmittedSuccessfully && colunaForm) {
+                    const rect = colunaForm.getBoundingClientRect();
+                    if (rect.bottom < 0) showStickyBar();
+                }
+            }, 200);
+        });
+    });
 });
 </script>
 

@@ -72,6 +72,22 @@ class ReservationService {
     }
 
     /**
+     * Gera link do WhatsApp para o ALUNO entrar em contato com a coordenação do ISP após a reserva
+     */
+    public static function generateStudentToISPWhatsAppLink($phone, $name, $campaignTitle, $modality) {
+        $cleanPhone = normalize_phone_number($phone);
+        if (empty($cleanPhone)) return '#';
+
+        $modalityLabels = self::getModalityLabels();
+        $modalityName = $modalityLabels[$modality] ?? ucfirst($modality);
+
+        $msg = "Olá! Meu nome é {$name}.\n\n";
+        $msg .= "Acabei de realizar minha reserva de interesse para a turma {$campaignTitle} ({$modalityName}) no site do ISP e gostaria de tirar algumas dúvidas.";
+
+        return "https://wa.me/" . $cleanPhone . "?text=" . urlencode($msg);
+    }
+
+    /**
      * Cria ou reaproveita um lead mestre com prevenção e registro de conflitos
      */
     public static function processReservationLead($pdo, array $leadData) {
@@ -466,7 +482,7 @@ class ReservationService {
 
                 $siteConfig = get_config($pdo);
                 $ispPhone = !empty($siteConfig['phone']) ? $siteConfig['phone'] : '99999999999';
-                $ispWhatsAppUrl = self::generateWhatsAppLink($ispPhone, $leadPayload['name'], $campaign['title'], $preferredModality);
+                $ispWhatsAppUrl = self::generateStudentToISPWhatsAppLink($ispPhone, $leadPayload['name'], $campaign['title'], $preferredModality);
 
                 return [
                     'success' => true,
@@ -565,7 +581,7 @@ class ReservationService {
             // Gerar Link do WhatsApp para contato imediato opcional com a coordenação
             $siteConfig = get_config($pdo);
             $ispPhone = !empty($siteConfig['phone']) ? $siteConfig['phone'] : '99999999999';
-            $ispWhatsAppUrl = self::generateWhatsAppLink($ispPhone, $leadPayload['name'], $campaign['title'], $preferredModality);
+            $ispWhatsAppUrl = self::generateStudentToISPWhatsAppLink($ispPhone, $leadPayload['name'], $campaign['title'], $preferredModality);
 
             return [
                 'success' => true,
