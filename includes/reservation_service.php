@@ -484,6 +484,27 @@ class ReservationService {
                 $ispPhone = !empty($siteConfig['phone']) ? $siteConfig['phone'] : '99999999999';
                 $ispWhatsAppUrl = self::generateStudentToISPWhatsAppLink($ispPhone, $leadPayload['name'], $campaign['title'], $preferredModality);
 
+                // Disparo de Notificação Automática (E-mail & WhatsApp) para o Administrador
+                try {
+                    require_once __DIR__ . '/notification_service.php';
+                    NotificationService::notifyAdminNewReservation($pdo, [
+                        'reservation_id' => $reservationId,
+                        'protocol' => 'ISP-' . str_pad($reservationId, 6, '0', STR_PAD_LEFT),
+                        'campaign_title' => $campaign['title'],
+                        'campaign_slug' => $campaign['slug'],
+                        'name' => $leadPayload['name'],
+                        'email' => $leadPayload['email'],
+                        'phone' => $leadPayload['phone'],
+                        'preferred_modality' => $preferredModality,
+                        'city' => $city,
+                        'state' => $state,
+                        'is_waiting_list' => (bool)$isWaitingList,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                } catch (Exception $eNotif) {
+                    error_log("Aviso: Falha ao disparar notificação de reserva reativada: " . $eNotif->getMessage());
+                }
+
                 return [
                     'success' => true,
                     'already_registered' => false,
@@ -582,6 +603,27 @@ class ReservationService {
             $siteConfig = get_config($pdo);
             $ispPhone = !empty($siteConfig['phone']) ? $siteConfig['phone'] : '99999999999';
             $ispWhatsAppUrl = self::generateStudentToISPWhatsAppLink($ispPhone, $leadPayload['name'], $campaign['title'], $preferredModality);
+
+            // Disparo de Notificação Automática (E-mail & WhatsApp) para o Administrador
+            try {
+                require_once __DIR__ . '/notification_service.php';
+                NotificationService::notifyAdminNewReservation($pdo, [
+                    'reservation_id' => $reservationId,
+                    'protocol' => 'ISP-' . str_pad($reservationId, 6, '0', STR_PAD_LEFT),
+                    'campaign_title' => $campaign['title'],
+                    'campaign_slug' => $campaign['slug'],
+                    'name' => $leadPayload['name'],
+                    'email' => $leadPayload['email'],
+                    'phone' => $leadPayload['phone'],
+                    'preferred_modality' => $preferredModality,
+                    'city' => $city,
+                    'state' => $state,
+                    'is_waiting_list' => (bool)$isWaitingList,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            } catch (Exception $eNotif) {
+                error_log("Aviso: Falha ao disparar notificação de nova reserva: " . $eNotif->getMessage());
+            }
 
             return [
                 'success' => true,

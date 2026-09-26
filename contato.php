@@ -23,16 +23,32 @@ require_once 'includes/header.php';
                 <input type="email" name="email" required placeholder="alvo@servidor.com">
             </div>
             <div class="form-group">
-                <label>FREQUÊNCIA (TELEFONE)</label>
-                <input type="text" name="phone" placeholder="(00) 00000-0000">
+                <label>WHATSAPP / TELEFONE (COM DDD)</label>
+                <input type="text" name="phone" id="contato_phone" required placeholder="(00) 00000-0000">
             </div>
             <div class="form-group">
                 <label>PACOTE DE DADOS (MENSAGEM)</label>
-                <textarea name="message" rows="5" required placeholder="Descreva o suporte necessário..."></textarea>
+                <textarea name="message" rows="5" required placeholder="Descreva o suporte necessário ou curso de interesse..."></textarea>
             </div>
             <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">TRANSMITIR DADOS</button>
         </form>
     </div>
 </div>
+
+<script>
+document.getElementById('contato_phone').addEventListener('input', function(e) {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.substring(0, 11);
+    if (v.length > 10) {
+        e.target.value = '(' + v.substring(0, 2) + ') ' + v.substring(2, 7) + '-' + v.substring(7);
+    } else if (v.length > 6) {
+        e.target.value = '(' + v.substring(0, 2) + ') ' + v.substring(2, 6) + '-' + v.substring(6);
+    } else if (v.length > 2) {
+        e.target.value = '(' + v.substring(0, 2) + ') ' + v.substring(2);
+    } else if (v.length > 0) {
+        e.target.value = '(' + v;
+    }
+});
+</script>
 
 <?php require_once 'includes/footer.php'; ?>

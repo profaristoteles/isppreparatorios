@@ -106,7 +106,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$eventos = $pdo->query("SELECT * FROM eventos ORDER BY event_date DESC")->fetchAll();
+try {
+    $eventos = $pdo->query("SELECT e.*, (SELECT COUNT(*) FROM event_registrations r WHERE r.event_id = e.id) as total_inscritos FROM eventos e ORDER BY e.event_date DESC")->fetchAll();
+} catch (Exception $e) {
+    $eventos = $pdo->query("SELECT e.*, 0 as total_inscritos FROM eventos e ORDER BY e.event_date DESC")->fetchAll();
+}
 
 // Carregar lotes de todos os eventos
 $lotes_by_event = [];
@@ -212,15 +216,22 @@ require_once 'includes/header.php';
             <h3 style="margin-top: 0; color: var(--brand-orange); font-size: 1.1rem; margin-bottom: 1rem;">Captação de Leads (CRM)</h3>
             
             <div class="form-group">
-                <label>Tipo de Formulário</label>
+                <label>Tipo de Formulário / Inscrição</label>
                 <select name="form_type" id="evento_form_type" class="form-control" onchange="toggleFormFields()">
-                    <option value="link">Botão com Link Externo (Redireciona para o CRM)</option>
+                    <option value="form">Formulário Direto no Site (Recomendado - Notifica Admin por E-mail & WhatsApp)</option>
+                    <option value="link">Botão com Link Externo (Redireciona para o CRM / Checkout)</option>
                     <option value="embed">Código Embutido (Iframe do CRM direto na página)</option>
                 </select>
             </div>
             
-            <div class="form-group" id="field_form_link">
-                <label>Link Externo do CRM <small style="color: #999;">- O aluno será direcionado para cá ao clicar no botão</small></label>
+            <div class="form-group" id="field_form_internal_info" style="display: block; background: rgba(3,4,94,0.06); border-left: 4px solid #03045e; padding: 1rem; border-radius: 6px;">
+                <p style="margin: 0; color: #03045e; font-size: 0.9rem; line-height: 1.5;">
+                    <i class="fas fa-bell" style="color: #ff8000;"></i> <strong>Inscrições Nativas com Notificação Instantânea:</strong> Os alunos preenchem os dados (Nome, WhatsApp, E-mail e Modalidade) diretamente na página do evento. A cada nova inscrição, o <strong>e-mail e o WhatsApp cadastrados nas configurações do painel serão notificados imediatamente</strong>.
+                </p>
+            </div>
+
+            <div class="form-group" id="field_form_link" style="display: none;">
+                <label>Link Externo do CRM / Checkout <small style="color: #999;">- O aluno será direcionado para cá ao clicar no botão</small></label>
                 <input type="url" name="form_link" id="evento_form_link" class="form-control" placeholder="https://...">
             </div>
             
@@ -274,6 +285,7 @@ require_once 'includes/header.php';
                 <th>Imagem</th>
                 <th>Título</th>
                 <th>Data do Evento</th>
+                <th>Inscritos</th>
                 <th>Visibilidade</th>
                 <th>Ações</th>
             </tr>
@@ -288,8 +300,18 @@ require_once 'includes/header.php';
                         <div style="width: 50px; height: 50px; background: #eee; border-radius: 4px; display: grid; place-items: center; font-size: 0.7em; color: #999;">Sem IMG</div>
                     <?php endif; ?>
                 </td>
-                <td><?= htmlspecialchars($e['title']) ?></td>
+                <td>
+                    <strong><?= htmlspecialchars($e['title']) ?></strong>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 3px;">
+                        Tipo: <?= $e['form_type'] === 'embed' ? 'Iframe CRM' : ($e['form_type'] === 'form' ? 'Formulário Nativo' : 'Link Externo') ?>
+                    </div>
+                </td>
                 <td><?= date('d/m/Y H:i', strtotime($e['event_date'])) ?></td>
+                <td>
+                    <a href="inscricoes.php?event_id=<?= $e['id'] ?>" class="badge badge-success" style="background: #03045e; color: #fff; padding: 4px 10px; border-radius: 12px; font-weight: 700; text-decoration: none; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="fas fa-users"></i> <?= (int)($e['total_inscritos'] ?? 0) ?> alunos
+                    </a>
+                </td>
                 <td>
                     <?php if($e['active'] == 0): ?>
                         <span style="background: #dc3545; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">Inativo</span>
@@ -299,6 +321,7 @@ require_once 'includes/header.php';
                 </td>
                 <td>
                     <button class="btn" onclick="editarEvento(<?= htmlspecialchars(json_encode($e), ENT_QUOTES, 'UTF-8') ?>)">Editar</button>
+                    <a href="inscricoes.php?event_id=<?= $e['id'] ?>" class="btn btn-warning" style="background: #ff8000; color: #fff; font-size: 0.85rem;" title="Ver alunos inscritos neste evento"><i class="fas fa-user-check"></i> Inscritos</a>
                     <a href="?del=<?= $e['id'] ?>" class="btn btn-danger" onclick="return confirm('Tem certeza?')">Excluir</a>
                 </td>
             </tr>
@@ -382,15 +405,25 @@ function addLoteRow(lote = {}) {
     container.appendChild(div);
 }
 
-// Toggle dos campos de CRM
+// Toggle dos campos de CRM e Inscrição
 function toggleFormFields() {
     const type = document.getElementById('evento_form_type').value;
-    if(type === 'embed') {
-        document.getElementById('field_form_link').style.display = 'none';
-        document.getElementById('field_form_embed').style.display = 'block';
+    const internalInfo = document.getElementById('field_form_internal_info');
+    const linkField = document.getElementById('field_form_link');
+    const embedField = document.getElementById('field_form_embed');
+
+    if (type === 'embed') {
+        if (linkField) linkField.style.display = 'none';
+        if (embedField) embedField.style.display = 'block';
+        if (internalInfo) internalInfo.style.display = 'none';
+    } else if (type === 'form') {
+        if (linkField) linkField.style.display = 'none';
+        if (embedField) embedField.style.display = 'none';
+        if (internalInfo) internalInfo.style.display = 'block';
     } else {
-        document.getElementById('field_form_link').style.display = 'block';
-        document.getElementById('field_form_embed').style.display = 'none';
+        if (linkField) linkField.style.display = 'block';
+        if (embedField) embedField.style.display = 'none';
+        if (internalInfo) internalInfo.style.display = 'none';
     }
 }
 
@@ -495,7 +528,7 @@ function resetForm() {
     document.getElementById('evento_link_presencial').value = '';
     document.getElementById('evento_price_online').value = '';
     document.getElementById('evento_link_online').value = '';
-    document.getElementById('evento_form_type').value = 'link';
+    document.getElementById('evento_form_type').value = 'form';
     document.getElementById('evento_form_link').value = '';
     document.getElementById('evento_form_embed').value = '';
     document.getElementById('evento_active').checked = true;

@@ -127,6 +127,20 @@ if ($result['status'] === 'success') {
 $token = generate_download_token($subject_type, $subject_id, $material_id, $video_id);
 $download_url = "/download-material.php?token=" . urlencode($token);
 
+// Notificação opcional ao admin para novos downloads de materiais
+try {
+    require_once __DIR__ . '/includes/notification_service.php';
+    NotificationService::notifyAdminNewLead($pdo, [
+        'name' => $leadPayload['name'],
+        'email' => $leadPayload['email'],
+        'phone' => $leadPayload['phone'],
+        'material_title' => $matInfo['title'] ?? ($matInfo['video_slug'] ?? 'Material de Aula Gratuita'),
+        'campaign_code' => $leadPayload['campaign_code'] ?? 'aulas-gratuitas'
+    ]);
+} catch (Exception $eNotif) {
+    error_log("Aviso: Falha ao notificar admin sobre lead gratuito: " . $eNotif->getMessage());
+}
+
 // Buscar link configurado do Grupo de WhatsApp VIP
 $config = get_config($pdo);
 $whatsapp_group_url = !empty($config['whatsapp_group_url']) ? $config['whatsapp_group_url'] : '';

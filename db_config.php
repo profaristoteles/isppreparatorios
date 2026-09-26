@@ -200,6 +200,72 @@ try {
     )");
 } catch (Exception $e) { /* falha silenciosa */ }
 
+// Auto-migration: campos de Notificação Administrativa (E-mail & WhatsApp)
+try {
+    $notifCols = [
+        'notify_admin_email' => "VARCHAR(255) DEFAULT ''",
+        'notify_admin_whatsapp' => "VARCHAR(50) DEFAULT ''",
+        'notify_email_enabled' => "TINYINT(1) DEFAULT 1",
+        'notify_whatsapp_enabled' => "TINYINT(1) DEFAULT 1",
+        'notify_on_reservation' => "TINYINT(1) DEFAULT 1",
+        'notify_on_event' => "TINYINT(1) DEFAULT 1",
+        'notify_on_contact' => "TINYINT(1) DEFAULT 1",
+        'notify_on_lead' => "TINYINT(1) DEFAULT 0",
+        'smtp_enabled' => "TINYINT(1) DEFAULT 0",
+        'smtp_host' => "VARCHAR(255) DEFAULT ''",
+        'smtp_port' => "INT DEFAULT 587",
+        'smtp_user' => "VARCHAR(255) DEFAULT ''",
+        'smtp_pass' => "VARCHAR(255) DEFAULT ''",
+        'smtp_secure' => "VARCHAR(10) DEFAULT 'tls'",
+        'smtp_from_email' => "VARCHAR(255) DEFAULT ''",
+        'smtp_from_name' => "VARCHAR(255) DEFAULT 'ISP Preparatórios'",
+        'whatsapp_api_provider' => "VARCHAR(50) DEFAULT 'none'",
+        'whatsapp_api_url' => "VARCHAR(500) DEFAULT ''",
+        'whatsapp_api_key' => "VARCHAR(500) DEFAULT ''",
+        'whatsapp_api_instance' => "VARCHAR(255) DEFAULT ''"
+    ];
+
+    foreach ($notifCols as $col => $definition) {
+        $cols = $pdo->query("SHOW COLUMNS FROM configuracoes LIKE " . $pdo->quote($col))->fetchAll();
+        if (empty($cols)) {
+            $pdo->exec("ALTER TABLE configuracoes ADD COLUMN $col $definition");
+        }
+    }
+} catch (Exception $e) { /* tabela pode nao existir ainda */ }
+
+// Auto-migration: tabelas de Inscrições em Eventos e Log de Notificações
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS event_registrations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        event_id INT NOT NULL,
+        lead_id INT NULL,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        phone_normalized VARCHAR(20) DEFAULT '',
+        modality VARCHAR(50) DEFAULT 'geral',
+        status VARCHAR(50) DEFAULT 'confirmada',
+        notes TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_evt_reg_event (event_id),
+        INDEX idx_evt_reg_created (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS notifications_log (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        channel ENUM('email', 'whatsapp') NOT NULL,
+        event_type VARCHAR(50) NOT NULL,
+        recipient VARCHAR(255) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        message_preview TEXT,
+        status ENUM('sent', 'failed', 'disabled') NOT NULL,
+        error_message TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_notif_created (created_at),
+        INDEX idx_notif_channel (channel)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+} catch (Exception $e) { /* falha silenciosa */ }
+
 // Funções utilitárias globais
 function get_config($pdo) {
     $stmt = $pdo->query("SELECT * FROM configuracoes LIMIT 1");

@@ -133,6 +133,82 @@ $is_future = strtotime($evento['event_date']) >= time();
                                         </div>
                                     <?php endif; ?>
                                 </div>
+                            <?php elseif($evento['form_type'] === 'form' || (empty($evento['form_link']) && empty($evento['form_embed']) && !$has_modalities)): ?>
+                                <!-- Formulário Nativo de Inscrição no Evento -->
+                                <div id="boxInscricaoEvento">
+                                    <form id="formEventoInscricao" onsubmit="submitEventoInscricao(event, this)">
+                                        <input type="hidden" name="event_id" value="<?= (int)$evento['id'] ?>">
+                                        <input type="hidden" name="event_slug" value="<?= htmlspecialchars($evento['slug'] ?? '') ?>">
+                                        
+                                        <!-- Honeypot Anti-Spam -->
+                                        <div style="display:none !important;" aria-hidden="true">
+                                            <input type="text" name="website_url_check" tabindex="-1" autocomplete="off">
+                                            <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
+                                        </div>
+
+                                        <div style="margin-bottom: 1rem;">
+                                            <label style="display: block; color: rgba(255,255,255,0.85); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem;">Nome Completo *</label>
+                                            <input type="text" name="name" required placeholder="Digite seu nome completo" style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.95rem;">
+                                        </div>
+
+                                        <div style="margin-bottom: 1rem;">
+                                            <label style="display: block; color: rgba(255,255,255,0.85); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem;">WhatsApp com DDD *</label>
+                                            <input type="tel" name="phone" id="evt_phone" required placeholder="(99) 99999-9999" style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.95rem;">
+                                        </div>
+
+                                        <div style="margin-bottom: 1.2rem;">
+                                            <label style="display: block; color: rgba(255,255,255,0.85); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem;">Seu Melhor E-mail *</label>
+                                            <input type="email" name="email" required placeholder="exemplo@email.com" style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.95rem;">
+                                        </div>
+
+                                        <?php if (!empty($lote_info['price_presencial']) && !empty($lote_info['price_online'])): ?>
+                                        <div style="margin-bottom: 1.2rem;">
+                                            <label style="display: block; color: rgba(255,255,255,0.85); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Modalidade de Participação *</label>
+                                            <div style="display: flex; gap: 0.8rem;">
+                                                <label style="flex: 1; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 0.9rem;">
+                                                    <input type="radio" name="modality" value="presencial" checked> 🏫 Presencial
+                                                </label>
+                                                <label style="flex: 1; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 0.9rem;">
+                                                    <input type="radio" name="modality" value="online"> 💻 Online
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
+
+                                        <div id="evtFormFeedback" style="display: none; padding: 0.8rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+
+                                        <button type="submit" class="btn btn-submit-evt" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--brand-orange); border: none; cursor: pointer; color: #fff;">
+                                            <span>Confirmar Minha Inscrição</span> <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                        <p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 0.75rem; margin-top: 0.8rem;">
+                                            <i class="fas fa-lock"></i> Seus dados estão seguros e protegidos pela LGPD.
+                                        </p>
+                                    </form>
+
+                                    <!-- Painel de Sucesso da Inscrição -->
+                                    <div id="evtSuccessPanel" style="display: none; text-align: center; padding: 1rem 0;">
+                                        <div style="width: 60px; height: 60px; background: rgba(40,167,69,0.15); border: 2px solid #28a745; color: #28a745; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 1rem;">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                        <h3 style="color: #fff; font-size: 1.35rem; margin-bottom: 0.5rem;" id="evtSuccessTitle">Inscrição Confirmada!</h3>
+                                        <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.2rem;" id="evtSuccessMsg">
+                                            Seu lugar foi reservado com sucesso no evento. Nossa equipe da coordenação entrará em contato via WhatsApp com os detalhes.
+                                        </p>
+                                        
+                                        <div style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px; padding: 0.8rem; margin-bottom: 1.2rem;">
+                                            <span style="display: block; font-size: 0.75rem; color: rgba(255,255,255,0.6); text-transform: uppercase;">Número do Protocolo</span>
+                                            <strong style="font-size: 1.25rem; color: var(--brand-orange); font-family: var(--font-mono);" id="evtSuccessProtocol">EVT-000000</strong>
+                                        </div>
+
+                                        <a id="btnEvtWhatsAppCoord" href="#" target="_blank" style="background: #25d366; color: #fff; text-decoration: none; padding: 12px 18px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.95rem; width: 100%; box-sizing: border-box; margin-bottom: 0.8rem; box-shadow: 0 4px 15px rgba(37,211,102,0.3);">
+                                            <i class="fab fa-whatsapp" style="font-size: 1.2rem;"></i> Falar com a Coordenação no Zap
+                                        </a>
+
+                                        <a id="btnEvtPaymentLink" href="#" target="_blank" style="display: none; background: transparent; border: 1px solid #00ccff; color: #00ccff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; width: 100%; box-sizing: border-box;">
+                                            <i class="fas fa-credit-card"></i> Concluir Pagamento do Ingresso
+                                        </a>
+                                    </div>
+                                </div>
                             <?php elseif($evento['form_type'] === 'embed' && !empty($evento['form_embed'])): ?>
                                 <!-- Código Embutido do CRM com max-width para celular -->
                                 <div class="crm-form-embed" style="width: 100%; overflow: hidden; position: relative;">
@@ -162,6 +238,12 @@ $is_future = strtotime($evento['event_date']) >= time();
                                 <a href="<?= htmlspecialchars($evt_link) ?>" class="btn" style="display: block; width: 100%; text-align: center; font-size: 1.1rem; padding: 1.2rem; border-radius: 8px;" target="_blank" rel="noopener noreferrer">
                                     Quero Participar!
                                 </a>
+                                
+                                <div style="text-align: center; margin-top: 1rem;">
+                                    <button type="button" onclick="openModalInscricaoEvento()" style="background: none; border: none; color: var(--brand-orange); font-size: 0.85rem; text-decoration: underline; cursor: pointer;">
+                                        Prefere preencher seus dados diretamente aqui? Clique aqui
+                                    </button>
+                                </div>
                             <?php else: ?>
                                 <p style="text-align: center; color: var(--text-secondary); padding: 2rem 0;">Inscrições em breve.</p>
                             <?php endif; ?>
@@ -248,6 +330,177 @@ $is_future = strtotime($evento['event_date']) >= time();
     </section>
     <?php endif; ?>
 
+    <!-- Modal de Inscrição Direta no Evento (Fallback/Acesso Rápido) -->
+    <div id="modalInscricaoEvento" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 99999; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(8px);">
+        <div style="background: var(--obsidian-surface); border: 1px solid var(--glass-border); border-radius: 16px; width: 100%; max-width: 480px; padding: 2.2rem; box-shadow: 0 25px 60px rgba(0,0,0,0.8); position: relative; max-height: 90vh; overflow-y: auto;">
+            <button type="button" onclick="closeModalInscricaoEvento()" style="position: absolute; top: 18px; right: 18px; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; opacity: 0.7;">&times;</button>
+            
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <span style="color: var(--brand-orange); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">INSCRIÇÃO RÁPIDA</span>
+                <h3 style="color: #fff; font-size: 1.4rem; margin: 0.3rem 0;"><?= htmlspecialchars($evento['title']) ?></h3>
+            </div>
+
+            <form id="formModalEvento" onsubmit="submitEventoInscricao(event, this)">
+                <input type="hidden" name="event_id" value="<?= (int)$evento['id'] ?>">
+                <input type="hidden" name="event_slug" value="<?= htmlspecialchars($evento['slug'] ?? '') ?>">
+                <div style="display:none !important;" aria-hidden="true">
+                    <input type="text" name="website_url_check" tabindex="-1" autocomplete="off">
+                    <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; color: rgba(255,255,255,0.85); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem;">Nome Completo *</label>
+                    <input type="text" name="name" required placeholder="Digite seu nome completo" style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.4); color: #fff; font-size: 0.95rem;">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; color: rgba(255,255,255,0.85); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem;">WhatsApp com DDD *</label>
+                    <input type="tel" name="phone" class="phone-mask" required placeholder="(99) 99999-9999" style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.4); color: #fff; font-size: 0.95rem;">
+                </div>
+
+                <div style="margin-bottom: 1.2rem;">
+                    <label style="display: block; color: rgba(255,255,255,0.85); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem;">Seu Melhor E-mail *</label>
+                    <input type="email" name="email" required placeholder="exemplo@email.com" style="width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.4); color: #fff; font-size: 0.95rem;">
+                </div>
+
+                <?php if (!empty($lote_info['price_presencial']) && !empty($lote_info['price_online'])): ?>
+                <div style="margin-bottom: 1.2rem;">
+                    <label style="display: block; color: rgba(255,255,255,0.85); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Modalidade de Participação *</label>
+                    <div style="display: flex; gap: 0.8rem;">
+                        <label style="flex: 1; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 0.9rem;">
+                            <input type="radio" name="modality" value="presencial" checked> 🏫 Presencial
+                        </label>
+                        <label style="flex: 1; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 0.9rem;">
+                            <input type="radio" name="modality" value="online"> 💻 Online
+                        </label>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <div class="evtFormFeedbackModal" style="display: none; padding: 0.8rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem;"></div>
+
+                <button type="submit" class="btn btn-submit-evt" style="width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--brand-orange); border: none; cursor: pointer; color: #fff;">
+                    <span>Confirmar Minha Inscrição</span> <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="evtSuccessPanelModal" style="display: none; text-align: center; padding: 1rem 0;">
+                <div style="width: 60px; height: 60px; background: rgba(40,167,69,0.15); border: 2px solid #28a745; color: #28a745; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 1rem;">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 style="color: #fff; font-size: 1.35rem; margin-bottom: 0.5rem;" class="evtSuccessTitleModal">Inscrição Confirmada!</h3>
+                <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.2rem;" class="evtSuccessMsgModal">
+                    Seu lugar foi reservado com sucesso no evento. Nossa equipe da coordenação entrará em contato via WhatsApp com os detalhes.
+                </p>
+                <div style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px; padding: 0.8rem; margin-bottom: 1.2rem;">
+                    <span style="display: block; font-size: 0.75rem; color: rgba(255,255,255,0.6); text-transform: uppercase;">Número do Protocolo</span>
+                    <strong style="font-size: 1.25rem; color: var(--brand-orange); font-family: var(--font-mono);" class="evtSuccessProtocolModal">EVT-000000</strong>
+                </div>
+                <a class="btnEvtWhatsAppCoordModal" href="#" target="_blank" style="background: #25d366; color: #fff; text-decoration: none; padding: 12px 18px; border-radius: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.95rem; width: 100%; box-sizing: border-box; margin-bottom: 0.8rem;">
+                    <i class="fab fa-whatsapp" style="font-size: 1.2rem;"></i> Falar com a Coordenação no Zap
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function openModalInscricaoEvento() {
+        const m = document.getElementById('modalInscricaoEvento');
+        if (m) m.style.display = 'flex';
+    }
+
+    function closeModalInscricaoEvento() {
+        const m = document.getElementById('modalInscricaoEvento');
+        if (m) m.style.display = 'none';
+    }
+
+    // Máscara amigável de Telefone / WhatsApp
+    function applyPhoneMask(input) {
+        if (!input) return;
+        input.addEventListener('input', function(e) {
+            let v = e.target.value.replace(/\D/g, '');
+            if (v.length > 11) v = v.substring(0, 11);
+            if (v.length > 10) {
+                e.target.value = '(' + v.substring(0, 2) + ') ' + v.substring(2, 7) + '-' + v.substring(7);
+            } else if (v.length > 6) {
+                e.target.value = '(' + v.substring(0, 2) + ') ' + v.substring(2, 6) + '-' + v.substring(6);
+            } else if (v.length > 2) {
+                e.target.value = '(' + v.substring(0, 2) + ') ' + v.substring(2);
+            } else if (v.length > 0) {
+                e.target.value = '(' + v;
+            }
+        });
+    }
+    applyPhoneMask(document.getElementById('evt_phone'));
+    document.querySelectorAll('.phone-mask').forEach(applyPhoneMask);
+
+    function submitEventoInscricao(e, form) {
+        e.preventDefault();
+        const btn = form.querySelector('.btn-submit-evt');
+        const originalBtnHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando Inscrição...';
+
+        const container = form.closest('#boxInscricaoEvento') || form.closest('#modalInscricaoEvento');
+        const feedback = container ? (container.querySelector('#evtFormFeedback') || container.querySelector('.evtFormFeedbackModal')) : null;
+        if (feedback) feedback.style.display = 'none';
+
+        const formData = new FormData(form);
+
+        fetch('/ajax_event_registration.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+
+            if (data.success) {
+                form.style.display = 'none';
+                const successPanel = container ? (container.querySelector('#evtSuccessPanel') || container.querySelector('.evtSuccessPanelModal')) : null;
+                if (successPanel) {
+                    successPanel.style.display = 'block';
+                    
+                    const titleEl = container.querySelector('#evtSuccessTitle') || container.querySelector('.evtSuccessTitleModal');
+                    const msgEl = container.querySelector('#evtSuccessMsg') || container.querySelector('.evtSuccessMsgModal');
+                    const protoEl = container.querySelector('#evtSuccessProtocol') || container.querySelector('.evtSuccessProtocolModal');
+                    const zapEl = container.querySelector('#btnEvtWhatsAppCoord') || container.querySelector('.btnEvtWhatsAppCoordModal');
+                    const payEl = container.querySelector('#btnEvtPaymentLink');
+
+                    if (titleEl) titleEl.innerText = data.already_registered ? 'Você Já Está Inscrito(a)!' : 'Inscrição Confirmada com Sucesso!';
+                    if (msgEl) msgEl.innerText = data.message || 'Seus dados foram recebidos. A coordenação entrará em contato!';
+                    if (protoEl) protoEl.innerText = data.protocol || 'EVT-CONFIRMADO';
+                    if (zapEl && data.whatsapp_contact_url) zapEl.href = data.whatsapp_contact_url;
+                    
+                    if (payEl && data.payment_link) {
+                        payEl.href = data.payment_link;
+                        payEl.style.display = 'flex';
+                    }
+                }
+            } else {
+                if (feedback) {
+                    feedback.style.display = 'block';
+                    feedback.style.background = 'rgba(220,53,69,0.2)';
+                    feedback.style.border = '1px solid #dc3545';
+                    feedback.style.color = '#ff8888';
+                    feedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'Erro ao processar inscrição.');
+                }
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+            if (feedback) {
+                feedback.style.display = 'block';
+                feedback.style.background = 'rgba(220,53,69,0.2)';
+                feedback.style.border = '1px solid #dc3545';
+                feedback.style.color = '#ff8888';
+                feedback.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Falha de comunicação com o servidor. Tente novamente.';
+            }
+        });
+    }
+    </script>
 </main>
 
 <?php require_once 'includes/footer.php'; ?>
