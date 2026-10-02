@@ -57,7 +57,10 @@ $input = [
     'utm_medium'         => trim($postData['utm_medium'] ?? ''),
     'utm_campaign'       => trim($postData['utm_campaign'] ?? ''),
     'utm_content'        => trim($postData['utm_content'] ?? ''),
-    'utm_term'           => trim($postData['utm_term'] ?? '')
+    'utm_term'           => trim($postData['utm_term'] ?? ''),
+    'landing_page'       => trim($postData['landing_page'] ?? ''),
+    'referrer'           => trim($postData['referrer'] ?? ''),
+    'first_visit_at'     => trim($postData['first_visit_at'] ?? '')
 ];
 
 $result = ReservationService::createReservation($pdo, $input);

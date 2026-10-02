@@ -1250,12 +1250,15 @@ function render_formatted_description($rawText) {
                                         <input type="text" name="website_hp" tabindex="-1" autocomplete="off">
                                     </div>
 
-                                    <!-- Captura automática de UTMs da URL -->
+                                    <!-- Captura automática de UTMs da URL e Origem de Marketing -->
                                     <input type="hidden" name="utm_source" id="utm_source">
                                     <input type="hidden" name="utm_medium" id="utm_medium">
                                     <input type="hidden" name="utm_campaign" id="utm_campaign">
                                     <input type="hidden" name="utm_content" id="utm_content">
                                     <input type="hidden" name="utm_term" id="utm_term">
+                                    <input type="hidden" name="landing_page" id="landing_page">
+                                    <input type="hidden" name="referrer" id="referrer">
+                                    <input type="hidden" name="first_visit_at" id="first_visit_at">
 
                                     <!-- Nome Completo -->
                                     <div class="reserva-form-group">
@@ -1654,6 +1657,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (inputEl) inputEl.value = val;
     });
 
+    if (typeof window.ispRepopulateMarketingInputs === 'function') {
+        window.ispRepopulateMarketingInputs();
+    }
+
     // 5. Máscara amigável de Telefone / WhatsApp
     const phoneInput = document.getElementById('phone_field');
     if (phoneInput) {
@@ -1704,8 +1711,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.already_registered) {
                         document.getElementById('sucessoTitulo').innerText = 'Você Já Possui Reserva Registrada!';
                         document.getElementById('sucessoMsg').innerText = data.message || 'Seu interesse já está confirmado nesta turma. Nossa equipe entrará em contato em breve.';
-                    } else {
+                        // Cadastro já existente: não dispara novo evento Lead
+                        if (window.ispMarketingConfig && window.ispMarketingConfig.debug_mode) {
+                            console.info('[ISP Tracker] Reserva existente identificada. Evento Lead suprimido para evitar duplicidade.');
+                        }
+                    } else if (data.new_lead === true) {
                         document.getElementById('sucessoTitulo').innerText = data.message || 'Reserva Realizada com Sucesso!';
+
+                        // DISPARO EXCLUSIVO: Apenas quando uma NOVA reserva é confirmada pelo servidor
+                        window.metaLeadSent = window.metaLeadSent || {};
+                        if (!window.metaLeadSent[data.reservation_id]) {
+                            window.metaLeadSent[data.reservation_id] = true;
+
+                            if (typeof window.ispTrackEvent === 'function') {
+                                window.ispTrackEvent('Lead', {
+                                    content_name: 'Preparatório Intensivo - Concurso Prefeitura de Caxias-MA',
+                                    content_category: 'Preparatório',
+                                    status: 'pre_cadastro'
+                                }, {
+                                    eventID: data.event_id || ('lead_res_' + data.reservation_id)
+                                });
+                            }
+                        }
+                    } else {
+                        document.getElementById('sucessoTitulo').innerText = data.message || 'Reserva Recebida!';
                     }
 
                     document.getElementById('sucessoProtocolo').innerText = data.protocol || ('ISP-' + (data.reservation_id || '0001'));

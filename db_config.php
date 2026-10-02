@@ -103,6 +103,24 @@ try {
     }
 } catch (Exception $e) { /* Auto-migração concluída ou em andamento */ }
 
+// Auto-migration para Infraestrutura de Rastreamento de Marketing e Conversões
+try {
+    $tablesMktNeeded = ['marketing_settings', 'marketing_campaigns', 'marketing_events', 'marketing_conversions'];
+    $needsMktMigration = false;
+    foreach ($tablesMktNeeded as $tName) {
+        $check = $pdo->query("SHOW TABLES LIKE '{$tName}'")->fetch();
+        if (!$check) {
+            $needsMktMigration = true;
+            break;
+        }
+    }
+    if ($needsMktMigration) {
+        ob_start();
+        require_once __DIR__ . '/migration_marketing.php';
+        ob_end_clean();
+    }
+} catch (Exception $e) { /* Auto-migração concluída ou em andamento */ }
+
 // Auto-migration: colunas SEO de posts (meta_title, meta_description, slug, image_alt)
 // Garante que existam E tenham tamanho suficiente (VARCHAR 500)
 try {

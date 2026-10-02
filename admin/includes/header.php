@@ -89,6 +89,12 @@
     <a href="gerenciar-campanhas-reserva.php"><span><i class="fas fa-bullhorn"></i> Campanhas</span></a>
     <a href="gerenciar-reservas.php"><span><i class="fas fa-clipboard-list"></i> Reservas</span></a>
 
+    <div class="menu-section-header">Marketing & Rastreamento</div>
+    <a href="marketing-pixels.php"><span><i class="fas fa-bullseye"></i> Pixels & Conversões</span></a>
+    <a href="marketing-eventos.php"><span><i class="fas fa-tags"></i> Eventos</span></a>
+    <a href="marketing-campanhas.php"><span><i class="fas fa-bullhorn"></i> Campanhas</span></a>
+    <a href="marketing-conversoes.php"><span><i class="fas fa-chart-line"></i> Conversões (Log)</span></a>
+
     <div class="menu-section-header">Geral do Site</div>
     <a href="gerenciar-cursos.php"><span><i class="fas fa-graduation-cap"></i> Cursos</span></a>
     <a href="gerenciar-apostilas.php"><span><i class="fas fa-book-open"></i> Apostilas</span></a>

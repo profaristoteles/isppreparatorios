@@ -392,6 +392,7 @@ class ReservationService {
 
                 return [
                     'success' => true,
+                    'new_lead' => false,
                     'already_registered' => true,
                     'reservation_id' => (int)$existingRes['id'],
                     'message' => 'Você já possui uma reserva registrada para esta turma.',
@@ -507,6 +508,7 @@ class ReservationService {
 
                 return [
                     'success' => true,
+                    'new_lead' => false,
                     'already_registered' => false,
                     'reactivated' => true,
                     'reservation_id' => $reservationId,
@@ -536,10 +538,18 @@ class ReservationService {
         try {
             $pdo->beginTransaction();
 
+            // Gerar identificador único de deduplicação (event_id) para Meta Pixel e CAPI
+            require_once __DIR__ . '/MarketingTracker.php';
+            $eventId = MarketingTracker::generateEventId('lead_res_' . $campaignId);
+            $landingPage = trim($input['landing_page'] ?? ('/reserva/' . $campaign['slug']));
+            $referrer = trim($input['referrer'] ?? '');
+            $firstVisitAt = !empty($input['first_visit_at']) ? date('Y-m-d H:i:s', strtotime($input['first_visit_at'])) : date('Y-m-d H:i:s');
+
             $stmtIns = $pdo->prepare("INSERT INTO reservations (
                 campaign_id, lead_id, preferred_modality, status, is_waiting_list, city, state, 
-                custom_answers_json, source, utm_source, utm_medium, utm_campaign, utm_content, utm_term, consent_accepted
-            ) VALUES (?, ?, ?, 'nova', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
+                custom_answers_json, source, utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+                event_id, landing_page, referrer, first_visit_at, consent_accepted
+            ) VALUES (?, ?, ?, 'nova', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
 
             $stmtIns->execute([
                 $campaignId,
@@ -554,7 +564,11 @@ class ReservationService {
                 trim($input['utm_medium'] ?? ''),
                 trim($input['utm_campaign'] ?? ''),
                 trim($input['utm_content'] ?? ''),
-                trim($input['utm_term'] ?? '')
+                trim($input['utm_term'] ?? ''),
+                $eventId,
+                $landingPage,
+                $referrer,
+                $firstVisitAt
             ]);
 
             $reservationId = (int)$pdo->lastInsertId();
@@ -566,6 +580,31 @@ class ReservationService {
 
             $stmtHist = $pdo->prepare("INSERT INTO reservation_history (reservation_id, admin_id, action_type, old_status, new_status, description) VALUES (?, NULL, 'criacao', NULL, 'nova', ?)");
             $stmtHist->execute([$reservationId, $historyDesc]);
+
+            // Registrar conversão auditável na infraestrutura centralizada de marketing
+            MarketingTracker::recordConversion($pdo, [
+                'event_id' => $eventId,
+                'event_name' => 'Lead',
+                'campaign_id' => $campaignId,
+                'campaign_slug' => $campaign['slug'],
+                'entity_type' => 'reservation',
+                'entity_id' => $reservationId,
+                'lead_id' => $leadId,
+                'page_url' => $landingPage,
+                'referrer' => $referrer,
+                'utm_source' => trim($input['utm_source'] ?? ''),
+                'utm_medium' => trim($input['utm_medium'] ?? ''),
+                'utm_campaign' => trim($input['utm_campaign'] ?? ''),
+                'utm_content' => trim($input['utm_content'] ?? ''),
+                'utm_term' => trim($input['utm_term'] ?? ''),
+                'payload_json' => [
+                    'content_name' => $campaign['title'],
+                    'content_category' => 'Preparatório',
+                    'status' => 'pre_cadastro',
+                    'modality' => $preferredModality,
+                    'is_waiting_list' => (bool)$isWaitingList
+                ]
+            ]);
 
             $pdo->commit();
 
@@ -627,11 +666,14 @@ class ReservationService {
 
             return [
                 'success' => true,
+                'new_lead' => true,
                 'already_registered' => false,
                 'reservation_id' => $reservationId,
+                'event_id' => $eventId,
                 'protocol' => 'ISP-' . str_pad($reservationId, 6, '0', STR_PAD_LEFT),
                 'lead_id' => $leadId,
                 'campaign_title' => $campaign['title'],
+                'campaign_slug' => $campaign['slug'],
                 'preferred_modality' => $preferredModality,
                 'is_waiting_list' => (bool)$isWaitingList,
                 'whatsapp_contact_url' => $ispWhatsAppUrl,
@@ -652,6 +694,7 @@ class ReservationService {
                 if ($concurrentRes) {
                     return [
                         'success' => true,
+                        'new_lead' => false,
                         'already_registered' => true,
                         'reservation_id' => (int)$concurrentRes['id'],
                         'message' => 'Você já possui uma reserva registrada para esta turma.',
