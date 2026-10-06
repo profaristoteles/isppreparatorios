@@ -18,16 +18,17 @@ $total_canais = safe_count($pdo, "SELECT COUNT(*) FROM free_channels WHERE activ
 $total_pub = safe_count($pdo, "SELECT COUNT(*) FROM free_videos WHERE status='publicado' AND active=1 AND deleted_at IS NULL");
 $total_rascunho = safe_count($pdo, "SELECT COUNT(*) FROM free_videos WHERE status='rascunho' AND active=1 AND deleted_at IS NULL");
 $total_materiais = safe_count($pdo, "SELECT COUNT(*) FROM free_materials WHERE active=1 AND deleted_at IS NULL");
-$total_leads = safe_count($pdo, "SELECT COUNT(*) FROM leads");
+$sqlFreeLeadsCond = "(source LIKE 'aulas-gratuitas%' OR EXISTS (SELECT 1 FROM free_video_events e WHERE e.lead_id = leads.id) OR EXISTS (SELECT 1 FROM lead_downloads ld WHERE ld.subject_type = 'lead' AND ld.subject_id = leads.id) OR EXISTS (SELECT 1 FROM lead_consents lc WHERE lc.lead_id = leads.id AND lc.source LIKE 'aulas-gratuitas%'))";
+$total_leads = safe_count($pdo, "SELECT COUNT(*) FROM leads WHERE {$sqlFreeLeadsCond}");
 $total_downloads = safe_count($pdo, "SELECT COUNT(*) FROM lead_downloads");
 $total_conflitos = safe_count($pdo, "SELECT COUNT(*) FROM lead_conflicts WHERE status='pending'");
 $total_fila_pend = safe_count($pdo, "SELECT COUNT(*) FROM integration_queue WHERE status='pending'");
 $total_fila_erro = safe_count($pdo, "SELECT COUNT(*) FROM integration_queue WHERE status='error'");
 
 // Métricas de Tempo
-$leads_hoje = safe_count($pdo, "SELECT COUNT(*) FROM leads WHERE DATE(created_at) = CURDATE()");
-$leads_7d = safe_count($pdo, "SELECT COUNT(*) FROM leads WHERE created_at >= NOW() - INTERVAL 7 DAY");
-$leads_30d = safe_count($pdo, "SELECT COUNT(*) FROM leads WHERE created_at >= NOW() - INTERVAL 30 DAY");
+$leads_hoje = safe_count($pdo, "SELECT COUNT(*) FROM leads WHERE DATE(created_at) = CURDATE() AND {$sqlFreeLeadsCond}");
+$leads_7d = safe_count($pdo, "SELECT COUNT(*) FROM leads WHERE created_at >= NOW() - INTERVAL 7 DAY AND {$sqlFreeLeadsCond}");
+$leads_30d = safe_count($pdo, "SELECT COUNT(*) FROM leads WHERE created_at >= NOW() - INTERVAL 30 DAY AND {$sqlFreeLeadsCond}");
 
 $dl_hoje = safe_count($pdo, "SELECT COUNT(*) FROM lead_downloads WHERE DATE(downloaded_at) = CURDATE()");
 $dl_7d = safe_count($pdo, "SELECT COUNT(*) FROM lead_downloads WHERE downloaded_at >= NOW() - INTERVAL 7 DAY");

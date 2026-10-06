@@ -42,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Filtros
 $search = trim($_GET['q'] ?? '');
+$origin = trim($_GET['origin'] ?? 'aulas_gratuitas');
 $channel_id = !empty($_GET['channel_id']) ? (int)$_GET['channel_id'] : 0;
 $video_id = !empty($_GET['video_id']) ? (int)$_GET['video_id'] : 0;
 $teacher_id = !empty($_GET['teacher_id']) ? (int)$_GET['teacher_id'] : 0;
@@ -59,6 +60,19 @@ $offset = ($page - 1) * $limit;
 
 $where = " WHERE 1=1";
 $params = [];
+
+if ($origin === 'aulas_gratuitas') {
+    // Apenas leads legítimos vinculados a aulas gratuitas
+    $where .= " AND (
+        l.source LIKE 'aulas-gratuitas%' 
+        OR EXISTS (SELECT 1 FROM free_video_events e WHERE e.lead_id = l.id) 
+        OR EXISTS (SELECT 1 FROM lead_downloads ld WHERE ld.subject_type = 'lead' AND ld.subject_id = l.id) 
+        OR EXISTS (SELECT 1 FROM lead_consents lc WHERE lc.lead_id = l.id AND lc.source LIKE 'aulas-gratuitas%')
+    )";
+} elseif ($origin === 'reservas') {
+    // Apenas leads com reservas de turmas
+    $where .= " AND (l.source LIKE 'reserva%' OR EXISTS (SELECT 1 FROM reservations r WHERE r.lead_id = l.id))";
+}
 
 if (!empty($search)) {
     $where .= " AND (l.name LIKE ? OR l.email LIKE ? OR l.phone_original LIKE ? OR l.phone_normalized LIKE ?)";
@@ -132,10 +146,18 @@ require_once 'includes/header.php';
 <!-- Filtros Avançados -->
 <div class="card">
     <form method="GET" style="display: flex; flex-direction: column; gap: 1rem;">
-        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem;">
+        <div style="display: grid; grid-template-columns: 2fr 1.3fr 1fr 1fr 1fr; gap: 1rem;">
             <div class="form-group" style="margin: 0;">
                 <label>Busca por Nome, E-mail ou Telefone</label>
                 <input type="text" name="q" class="form-control" placeholder="Digite para buscar..." value="<?= htmlspecialchars($search) ?>">
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label>Segmento / Origem</label>
+                <select name="origin" class="form-control">
+                    <option value="aulas_gratuitas" <?= $origin === 'aulas_gratuitas' ? 'selected' : '' ?>>🎯 Aulas Gratuitas (Padrão)</option>
+                    <option value="reservas" <?= $origin === 'reservas' ? 'selected' : '' ?>>📝 Leads com Reserva de Turmas</option>
+                    <option value="todos" <?= $origin === 'todos' ? 'selected' : '' ?>>🌐 Todos os Leads (Base Unificada)</option>
+                </select>
             </div>
             <div class="form-group" style="margin: 0;">
                 <label>Tag Contém</label>

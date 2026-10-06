@@ -7,6 +7,7 @@ require_once '../db_config.php';
 
 // Filtros
 $search = trim($_GET['q'] ?? '');
+$origin = trim($_GET['origin'] ?? 'aulas_gratuitas');
 $channel_id = !empty($_GET['channel_id']) ? (int)$_GET['channel_id'] : 0;
 $video_id = !empty($_GET['video_id']) ? (int)$_GET['video_id'] : 0;
 $teacher_id = !empty($_GET['teacher_id']) ? (int)$_GET['teacher_id'] : 0;
@@ -19,6 +20,18 @@ $date_end = !empty($_GET['date_end']) ? $_GET['date_end'] : '';
 
 $where = " WHERE 1=1";
 $params = [];
+
+if ($origin === 'aulas_gratuitas') {
+    // Apenas leads de aulas gratuitas
+    $where .= " AND (
+        l.source LIKE 'aulas-gratuitas%' 
+        OR EXISTS (SELECT 1 FROM free_video_events e WHERE e.lead_id = l.id) 
+        OR EXISTS (SELECT 1 FROM lead_downloads ld WHERE ld.subject_type = 'lead' AND ld.subject_id = l.id) 
+        OR EXISTS (SELECT 1 FROM lead_consents lc WHERE lc.lead_id = l.id AND lc.source LIKE 'aulas-gratuitas%')
+    )";
+} elseif ($origin === 'reservas') {
+    $where .= " AND (l.source LIKE 'reserva%' OR EXISTS (SELECT 1 FROM reservations r WHERE r.lead_id = l.id))";
+}
 
 if (!empty($search)) {
     $where .= " AND (l.name LIKE ? OR l.email LIKE ? OR l.phone_original LIKE ? OR l.phone_normalized LIKE ?)";

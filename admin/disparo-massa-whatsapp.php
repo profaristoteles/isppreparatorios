@@ -9,6 +9,7 @@ $config = get_config($pdo);
 
 $isEvolutionConfigured = !empty($crm_cfg['apiUrl']) && !empty($crm_cfg['apiKey']);
 $channels = $pdo->query("SELECT id, name FROM free_channels WHERE deleted_at IS NULL ORDER BY name ASC")->fetchAll();
+$reservationCampaigns = $pdo->query("SELECT id, title FROM reservation_campaigns ORDER BY title ASC")->fetchAll();
 
 require_once 'includes/header.php';
 ?>
@@ -51,10 +52,12 @@ require_once 'includes/header.php';
         <div class="form-group">
             <label>Selecione o Grupo de Destinatários:</label>
             <select id="target_group" class="form-control" onchange="atualizarPublicoAlvo()">
-                <option value="all_leads">🎯 Todos os Leads de Aulas Gratuitas (Base Geral)</option>
-                <option value="leads_channel">📺 Leads de um Canal Específico</option>
-                <option value="all_reservations">📝 Alunos com Reserva de Turmas</option>
+                <option value="all_leads">🎯 Todos os Leads de Aulas Gratuitas</option>
+                <option value="leads_channel">📺 Leads de um Canal Específico (Aulas)</option>
+                <option value="all_reservations">📝 Alunos com Reserva de Turmas (Todas as Campanhas)</option>
+                <option value="reservations_campaign">📌 Alunos de uma Campanha Específica de Reserva</option>
                 <option value="all_events">📅 Alunos Inscritos em Eventos/Lives</option>
+                <option value="all_contacts">🌐 Todos os Contatos Cadastrados (Base Geral Unificada)</option>
             </select>
         </div>
 
@@ -64,6 +67,16 @@ require_once 'includes/header.php';
                 <option value="">Selecione um canal...</option>
                 <?php foreach ($channels as $c): ?>
                     <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="form-group" id="campaign_filter_group" style="display: none;">
+            <label>Escolha a Campanha de Reserva:</label>
+            <select id="filter_campaign_id" class="form-control" onchange="carregarContatosDestino()">
+                <option value="">Selecione uma campanha...</option>
+                <?php foreach ($reservationCampaigns as $rc): ?>
+                    <option value="<?= $rc['id'] ?>"><?= htmlspecialchars($rc['title']) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -166,17 +179,20 @@ let shouldStop = false;
 function atualizarPublicoAlvo() {
     const grp = document.getElementById('target_group').value;
     const chanGrp = document.getElementById('channel_filter_group');
-    if (grp === 'leads_channel') {
-        chanGrp.style.display = 'block';
-    } else {
-        chanGrp.style.display = 'none';
-    }
+    const campGrp = document.getElementById('campaign_filter_group');
+    if (chanGrp) chanGrp.style.display = (grp === 'leads_channel') ? 'block' : 'none';
+    if (campGrp) campGrp.style.display = (grp === 'reservations_campaign') ? 'block' : 'none';
     carregarContatosDestino();
 }
 
 function carregarContatosDestino() {
     const grp = document.getElementById('target_group').value;
-    const chanId = document.getElementById('filter_channel_id').value;
+    let filterId = 0;
+    if (grp === 'leads_channel') {
+        filterId = document.getElementById('filter_channel_id').value;
+    } else if (grp === 'reservations_campaign') {
+        filterId = document.getElementById('filter_campaign_id').value;
+    }
     const badge = document.getElementById('recipient_count_badge');
 
     badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -184,7 +200,7 @@ function carregarContatosDestino() {
     const formData = new FormData();
     formData.append('action', 'fetch_recipients');
     formData.append('target_group', grp);
-    formData.append('filter_id', chanId);
+    formData.append('filter_id', filterId);
 
     fetch('ajax_whatsapp_broadcast.php', {
         method: 'POST',
