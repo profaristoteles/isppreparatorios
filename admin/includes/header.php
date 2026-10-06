@@ -90,6 +90,7 @@
     <a href="gerenciar-reservas.php"><span><i class="fas fa-clipboard-list"></i> Reservas</span></a>
 
     <div class="menu-section-header">Marketing & Rastreamento</div>
+    <a href="disparo-massa-whatsapp.php"><span><i class="fab fa-whatsapp" style="color: #25d366;"></i> Disparo WhatsApp</span></a>
     <a href="marketing-pixels.php"><span><i class="fas fa-bullseye"></i> Pixels & Conversões</span></a>
     <a href="marketing-eventos.php"><span><i class="fas fa-tags"></i> Eventos</span></a>
     <a href="marketing-campanhas.php"><span><i class="fas fa-bullhorn"></i> Campanhas</span></a>

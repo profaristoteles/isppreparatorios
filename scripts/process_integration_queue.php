@@ -72,7 +72,7 @@ try {
 
         if ($integration === 'evocrm') {
             if ($action === 'upsert_contact') {
-                $result = EvoCRMService::upsertContact($payload);
+                $result = EvoCRMService::upsertContact($payload, $pdo);
             } else {
                 $result = ['success' => false, 'message' => "Ação de integração não suportada: {$action}"];
                 $isPermanentError = true;

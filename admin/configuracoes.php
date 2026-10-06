@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 require_once '../db_config.php';
+require_once '../includes/evocrm_service.php';
 require_once 'includes/admin_security.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -52,6 +53,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $whatsapp_api_key = trim($_POST['whatsapp_api_key'] ?? '');
     $whatsapp_api_instance = trim($_POST['whatsapp_api_instance'] ?? '');
 
+    // Configurações de CRM & Evolution API
+    $evocrm_enabled = isset($_POST['evocrm_enabled']) ? 1 : 0;
+    $evocrm_provider = trim($_POST['evocrm_provider'] ?? 'evolution');
+    $evocrm_api_url = trim($_POST['evocrm_api_url'] ?? '');
+    $evocrm_api_key = trim($_POST['evocrm_api_key'] ?? '');
+    $evocrm_instance = trim($_POST['evocrm_instance'] ?? '');
+
     $stmt = $pdo->prepare("UPDATE configuracoes SET 
         theme_color_primary=?, theme_color_secondary=?, footer_text=?, phone=?, email=?, 
         facebook=?, instagram=?, youtube=?, tiktok=?, whatsapp_group_url=?, 
@@ -59,7 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         notify_admin_email=?, notify_admin_whatsapp=?, notify_email_enabled=?, notify_whatsapp_enabled=?,
         notify_on_reservation=?, notify_on_event=?, notify_on_contact=?, notify_on_lead=?,
         smtp_enabled=?, smtp_host=?, smtp_port=?, smtp_user=?, smtp_pass=?, smtp_secure=?, smtp_from_email=?, smtp_from_name=?,
-        whatsapp_api_provider=?, whatsapp_api_url=?, whatsapp_api_key=?, whatsapp_api_instance=?
+        whatsapp_api_provider=?, whatsapp_api_url=?, whatsapp_api_key=?, whatsapp_api_instance=?,
+        evocrm_enabled=?, evocrm_provider=?, evocrm_api_url=?, evocrm_api_key=?, evocrm_instance=?
     WHERE id=1");
 
     $saveSuccess = $stmt->execute([
@@ -69,7 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $notify_admin_email, $notify_admin_whatsapp, $notify_email_enabled, $notify_whatsapp_enabled,
         $notify_on_reservation, $notify_on_event, $notify_on_contact, $notify_on_lead,
         $smtp_enabled, $smtp_host, $smtp_port, $smtp_user, $smtp_pass, $smtp_secure, $smtp_from_email, $smtp_from_name,
-        $whatsapp_api_provider, $whatsapp_api_url, $whatsapp_api_key, $whatsapp_api_instance
+        $whatsapp_api_provider, $whatsapp_api_url, $whatsapp_api_key, $whatsapp_api_instance,
+        $evocrm_enabled, $evocrm_provider, $evocrm_api_url, $evocrm_api_key, $evocrm_instance
     ]);
 
     if ($saveSuccess) {
@@ -83,8 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $config = get_config($pdo);
 
-// Verificação de Status Informativo das Integrações de Aulas Gratuitas (Sem expor credenciais)
-$evocrm_enabled = filter_var(getenv('EVOCRM_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN);
+// Verificação de Status Informativo das Integrações
+$crm_cfg = EvoCRMService::getConfig($pdo);
+$evocrm_enabled = $crm_cfg['enabled'];
 $download_secret = getenv('DOWNLOAD_SECRET_KEY') ?: '';
 $mautic_enabled = filter_var(getenv('MAUTIC_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN);
 
@@ -152,37 +163,110 @@ require_once 'includes/header.php';
             </div>
         </div>
 
-        <!-- Seção Informativa de Integrações de Aulas Gratuitas -->
-        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #03045e; margin-top: 2rem;">
-            <h4 style="color: #03045e; margin-bottom: 0.5rem;"><i class="fas fa-plug"></i> Status das Integrações da Área de Aulas Gratuitas</h4>
-            <p style="color: #666; font-size: 0.85rem; margin-bottom: 1rem;">O status dos serviços abaixo é gerenciado com segurança via variáveis de ambiente (.env).</p>
-            
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
-                <div style="background: #fff; padding: 1rem; border-radius: 6px; border: 1px solid #ddd;">
-                    <div style="font-weight: 600; font-size: 0.9rem;">EvoCRM</div>
-                    <div style="margin-top: 0.5rem;">
+        <!-- Seção de Integração com CRM & Evolution API (Aulas Gratuitas, Reservas & Disparos) -->
+        <div style="background: #ffffff; padding: 1.8rem; border-radius: 8px; border: 1px solid #dcdfe6; border-left: 4px solid #03045e; margin-top: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #03045e; margin: 0 0 0.4rem 0; font-size: 1.25rem;"><i class="fas fa-plug"></i> Integração CRM &amp; Evolution API (Leads &amp; Reservas)</h3>
+                    <p style="color: #555; font-size: 0.88rem; margin: 0; line-height: 1.5;">
+                        Envie automaticamente todos os novos alunos e contatos cadastrados para o seu CRM ou para sua instância da <strong>Evolution API</strong> para envio de mensagens em massa e nutrição de leads.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div id="crm_status_badge">
                         <?php if ($evocrm_enabled): ?>
-                            <span class="badge badge-success"><i class="fas fa-check-circle"></i> ATIVO</span>
+                            <span class="badge badge-success" style="font-size: 0.85rem; padding: 6px 12px;"><i class="fas fa-check-circle"></i> ATIVO</span>
                         <?php else: ?>
-                            <span class="badge badge-secondary"><i class="fas fa-pause-circle"></i> INATIVO (.env)</span>
+                            <span class="badge badge-secondary" style="font-size: 0.85rem; padding: 6px 12px;"><i class="fas fa-pause-circle"></i> INATIVO</span>
                         <?php endif; ?>
                     </div>
                 </div>
+            </div>
 
-                <div style="background: #fff; padding: 1rem; border-radius: 6px; border: 1px solid #ddd;">
-                    <div style="font-weight: 600; font-size: 0.9rem;">Download Seguro HMAC</div>
-                    <div style="margin-top: 0.5rem;">
+            <!-- Toggle Ativar/Desativar -->
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; margin-bottom: 1.2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; font-weight: 600; color: #03045e;">
+                    <input type="checkbox" name="evocrm_enabled" id="evocrm_enabled" value="1" <?= $evocrm_enabled ? 'checked' : '' ?> onchange="toggleCrmFields()" style="width: 18px; height: 18px;">
+                    <span>Ativar sincronização automática de contatos com CRM / Evolution API</span>
+                </label>
+                <div>
+                    <a href="fila-integracoes.php" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+                        <i class="fas fa-list"></i> Ver Fila de Integrações
+                    </a>
+                </div>
+            </div>
+
+            <div id="crm_fields_container" style="<?= $evocrm_enabled ? '' : 'display: none;' ?>">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label>Plataforma / Provedor do CRM</label>
+                        <select name="evocrm_provider" id="evocrm_provider" class="form-control" onchange="toggleCrmProvider()">
+                            <option value="evolution" <?= ($config['evocrm_provider'] ?? 'evolution') === 'evolution' ? 'selected' : '' ?>>🟢 Evolution API (Recomendado - WhatsApp &amp; Mensagens em Massa)</option>
+                            <option value="evocrm" <?= ($config['evocrm_provider'] ?? '') === 'evocrm' ? 'selected' : '' ?>>🔵 EvoCRM / Webhook CRM (/contacts/upsert)</option>
+                        </select>
+                        <small style="color: #666;">A Evolution API sincroniza os números no WhatsApp e permite disparos em massa diretamente pelo sistema.</small>
+                    </div>
+
+                    <div class="form-group" id="crm_instance_group">
+                        <label>Nome da Instância (Evolution API)</label>
+                        <input type="text" name="evocrm_instance" id="evocrm_instance" class="form-control" placeholder="Ex: isp" value="<?= htmlspecialchars($config['evocrm_instance'] ?? ($config['whatsapp_api_instance'] ?? 'isp')) ?>">
+                        <small style="color: #666;">Nome da instância configurada no seu painel da Evolution API.</small>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label>URL da API</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="url" name="evocrm_api_url" id="evocrm_api_url" class="form-control" placeholder="https://api.seudominio.com" value="<?= htmlspecialchars($config['evocrm_api_url'] ?? ($config['whatsapp_api_url'] ?? '')) ?>">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="copiarCredenciaisNotificacoes()" title="Copiar URL e Chave já configuradas no WhatsApp de Notificações" style="white-space: nowrap;">
+                                <i class="fas fa-copy"></i> Copiar do Zap
+                            </button>
+                        </div>
+                        <small style="color: #666;">Endereço base da sua Evolution API (sem barra no final).</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Chave de API / Token (apikey)</label>
+                        <input type="password" name="evocrm_api_key" id="evocrm_api_key" class="form-control" placeholder="Cole sua API Key ou Bearer Token..." value="<?= htmlspecialchars($config['evocrm_api_key'] ?? ($config['whatsapp_api_key'] ?? '')) ?>">
+                        <small style="color: #666;">Chave global da Evolution API ou token de autenticação do CRM.</small>
+                    </div>
+                </div>
+
+                <!-- Painel de Ações Rápidas (Teste & Sincronização sob Demanda) -->
+                <div style="background: #eef2f7; border: 1px solid #d0dbe7; padding: 1rem 1.2rem; border-radius: 6px; margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <strong style="color: #03045e; font-size: 0.92rem;"><i class="fas fa-vial"></i> Testar Conexão &amp; Sincronizar Fila</strong>
+                        <div style="font-size: 0.82rem; color: #555;">Valide se a Evolution API está respondendo e envie os contatos pendentes imediatamente.</div>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnTestCrm" onclick="executarTesteCrm()">
+                            <i class="fas fa-bolt"></i> Testar Conexão
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnSyncQueue" onclick="executarSyncFila()">
+                            <i class="fas fa-sync"></i> Sincronizar Fila Agora
+                        </button>
+                    </div>
+                </div>
+                <div id="test_crm_result" style="width: 100%; margin-top: 8px; display: none;"></div>
+            </div>
+
+            <!-- Status Informativo das Demais Integrações (HMAC e Mautic) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: center; margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <div style="background: #fdfdfd; padding: 0.8rem; border-radius: 6px; border: 1px solid #eee;">
+                    <div style="font-weight: 600; font-size: 0.85rem; color: #555;">Download Seguro HMAC</div>
+                    <div style="margin-top: 0.3rem;">
                         <?php if (!empty($download_secret)): ?>
                             <span class="badge badge-success"><i class="fas fa-lock"></i> CONFIGURADO</span>
                         <?php else: ?>
-                            <span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> CHAVE PADRÃO</span>
+                            <span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> CHAVE PADRÃO (.env)</span>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <div style="background: #fff; padding: 1rem; border-radius: 6px; border: 1px solid #ddd;">
-                    <div style="font-weight: 600; font-size: 0.9rem;">Mautic API (Futuro)</div>
-                    <div style="margin-top: 0.5rem;">
+                <div style="background: #fdfdfd; padding: 0.8rem; border-radius: 6px; border: 1px solid #eee;">
+                    <div style="font-weight: 600; font-size: 0.85rem; color: #555;">Mautic API (Futuro)</div>
+                    <div style="margin-top: 0.3rem;">
                         <?php if ($mautic_enabled): ?>
                             <span class="badge badge-success"><i class="fas fa-check-circle"></i> ATIVO</span>
                         <?php else: ?>
@@ -576,6 +660,122 @@ function executarTesteWhatsApp() {
             resDiv.innerHTML = '<div style="background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem;"><i class="fas fa-check-circle"></i> <strong>Sucesso!</strong> ' + (data.message || 'Mensagem enviada com sucesso ao WhatsApp.') + '</div>';
         } else {
             resDiv.innerHTML = '<div style="background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem;"><i class="fas fa-exclamation-triangle"></i> <strong>Falha:</strong> ' + (data.message || 'Erro ao enviar mensagem no WhatsApp.') + '</div>';
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        resDiv.style.display = 'block';
+        resDiv.innerHTML = '<div style="background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem;"><i class="fas fa-times-circle"></i> Erro de comunicação com o servidor.</div>';
+    });
+}
+
+function toggleCrmFields() {
+    const chk = document.getElementById('evocrm_enabled');
+    const container = document.getElementById('crm_fields_container');
+    const badge = document.getElementById('crm_status_badge');
+    if (container) {
+        container.style.display = chk.checked ? 'block' : 'none';
+    }
+    if (badge) {
+        badge.innerHTML = chk.checked 
+            ? '<span class="badge badge-success" style="font-size: 0.85rem; padding: 6px 12px;"><i class="fas fa-check-circle"></i> ATIVO</span>'
+            : '<span class="badge badge-secondary" style="font-size: 0.85rem; padding: 6px 12px;"><i class="fas fa-pause-circle"></i> INATIVO</span>';
+    }
+}
+
+function toggleCrmProvider() {
+    const prov = document.getElementById('evocrm_provider').value;
+    const instGroup = document.getElementById('crm_instance_group');
+    if (instGroup) {
+        instGroup.style.display = (prov === 'evolution') ? 'block' : 'none';
+    }
+}
+
+function copiarCredenciaisNotificacoes() {
+    const zapUrl = document.getElementById('whatsapp_api_url');
+    const zapKey = document.getElementById('whatsapp_api_key');
+    const zapInst = document.getElementById('whatsapp_api_instance');
+
+    const crmUrl = document.getElementById('evocrm_api_url');
+    const crmKey = document.getElementById('evocrm_api_key');
+    const crmInst = document.getElementById('evocrm_instance');
+
+    if (zapUrl && zapUrl.value) crmUrl.value = zapUrl.value;
+    if (zapKey && zapKey.value) crmKey.value = zapKey.value;
+    if (zapInst && zapInst.value) crmInst.value = zapInst.value;
+
+    alert('Credenciais copiadas da seção de Notificações com sucesso!');
+}
+
+function executarTesteCrm() {
+    const btn = document.getElementById('btnTestCrm');
+    const resDiv = document.getElementById('test_crm_result');
+    const provider = document.getElementById('evocrm_provider').value;
+    const apiUrl = document.getElementById('evocrm_api_url').value.trim();
+    const apiKey = document.getElementById('evocrm_api_key').value.trim();
+    const instance = document.getElementById('evocrm_instance').value.trim();
+
+    if (!apiUrl || !apiKey) {
+        alert('Por favor, preencha a URL da API e a Chave de API antes de testar.');
+        return;
+    }
+
+    btn.disabled = true;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testando conexão...';
+    resDiv.style.display = 'none';
+
+    const formData = new FormData();
+    formData.append('provider', provider);
+    formData.append('api_url', apiUrl);
+    formData.append('api_key', apiKey);
+    formData.append('instance', instance);
+
+    fetch('ajax_test_crm.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        resDiv.style.display = 'block';
+        if (data.success) {
+            resDiv.innerHTML = '<div style="background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem;"><i class="fas fa-check-circle"></i> ' + (data.message || 'Conexão realizada com sucesso!') + '</div>';
+        } else {
+            resDiv.innerHTML = '<div style="background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem;"><i class="fas fa-exclamation-triangle"></i> ' + (data.message || 'Erro ao conectar à API.') + '</div>';
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        resDiv.style.display = 'block';
+        resDiv.innerHTML = '<div style="background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem;"><i class="fas fa-times-circle"></i> Erro de comunicação com o servidor.</div>';
+    });
+}
+
+function executarSyncFila() {
+    const btn = document.getElementById('btnSyncQueue');
+    const resDiv = document.getElementById('test_crm_result');
+
+    btn.disabled = true;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizando...';
+    resDiv.style.display = 'none';
+
+    fetch('ajax_crm_sync.php', {
+        method: 'POST'
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        resDiv.style.display = 'block';
+        if (data.success) {
+            resDiv.innerHTML = '<div style="background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem;"><i class="fas fa-check-circle"></i> ' + data.message + '</div>';
+        } else {
+            resDiv.innerHTML = '<div style="background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem;"><i class="fas fa-exclamation-triangle"></i> ' + (data.message || 'Falha ao sincronizar fila.') + '</div>';
         }
     })
     .catch(err => {

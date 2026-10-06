@@ -3,6 +3,43 @@ require_once 'auth.php';
 require_once '../db_config.php';
 require_once 'includes/admin_security.php';
 
+// Ações em massa via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf_token();
+    $action = $_POST['action'] ?? '';
+    if ($action === 'bulk_resync_crm') {
+        $selectedIds = $_POST['selected_leads'] ?? [];
+        if (!empty($selectedIds) && is_array($selectedIds)) {
+            $count = 0;
+            $stmtInsert = $pdo->prepare("INSERT INTO integration_queue (integration, entity_type, entity_id, action, payload, status) VALUES ('evocrm', 'lead', ?, 'upsert_contact', ?, 'pending')");
+            foreach ($selectedIds as $leadId) {
+                $leadId = (int)$leadId;
+                $stmtL = $pdo->prepare("SELECT * FROM leads WHERE id = ?");
+                $stmtL->execute([$leadId]);
+                $lead = $stmtL->fetch();
+                if ($lead) {
+                    $tags = !empty($lead['tags_cache']) ? array_map('trim', explode(',', $lead['tags_cache'])) : ['lead:site'];
+                    $payload = [
+                        'lead_id' => $lead['id'],
+                        'name' => $lead['name'],
+                        'email' => $lead['email'],
+                        'phone' => !empty($lead['phone_normalized']) ? $lead['phone_normalized'] : $lead['phone_original'],
+                        'tags' => $tags,
+                        'campaign_code' => $lead['campaign_code'] ?? 'aulas-gratuitas'
+                    ];
+                    $stmtInsert->execute([$lead['id'], json_encode($payload)]);
+                    $count++;
+                }
+            }
+            $_SESSION['msg'] = "{$count} lead(s) enfileirado(s) com sucesso para sincronização com o CRM / Evolution API!";
+        } else {
+            $_SESSION['erro'] = "Nenhum lead foi selecionado.";
+        }
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit;
+    }
+}
+
 // Filtros
 $search = trim($_GET['q'] ?? '');
 $channel_id = !empty($_GET['channel_id']) ? (int)$_GET['channel_id'] : 0;
@@ -165,66 +202,100 @@ require_once 'includes/header.php';
     </form>
 </div>
 
-<!-- Tabela de Leads -->
+<!-- Tabela de Leads com Ações em Massa -->
 <div class="card">
-    <div style="margin-bottom: 0.8rem; color: #666; font-size: 0.9rem;">
-        Total de <strong><?= number_format($totalLeads) ?></strong> lead(s) encontrado(s).
-    </div>
+    <form method="POST" id="formBulkLeads">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="bulk_resync_crm">
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nome / E-mail</th>
-                <th>WhatsApp / Telefone</th>
-                <th>Origem / UTMs</th>
-                <th>Tags</th>
-                <th>Downloads</th>
-                <th>Data Cadastro</th>
-                <th style="width: 80px;">Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (empty($leadsList)): ?>
-                <tr><td colspan="8" style="text-align: center; color: #888;">Nenhum lead encontrado com os filtros aplicados.</td></tr>
-            <?php else: foreach ($leadsList as $lead): ?>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
+            <div style="color: #666; font-size: 0.9rem;">
+                Total de <strong><?= number_format($totalLeads) ?></strong> lead(s) encontrado(s).
+            </div>
+
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Deseja sincronizar os leads selecionados com o CRM / Evolution API?')">
+                    <i class="fas fa-sync"></i> Reenviar Selecionados ao CRM / Evolution API
+                </button>
+                <a href="fila-integracoes.php?queue_all_leads=1&csrf_token=<?= generate_csrf_token() ?>" class="btn btn-sm btn-secondary" onclick="return confirm('Deseja enfileirar todos os leads da base para envio ao CRM?')">
+                    <i class="fas fa-users"></i> Enfileirar Todos da Base
+                </a>
+                <a href="disparo-massa-whatsapp.php" class="btn btn-sm btn-success" style="background: #25d366; border-color: #25d366; color: white;">
+                    <i class="fab fa-whatsapp"></i> Disparo em Massa
+                </a>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>#<?= $lead['id'] ?></td>
-                    <td>
-                        <strong><?= htmlspecialchars($lead['name']) ?></strong><br>
-                        <small style="color: #666;"><?= htmlspecialchars($lead['email']) ?></small>
-                        <?php if (!empty($lead['res_count'])): ?>
-                            <div style="margin-top: 3px;">
-                                <span class="badge" style="background: #fff3cd; color: #856404; border: 1px solid #ffeeba; font-size: 0.72rem; padding: 0.2rem 0.5rem;">
-                                    <i class="fas fa-bookmark"></i> <?= $lead['res_count'] ?> reserva(s)
-                                </span>
-                            </div>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <i class="fab fa-whatsapp text-success"></i> <?= htmlspecialchars($lead['phone_original']) ?><br>
-                        <small style="color: #888;"><?= htmlspecialchars($lead['phone_normalized'] ?: '-') ?></small>
-                    </td>
-                    <td>
-                        <span class="badge badge-info"><?= htmlspecialchars($lead['source']) ?></span><br>
-                        <?php if ($lead['utm_source']): ?>
-                            <small style="color: #666;"><?= htmlspecialchars($lead['utm_source']) ?> / <?= htmlspecialchars($lead['utm_medium']) ?></small>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <span class="badge badge-secondary"><?= $lead['tag_count'] ?> tag(s)</span>
-                    </td>
-                    <td>
-                        <span class="badge badge-success"><?= $lead['dl_count'] ?> PDF(s)</span>
-                    </td>
-                    <td><?= date('d/m/Y H:i', strtotime($lead['created_at'])) ?></td>
-                    <td>
-                        <a href="lead-detalhes.php?id=<?= $lead['id'] ?>" class="btn btn-sm" title="Ver Detalhes"><i class="fas fa-eye"></i></a>
-                    </td>
+                    <th style="width: 35px; text-align: center;">
+                        <input type="checkbox" id="selectAllLeads" onclick="toggleSelectAllLeads(this)" title="Selecionar todos">
+                    </th>
+                    <th>ID</th>
+                    <th>Nome / E-mail</th>
+                    <th>WhatsApp / Telefone</th>
+                    <th>Origem / UTMs</th>
+                    <th>Tags</th>
+                    <th>Downloads</th>
+                    <th>Data Cadastro</th>
+                    <th style="width: 80px;">Ações</th>
                 </tr>
-            <?php endforeach; endif; ?>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <?php if (empty($leadsList)): ?>
+                    <tr><td colspan="9" style="text-align: center; color: #888;">Nenhum lead encontrado com os filtros aplicados.</td></tr>
+                <?php else: foreach ($leadsList as $lead): ?>
+                    <tr>
+                        <td style="text-align: center;">
+                            <input type="checkbox" name="selected_leads[]" value="<?= $lead['id'] ?>" class="lead-checkbox">
+                        </td>
+                        <td>#<?= $lead['id'] ?></td>
+                        <td>
+                            <strong><?= htmlspecialchars($lead['name']) ?></strong><br>
+                            <small style="color: #666;"><?= htmlspecialchars($lead['email']) ?></small>
+                            <?php if (!empty($lead['res_count'])): ?>
+                                <div style="margin-top: 3px;">
+                                    <span class="badge" style="background: #fff3cd; color: #856404; border: 1px solid #ffeeba; font-size: 0.72rem; padding: 0.2rem 0.5rem;">
+                                        <i class="fas fa-bookmark"></i> <?= $lead['res_count'] ?> reserva(s)
+                                    </span>
+                                </div>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <i class="fab fa-whatsapp text-success"></i> <?= htmlspecialchars($lead['phone_original']) ?><br>
+                            <small style="color: #888;"><?= htmlspecialchars($lead['phone_normalized'] ?: '-') ?></small>
+                        </td>
+                        <td>
+                            <span class="badge badge-info"><?= htmlspecialchars($lead['source']) ?></span><br>
+                            <?php if ($lead['utm_source']): ?>
+                                <small style="color: #666;"><?= htmlspecialchars($lead['utm_source']) ?> / <?= htmlspecialchars($lead['utm_medium']) ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <span class="badge badge-secondary"><?= $lead['tag_count'] ?> tag(s)</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-success"><?= $lead['dl_count'] ?> PDF(s)</span>
+                        </td>
+                        <td><?= date('d/m/Y H:i', strtotime($lead['created_at'])) ?></td>
+                        <td>
+                            <a href="lead-detalhes.php?id=<?= $lead['id'] ?>" class="btn btn-sm" title="Ver Detalhes"><i class="fas fa-eye"></i></a>
+                        </td>
+                    </tr>
+                <?php endforeach; endif; ?>
+            </tbody>
+        </table>
+    </form>
+</div>
+
+<script>
+function toggleSelectAllLeads(master) {
+    document.querySelectorAll('.lead-checkbox').forEach(cb => {
+        cb.checked = master.checked;
+    });
+}
+</script>
 
     <!-- Paginação -->
     <?php if ($totalPages > 1): ?>

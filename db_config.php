@@ -240,7 +240,12 @@ try {
         'whatsapp_api_provider' => "VARCHAR(50) DEFAULT 'none'",
         'whatsapp_api_url' => "VARCHAR(500) DEFAULT ''",
         'whatsapp_api_key' => "VARCHAR(500) DEFAULT ''",
-        'whatsapp_api_instance' => "VARCHAR(255) DEFAULT ''"
+        'whatsapp_api_instance' => "VARCHAR(255) DEFAULT ''",
+        'evocrm_enabled' => "TINYINT(1) DEFAULT 0",
+        'evocrm_provider' => "VARCHAR(50) DEFAULT 'evolution'",
+        'evocrm_api_url' => "VARCHAR(500) DEFAULT ''",
+        'evocrm_api_key' => "VARCHAR(500) DEFAULT ''",
+        'evocrm_instance' => "VARCHAR(255) DEFAULT ''"
     ];
 
     foreach ($notifCols as $col => $definition) {

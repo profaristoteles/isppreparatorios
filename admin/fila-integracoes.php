@@ -25,6 +25,76 @@ if (isset($_GET['unlock'])) {
     exit;
 }
 
+// Processar Lote Agora via Painel
+if (isset($_GET['process_now'])) {
+    verify_csrf_token();
+    require_once '../includes/evocrm_service.php';
+    
+    $sqlSelect = "SELECT id, integration, entity_type, entity_id, action, payload, attempts, max_attempts 
+                  FROM integration_queue 
+                  WHERE (
+                      (status IN ('pending', 'error') AND (next_retry_at IS NULL OR next_retry_at <= NOW()))
+                      OR (status = 'processing' AND locked_at < NOW() - INTERVAL 10 MINUTE)
+                  )
+                  LIMIT 50";
+    $stmtJobs = $pdo->query($sqlSelect);
+    $jobs = $stmtJobs->fetchAll();
+    
+    $synced = 0;
+    $errors = 0;
+    
+    foreach ($jobs as $job) {
+        $payload = json_decode($job['payload'], true) ?: [];
+        $res = EvoCRMService::upsertContact($payload, $pdo);
+        if ($res['success']) {
+            $stmtUp = $pdo->prepare("UPDATE integration_queue SET status = 'synced', attempts = attempts + 1, last_error = NULL, locked_at = NULL WHERE id = ?");
+            $stmtUp->execute([$job['id']]);
+            $synced++;
+        } else {
+            $cleanErr = preg_replace('/(Bearer|Key|Token|Password)\s+[A-Za-z0-9._-]+/i', '$1 [REDACTED]', $res['message']);
+            $stmtUp = $pdo->prepare("UPDATE integration_queue SET status = 'error', attempts = attempts + 1, last_error = ?, next_retry_at = NOW() + INTERVAL 5 MINUTE, locked_at = NULL WHERE id = ?");
+            $stmtUp->execute([$cleanErr, $job['id']]);
+            $errors++;
+        }
+    }
+    
+    if (count($jobs) === 0) {
+        $_SESSION['msg'] = "Nenhum job pendente na fila no momento.";
+    } else {
+        $_SESSION['msg'] = "Processamento concluído: {$synced} contato(s) sincronizado(s) com sucesso!" . ($errors > 0 ? " ({$errors} erro(s))" : "");
+    }
+    header("Location: fila-integracoes.php");
+    exit;
+}
+
+// Enfileirar todos os leads existentes para envio ao CRM / Evolution API
+if (isset($_GET['queue_all_leads'])) {
+    verify_csrf_token();
+    $stmtLeads = $pdo->query("SELECT l.* FROM leads l WHERE l.id NOT IN (SELECT entity_id FROM integration_queue WHERE integration = 'evocrm' AND entity_type = 'lead' AND status = 'synced')");
+    $leadsToQueue = $stmtLeads->fetchAll();
+    $queuedCount = 0;
+    
+    $stmtInsert = $pdo->prepare("INSERT INTO integration_queue (integration, entity_type, entity_id, action, payload, status) VALUES ('evocrm', 'lead', ?, 'upsert_contact', ?, 'pending')");
+    
+    foreach ($leadsToQueue as $l) {
+        $tags = !empty($l['tags_cache']) ? array_map('trim', explode(',', $l['tags_cache'])) : ['lead:site'];
+        $payload = [
+            'lead_id' => $l['id'],
+            'name' => $l['name'],
+            'email' => $l['email'],
+            'phone' => !empty($l['phone_normalized']) ? $l['phone_normalized'] : $l['phone_original'],
+            'tags' => $tags,
+            'campaign_code' => $l['campaign_code'] ?? 'base-geral'
+        ];
+        $stmtInsert->execute([$l['id'], json_encode($payload)]);
+        $queuedCount++;
+    }
+    
+    $_SESSION['msg'] = "{$queuedCount} lead(s) enfileirado(s) com sucesso para o CRM / Evolution API!";
+    header("Location: fila-integracoes.php");
+    exit;
+}
+
 // Filtros e Paginação
 $filterStatus = $_GET['status'] ?? '';
 $filterIntegration = $_GET['integration'] ?? '';
@@ -59,8 +129,19 @@ $jobsList = $stmt->fetchAll();
 require_once 'includes/header.php';
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-    <h2><i class="fas fa-sync"></i> Fila Assíncrona de Integrações</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
+    <h2><i class="fas fa-sync"></i> Fila Assíncrona de Integrações (CRM / Evolution API)</h2>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="fila-integracoes.php?process_now=1&csrf_token=<?= generate_csrf_token() ?>" class="btn btn-primary btn-sm">
+            <i class="fas fa-play"></i> Processar Fila Agora
+        </a>
+        <a href="fila-integracoes.php?queue_all_leads=1&csrf_token=<?= generate_csrf_token() ?>" class="btn btn-secondary btn-sm" onclick="return confirm('Deseja enfileirar todos os leads cadastrados para envio ao CRM / Evolution API?')">
+            <i class="fas fa-users"></i> Enfileirar Todos os Leads
+        </a>
+        <a href="configuracoes.php" class="btn btn-secondary btn-sm" style="background: #e9ecef; color: #333; border: 1px solid #ccc;">
+            <i class="fas fa-cog"></i> Configurar CRM
+        </a>
+    </div>
 </div>
 
 <!-- Cards Sintéticos -->
