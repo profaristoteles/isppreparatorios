@@ -55,12 +55,36 @@ $stmtRes = $pdo->prepare("SELECT r.*, c.title as campaign_title, c.slug as campa
 $stmtRes->execute([$lead_id]);
 $reservationsList = $stmtRes->fetchAll();
 
+// Carregar Histórico de Disparos WhatsApp para este Lead
+$cleanLeadPhone = preg_replace('/[^0-9]/', '', $lead['phone_normalized'] ?: $lead['phone_original']);
+if (strlen($cleanLeadPhone) === 10 || strlen($cleanLeadPhone) === 11) {
+    $cleanLeadPhone = '55' . $cleanLeadPhone;
+}
+$stmtNotifs = $pdo->prepare("SELECT * FROM notifications_log WHERE channel = 'whatsapp' AND (recipient = ? OR recipient = ? OR recipient = ?) ORDER BY id DESC LIMIT 25");
+$stmtNotifs->execute([$cleanLeadPhone, $lead['phone_original'], $lead['phone_normalized']]);
+$leadZapLogs = $stmtNotifs->fetchAll();
+
+$leadPayloadJson = htmlspecialchars(json_encode([
+    'id' => (int)$lead['id'],
+    'name' => $lead['name'],
+    'phone' => !empty($lead['phone_normalized']) ? $lead['phone_normalized'] : $lead['phone_original'],
+    'email' => $lead['email'],
+    'source' => $lead['source']
+], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+
 require_once 'includes/header.php';
 ?>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 10px;">
     <h2><i class="fas fa-user"></i> Detalhes do Lead: <?= htmlspecialchars($lead['name']) ?> (#<?= $lead['id'] ?>)</h2>
-    <a href="gerenciar-leads.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar para a Lista</a>
+    <div style="display: flex; gap: 8px;">
+        <?php if (!empty($lead['phone_original']) || !empty($lead['phone_normalized'])): ?>
+            <button type="button" class="btn btn-success" style="background: #25d366; border-color: #25d366; color: white; font-weight: 600;" onclick='abrirModalWhatsApp(<?= $leadPayloadJson ?>)'>
+                <i class="fab fa-whatsapp"></i> Disparar Mensagem no WhatsApp
+            </button>
+        <?php endif; ?>
+        <a href="gerenciar-leads.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar para a Lista</a>
+    </div>
 </div>
 
 <!-- Dados Cadastrais e UTMs -->
@@ -70,7 +94,17 @@ require_once 'includes/header.php';
         <table class="table" style="margin-top: 0.5rem;">
             <tr><th style="width: 180px;">Nome Completo:</th><td><strong><?= htmlspecialchars($lead['name']) ?></strong></td></tr>
             <tr><th>E-mail:</th><td><a href="mailto:<?= htmlspecialchars($lead['email']) ?>"><?= htmlspecialchars($lead['email']) ?></a></td></tr>
-            <tr><th>WhatsApp / Telefone:</th><td><i class="fab fa-whatsapp text-success"></i> <?= htmlspecialchars($lead['phone_original']) ?></td></tr>
+            <tr>
+                <th>WhatsApp / Telefone:</th>
+                <td>
+                    <span style="font-weight: 700; color: #25d366;"><i class="fab fa-whatsapp"></i> <?= htmlspecialchars($lead['phone_original']) ?></span>
+                    <?php if (!empty($lead['phone_original']) || !empty($lead['phone_normalized'])): ?>
+                        <button type="button" class="btn btn-sm btn-success" style="background: #25d366; border-color: #25d366; color: white; margin-left: 8px; padding: 2px 8px; font-size: 0.8rem;" onclick='abrirModalWhatsApp(<?= $leadPayloadJson ?>)'>
+                            <i class="fab fa-paper-plane"></i> Enviar Mensagem
+                        </button>
+                    <?php endif; ?>
+                </td>
+            </tr>
             <tr><th>Telefone Normalizado:</th><td><code><?= htmlspecialchars($lead['phone_normalized'] ?: '-') ?></code></td></tr>
             <tr><th>Origem:</th><td><span class="badge badge-info"><?= htmlspecialchars($lead['source']) ?></span></td></tr>
             <tr><th>Primeira Conversão:</th><td><?= date('d/m/Y H:i:s', strtotime($lead['first_conversion'])) ?></td></tr>
@@ -254,6 +288,57 @@ require_once 'includes/header.php';
     </div>
 </div>
 
+<!-- Histórico de Disparos WhatsApp para este Lead -->
+<div class="card" style="margin-bottom: 1.5rem; border-left: 4px solid #25d366;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 8px;">
+        <h3 style="margin: 0;"><i class="fab fa-whatsapp" style="color: #25d366;"></i> Histórico de Mensagens WhatsApp Disparadas (<?= count($leadZapLogs) ?>)</h3>
+        <?php if (!empty($lead['phone_original']) || !empty($lead['phone_normalized'])): ?>
+            <button type="button" class="btn btn-sm btn-success" style="background: #25d366; border-color: #25d366; color: white;" onclick='abrirModalWhatsApp(<?= $leadPayloadJson ?>)'>
+                <i class="fab fa-whatsapp"></i> Nova Mensagem
+            </button>
+        <?php endif; ?>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table" style="margin-top: 0.5rem;" id="tabelaLogsZap">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">ID</th>
+                    <th>Data/Hora</th>
+                    <th>Telefone</th>
+                    <th>Título / Assunto</th>
+                    <th>Prévia da Mensagem</th>
+                    <th style="width: 100px;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($leadZapLogs)): ?>
+                    <tr id="emptyZapLogsRow"><td colspan="6" style="text-align: center; color: #888; padding: 1.2rem;">Nenhuma mensagem de WhatsApp registrada para este lead ainda. Clique no botão acima para disparar.</td></tr>
+                <?php else: foreach ($leadZapLogs as $log): ?>
+                    <tr>
+                        <td>#<?= $log['id'] ?></td>
+                        <td><?= date('d/m/Y H:i', strtotime($log['created_at'])) ?></td>
+                        <td><code><?= htmlspecialchars($log['recipient']) ?></code></td>
+                        <td><strong><?= htmlspecialchars($log['title']) ?></strong></td>
+                        <td style="max-width: 320px; font-size: 0.88rem; color: #333;">
+                            <?= nl2br(htmlspecialchars($log['message_preview'])) ?>
+                            <?php if ($log['error_message']): ?>
+                                <div style="color: #dc3545; font-size: 0.78rem; margin-top: 3px;"><strong>Erro:</strong> <?= htmlspecialchars($log['error_message']) ?></div>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($log['status'] === 'sent'): ?>
+                                <span class="badge badge-success"><i class="fas fa-check"></i> Enviada</span>
+                            <?php else: ?>
+                                <span class="badge badge-danger"><i class="fas fa-times"></i> Falha</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <!-- Status na Fila de Integrações -->
 <div class="card">
     <h3><i class="fas fa-sync"></i> Histórico na Fila de Integrações</h3>
@@ -295,4 +380,16 @@ require_once 'includes/header.php';
     </table>
 </div>
 
-<?php require_once 'includes/footer.php'; ?>
+<script>
+window.onWhatsAppMessageSent = function(data) {
+    // Recarrega em 1.5s para exibir o novo log na tabela de histórico
+    setTimeout(() => {
+        window.location.reload();
+    }, 1500);
+};
+</script>
+
+<?php 
+require_once 'includes/modal_whatsapp_individual.php';
+require_once 'includes/footer.php'; 
+?>

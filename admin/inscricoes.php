@@ -164,10 +164,20 @@ try {
                         </td>
                         <td><?= date('d/m/Y H:i', strtotime($er['created_at'])) ?></td>
                         <td>
-                            <?php if (!empty($cleanPhone)): ?>
-                                <a href="<?= $zapLink ?>" target="_blank" class="btn" style="background: #25d366; color: #fff; padding: 6px 12px; font-size: 0.82rem; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; text-decoration: none;">
-                                    <i class="fab fa-whatsapp"></i> Chamar
-                                </a>
+                            <?php if (!empty($cleanPhone)): 
+                                $erPayload = htmlspecialchars(json_encode([
+                                    'id' => (int)$er['id'],
+                                    'name' => $er['name'],
+                                    'phone' => $cleanPhone,
+                                    'email' => $er['email'],
+                                    'source' => 'Evento: ' . ($er['event_title'] ?? 'Inscrição'),
+                                    'initialMessage' => $msgZap,
+                                    'contextType' => 'inscricao_evento'
+                                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+                            ?>
+                                <button type="button" class="btn btn-sm btn-success" style="background: #25d366; border-color: #25d366; color: #fff; padding: 6px 12px; font-size: 0.82rem; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Disparar WhatsApp pelo painel" onclick='abrirModalWhatsApp(<?= $erPayload ?>)'>
+                                    <i class="fab fa-whatsapp"></i> Disparar Zap
+                                </button>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -225,10 +235,20 @@ try {
                         </td>
                         <td><?= date('d/m/Y H:i', strtotime($i['created_at'])) ?></td>
                         <td>
-                            <?php if (!empty($cleanPhone)): ?>
-                                <a href="<?= $zapLink ?>" target="_blank" class="btn" style="background: #25d366; color: #fff; padding: 6px 12px; font-size: 0.82rem; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; text-decoration: none;">
-                                    <i class="fab fa-whatsapp"></i> Chamar
-                                </a>
+                            <?php if (!empty($cleanPhone)): 
+                                $iPayload = htmlspecialchars(json_encode([
+                                    'id' => (int)$i['id'],
+                                    'name' => $i['name'],
+                                    'phone' => $cleanPhone,
+                                    'email' => $i['email'],
+                                    'source' => 'Contato: ' . ($i['curso'] ?? 'Site'),
+                                    'initialMessage' => $msgZap,
+                                    'contextType' => 'contato_site'
+                                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+                            ?>
+                                <button type="button" class="btn btn-sm btn-success" style="background: #25d366; border-color: #25d366; color: #fff; padding: 6px 12px; font-size: 0.82rem; font-weight: bold; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="Disparar WhatsApp pelo painel" onclick='abrirModalWhatsApp(<?= $iPayload ?>)'>
+                                    <i class="fab fa-whatsapp"></i> Disparar Zap
+                                </button>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -239,4 +259,7 @@ try {
     <?php endif; ?>
 </div>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php 
+require_once 'includes/modal_whatsapp_individual.php';
+require_once 'includes/footer.php'; 
+?>

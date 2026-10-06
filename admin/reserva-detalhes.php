@@ -157,6 +157,18 @@ $stmtQueue->execute([$reservationId]);
 $crmQueue = $stmtQueue->fetch();
 
 $whatsappLink = ReservationService::generateWhatsAppLink($reservation['lead_phone'], $reservation['lead_name'], $reservation['campaign_title'], $reservation['preferred_modality']);
+$modalityLabels = ReservationService::getModalityLabels();
+$modalityName = $modalityLabels[$reservation['preferred_modality']] ?? ucfirst($reservation['preferred_modality']);
+$zapMsgReserva = "Olá, {$reservation['lead_name']}! Tudo bem?\n\nAqui é da equipe do *ISP Preparatórios*.\n\nVocê realizou uma reserva de interesse para o *{$reservation['campaign_title']}*, na modalidade {$modalityName}, e estamos entrando em contato para passar algumas informações.";
+$resPayload = htmlspecialchars(json_encode([
+    'id' => (int)$reservation['lead_id'],
+    'name' => $reservation['lead_name'],
+    'phone' => $reservation['lead_phone'],
+    'email' => $reservation['lead_email'],
+    'source' => 'Reserva #' . $reservation['id'] . ' (' . $reservation['campaign_title'] . ')',
+    'initialMessage' => $zapMsgReserva,
+    'contextType' => 'reserva_turma'
+], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
 
 // Decodificar respostas customizadas se existirem
 $customAnswers = [];
@@ -183,9 +195,9 @@ require_once 'includes/header.php';
         <button type="button" onclick="openEditModal()" class="btn btn-primary" style="background: #0077b6; border-color: #0077b6;">
             <i class="fas fa-edit"></i> Editar Dados
         </button>
-        <a href="<?= htmlspecialchars($whatsappLink) ?>" target="_blank" class="btn btn-success" style="background: #25d366;">
-            <i class="fab fa-whatsapp"></i> Conversar no WhatsApp
-        </a>
+        <button type="button" onclick='abrirModalWhatsApp(<?= $resPayload ?>)' class="btn btn-success" style="background: #25d366; border-color: #25d366; color: #fff; font-weight: 600;">
+            <i class="fab fa-whatsapp"></i> Disparar WhatsApp pelo Painel
+        </button>
         <a href="mailto:<?= htmlspecialchars($reservation['lead_email']) ?>" class="btn btn-secondary">
             <i class="fas fa-envelope"></i> Enviar E-mail
         </a>
@@ -214,7 +226,7 @@ require_once 'includes/header.php';
                 <tr>
                     <th>WhatsApp / Telefone:</th>
                     <td>
-                        <a href="<?= htmlspecialchars($whatsappLink) ?>" target="_blank" style="color: #25d366; font-weight: 700; text-decoration: none;">
+                        <a href="javascript:void(0)" onclick='abrirModalWhatsApp(<?= $resPayload ?>)' style="color: #25d366; font-weight: 700; text-decoration: none;" title="Disparar mensagem no WhatsApp pelo painel">
                             <i class="fab fa-whatsapp"></i> <?= htmlspecialchars($reservation['lead_phone']) ?>
                         </a>
                         <span style="font-size: 0.8rem; color: #888; margin-left: 0.5rem;">(Normalizado: <?= htmlspecialchars($reservation['lead_phone_normalized']) ?>)</span>
@@ -674,4 +686,7 @@ window.addEventListener('click', function(e) {
 });
 </script>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php 
+require_once 'includes/modal_whatsapp_individual.php';
+require_once 'includes/footer.php'; 
+?>

@@ -236,13 +236,16 @@ require_once 'includes/header.php';
             </div>
 
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn btn-sm btn-success" style="background: #25d366; border-color: #25d366; color: white; font-weight: 600;" onclick="abrirWhatsAppParaSelecionado()">
+                    <i class="fab fa-whatsapp"></i> Disparar WhatsApp ao Lead Selecionado
+                </button>
                 <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Deseja sincronizar os leads selecionados com o CRM / Evolution API?')">
                     <i class="fas fa-sync"></i> Reenviar Selecionados ao CRM / Evolution API
                 </button>
                 <a href="fila-integracoes.php?queue_all_leads=1&csrf_token=<?= generate_csrf_token() ?>" class="btn btn-sm btn-secondary" onclick="return confirm('Deseja enfileirar todos os leads da base para envio ao CRM?')">
                     <i class="fas fa-users"></i> Enfileirar Todos da Base
                 </a>
-                <a href="disparo-massa-whatsapp.php" class="btn btn-sm btn-success" style="background: #25d366; border-color: #25d366; color: white;">
+                <a href="disparo-massa-whatsapp.php" class="btn btn-sm btn-success" style="background: #128c7e; border-color: #128c7e; color: white;">
                     <i class="fab fa-whatsapp"></i> Disparo em Massa
                 </a>
             </div>
@@ -261,16 +264,24 @@ require_once 'includes/header.php';
                     <th>Tags</th>
                     <th>Downloads</th>
                     <th>Data Cadastro</th>
-                    <th style="width: 80px;">Ações</th>
+                    <th style="width: 100px; text-align: center;">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($leadsList)): ?>
                     <tr><td colspan="9" style="text-align: center; color: #888;">Nenhum lead encontrado com os filtros aplicados.</td></tr>
-                <?php else: foreach ($leadsList as $lead): ?>
+                <?php else: foreach ($leadsList as $lead): 
+                    $leadPayloadJson = htmlspecialchars(json_encode([
+                        'id' => (int)$lead['id'],
+                        'name' => $lead['name'],
+                        'phone' => !empty($lead['phone_normalized']) ? $lead['phone_normalized'] : $lead['phone_original'],
+                        'email' => $lead['email'],
+                        'source' => $lead['source']
+                    ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+                ?>
                     <tr>
                         <td style="text-align: center;">
-                            <input type="checkbox" name="selected_leads[]" value="<?= $lead['id'] ?>" class="lead-checkbox">
+                            <input type="checkbox" name="selected_leads[]" value="<?= $lead['id'] ?>" class="lead-checkbox" data-lead='<?= $leadPayloadJson ?>'>
                         </td>
                         <td>#<?= $lead['id'] ?></td>
                         <td>
@@ -285,7 +296,13 @@ require_once 'includes/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <i class="fab fa-whatsapp text-success"></i> <?= htmlspecialchars($lead['phone_original']) ?><br>
+                            <?php if (!empty($lead['phone_original']) || !empty($lead['phone_normalized'])): ?>
+                                <a href="javascript:void(0)" onclick='abrirModalWhatsApp(<?= $leadPayloadJson ?>)' style="color: #128c7e; text-decoration: none; font-weight: 600;" title="Disparar mensagem no WhatsApp deste lead">
+                                    <i class="fab fa-whatsapp" style="color: #25d366;"></i> <?= htmlspecialchars($lead['phone_original']) ?>
+                                </a>
+                            <?php else: ?>
+                                <span style="color: #888;">-</span>
+                            <?php endif; ?><br>
                             <small style="color: #888;"><?= htmlspecialchars($lead['phone_normalized'] ?: '-') ?></small>
                         </td>
                         <td>
@@ -301,8 +318,15 @@ require_once 'includes/header.php';
                             <span class="badge badge-success"><?= $lead['dl_count'] ?> PDF(s)</span>
                         </td>
                         <td><?= date('d/m/Y H:i', strtotime($lead['created_at'])) ?></td>
-                        <td>
-                            <a href="lead-detalhes.php?id=<?= $lead['id'] ?>" class="btn btn-sm" title="Ver Detalhes"><i class="fas fa-eye"></i></a>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <a href="lead-detalhes.php?id=<?= $lead['id'] ?>" class="btn btn-sm btn-secondary" title="Ver Detalhes do Lead" style="padding: 0.25rem 0.45rem;">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <?php if (!empty($lead['phone_original']) || !empty($lead['phone_normalized'])): ?>
+                                <button type="button" class="btn btn-sm btn-success" style="background: #25d366; border-color: #25d366; color: white; padding: 0.25rem 0.5rem;" title="Disparar WhatsApp Direto" onclick='abrirModalWhatsApp(<?= $leadPayloadJson ?>)'>
+                                    <i class="fab fa-whatsapp"></i>
+                                </button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; endif; ?>
@@ -316,6 +340,26 @@ function toggleSelectAllLeads(master) {
     document.querySelectorAll('.lead-checkbox').forEach(cb => {
         cb.checked = master.checked;
     });
+}
+
+function abrirWhatsAppParaSelecionado() {
+    const checked = Array.from(document.querySelectorAll('.lead-checkbox:checked'));
+    if (checked.length === 0) {
+        alert('Selecione pelo menos um lead na tabela para enviar mensagem no WhatsApp.');
+        return;
+    }
+    try {
+        const leadData = JSON.parse(checked[0].getAttribute('data-lead'));
+        if (checked.length > 1) {
+            if (confirm(`Você selecionou ${checked.length} leads. Deseja disparar mensagem individual para o primeiro selecionado (${leadData.name})?\n\n(Para disparar para todos de uma vez, utilize a opção "Disparo em Massa")`)) {
+                abrirModalWhatsApp(leadData);
+            }
+        } else {
+            abrirModalWhatsApp(leadData);
+        }
+    } catch(e) {
+        alert('Erro ao carregar dados do lead selecionado.');
+    }
 }
 </script>
 
@@ -334,4 +378,7 @@ function toggleSelectAllLeads(master) {
     <?php endif; ?>
 </div>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php 
+require_once 'includes/modal_whatsapp_individual.php';
+require_once 'includes/footer.php'; 
+?>

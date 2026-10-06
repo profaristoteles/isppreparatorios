@@ -426,8 +426,12 @@ class NotificationService {
      */
     public static function sendWhatsApp($config, $recipientPhone, $messageText, array $extraContext = [], $pdo = null) {
         $cleanPhone = preg_replace('/[^0-9]/', '', $recipientPhone);
-        if (empty($cleanPhone)) {
-            self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $recipientPhone, 'Notificação WhatsApp', $messageText, 'failed', 'Telefone de destino inválido');
+        if (strlen($cleanPhone) === 10 || strlen($cleanPhone) === 11) {
+            $cleanPhone = '55' . $cleanPhone;
+        }
+
+        if (empty($cleanPhone) || strlen($cleanPhone) < 10) {
+            self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $recipientPhone, $extraContext['title'] ?? 'Notificação WhatsApp', $messageText, 'failed', 'Telefone de destino inválido');
             return ['success' => false, 'message' => 'Número de telefone do WhatsApp inválido.'];
         }
 
@@ -436,10 +440,28 @@ class NotificationService {
         $apiKey = trim($config['whatsapp_api_key'] ?? '');
         $instance = trim($config['whatsapp_api_instance'] ?? '');
 
-        if ($provider === 'none' || empty($apiUrl)) {
-            // Provedor de API não configurado. Registramos como link direto (manual link pronto)
+        // Fallback para credenciais EvoCRM se configuradas no sistema
+        if ((empty($apiUrl) || empty($apiKey) || $provider === 'none') && !empty($config['evocrm_api_url'])) {
+            $apiUrl = rtrim(trim($config['evocrm_api_url']), '/');
+            $apiKey = trim($config['evocrm_api_key'] ?? '');
+            $instance = trim($config['evocrm_instance'] ?? ($instance ?: 'isp'));
+            $provider = 'evolution';
+        }
+
+        $forceApi = !empty($extraContext['force_api']);
+
+        if ($provider === 'none' || empty($apiUrl) || empty($apiKey)) {
             $waLink = self::generateWaMeLink($cleanPhone, $messageText);
-            self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $cleanPhone, 'Notificação WhatsApp (Link)', $messageText, 'sent', 'API de WhatsApp não configurada. Link wa.me gerado para disparo manual: ' . $waLink);
+            if ($forceApi) {
+                return [
+                    'success' => false,
+                    'status' => 'not_configured',
+                    'message' => 'A API do WhatsApp (Evolution API ou Z-API) não está configurada no painel. Acesse Configurações para informar a URL, Instância e API Key.',
+                    'link' => $waLink
+                ];
+            }
+            // Provedor de API não configurado. Registramos como link direto (manual link pronto)
+            self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $cleanPhone, $extraContext['title'] ?? 'Notificação WhatsApp (Link)', $messageText, 'sent', 'API de WhatsApp não configurada. Link wa.me gerado para disparo manual: ' . $waLink);
             return [
                 'success' => true,
                 'status' => 'manual_link',
@@ -449,12 +471,12 @@ class NotificationService {
         }
 
         $endpoint = '';
-        $headers = ['Content-Type: application/json'];
+        $headers = ['Content-Type: application/json', 'Accept: application/json'];
         $body = [];
 
         if ($provider === 'evolution') {
             // Evolution API (v1 / v2)
-            $endpoint = $apiUrl . '/message/sendText/' . ($instance ?: 'isp');
+            $endpoint = $apiUrl . '/message/sendText/' . urlencode($instance ?: 'isp');
             $headers[] = 'apikey: ' . $apiKey;
             $body = [
                 'number' => $cleanPhone,
@@ -466,7 +488,7 @@ class NotificationService {
             ];
         } elseif ($provider === 'zapi') {
             // Z-API
-            $endpoint = $apiUrl . '/instances/' . $instance . '/token/' . $apiKey . '/send-text';
+            $endpoint = $apiUrl . '/instances/' . urlencode($instance) . '/token/' . urlencode($apiKey) . '/send-text';
             $headers[] = 'Client-Token: ' . $apiKey;
             $body = [
                 'phone' => $cleanPhone,
@@ -487,18 +509,18 @@ class NotificationService {
         }
 
         if (empty($endpoint)) {
-            self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $cleanPhone, 'Notificação WhatsApp', $messageText, 'failed', 'Endpoint do provedor WhatsApp não configurado');
+            self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $cleanPhone, $extraContext['title'] ?? 'Notificação WhatsApp', $messageText, 'failed', 'Endpoint do provedor WhatsApp não configurado');
             return ['success' => false, 'message' => 'Configuração de WhatsApp incompleta.'];
         }
 
-        // Disparo cURL com timeout curto (5s) para não prender o usuário
+        // Disparo cURL
         $ch = curl_init($endpoint);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode($body, JSON_UNESCAPED_UNICODE),
-            CURLOPT_TIMEOUT => 6,
-            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_TIMEOUT => 12,
+            CURLOPT_CONNECTTIMEOUT => 6,
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false
@@ -510,17 +532,34 @@ class NotificationService {
         curl_close($ch);
 
         if ($curlError) {
-            self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $cleanPhone, 'Notificação WhatsApp', $messageText, 'failed', 'Erro cURL: ' . $curlError);
+            self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $cleanPhone, $extraContext['title'] ?? 'Notificação WhatsApp', $messageText, 'failed', 'Erro cURL: ' . $curlError);
             return ['success' => false, 'message' => 'Erro de conexão com o Gateway WhatsApp: ' . $curlError];
         }
 
         if ($httpCode >= 200 && $httpCode < 300) {
-            self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $cleanPhone, 'Notificação WhatsApp', $messageText, 'sent', null);
-            return ['success' => true, 'message' => 'Notificação WhatsApp enviada com sucesso ao administrador!'];
+            self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $cleanPhone, $extraContext['title'] ?? 'Notificação WhatsApp', $messageText, 'sent', null);
+            return [
+                'success' => true,
+                'message' => $extraContext['success_msg'] ?? 'Mensagem WhatsApp disparada com sucesso!',
+                'response_data' => json_decode($response, true)
+            ];
         }
 
-        $errorMsg = "Gateway WhatsApp retornou status HTTP {$httpCode}: " . substr($response, 0, 200);
-        self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $cleanPhone, 'Notificação WhatsApp', $messageText, 'failed', $errorMsg);
+        // Tenta extrair mensagem amigável da resposta da API
+        $errorDetails = substr($response, 0, 250);
+        $respJson = json_decode($response, true);
+        if (is_array($respJson)) {
+            if (!empty($respJson['message'])) {
+                $errorDetails = is_array($respJson['message']) ? implode(', ', $respJson['message']) : $respJson['message'];
+            } elseif (!empty($respJson['error'])) {
+                $errorDetails = is_array($respJson['error']) ? json_encode($respJson['error']) : $respJson['error'];
+            } elseif (!empty($respJson['response']['message'])) {
+                $errorDetails = $respJson['response']['message'];
+            }
+        }
+
+        $errorMsg = "Gateway WhatsApp retornou status HTTP {$httpCode}: " . $errorDetails;
+        self::logNotification($pdo, 'whatsapp', $extraContext['type'] ?? 'sistema', $cleanPhone, $extraContext['title'] ?? 'Notificação WhatsApp', $messageText, 'failed', $errorMsg);
         return ['success' => false, 'message' => $errorMsg];
     }
 

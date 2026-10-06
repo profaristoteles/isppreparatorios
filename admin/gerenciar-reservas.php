@@ -376,6 +376,18 @@ require_once 'includes/header.php';
                         <tr><td colspan="12" style="text-align: center; color: #888; padding: 2.5rem;">Nenhuma reserva encontrada com os filtros selecionados.</td></tr>
                     <?php else: foreach ($reservations as $r): 
                         $whatsappLink = ReservationService::generateWhatsAppLink($r['lead_phone'], $r['lead_name'], $r['campaign_title'], $r['preferred_modality']);
+                        $modalityLabels = ReservationService::getModalityLabels();
+                        $modalityName = $modalityLabels[$r['preferred_modality']] ?? ucfirst($r['preferred_modality']);
+                        $zapMsgReserva = "Olá, {$r['lead_name']}! Tudo bem?\n\nAqui é da equipe do *ISP Preparatórios*.\n\nVocê realizou uma reserva de interesse para o *{$r['campaign_title']}*, na modalidade {$modalityName}, e estamos entrando em contato para passar algumas informações.";
+                        $rPayload = htmlspecialchars(json_encode([
+                            'id' => (int)$r['lead_id'],
+                            'name' => $r['lead_name'],
+                            'phone' => $r['lead_phone'],
+                            'email' => $r['lead_email'],
+                            'source' => 'Reserva #' . $r['id'] . ' (' . $r['campaign_title'] . ')',
+                            'initialMessage' => $zapMsgReserva,
+                            'contextType' => 'reserva_turma'
+                        ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
                         
                         $modBadgeClass = 'badge-secondary';
                         if ($r['preferred_modality'] === 'presencial') $modBadgeClass = 'badge-info';
@@ -405,7 +417,7 @@ require_once 'includes/header.php';
                                     </a>
                                 </div>
                                 <div style="font-size: 0.8rem; color: #555; margin-top: 3px; display: flex; align-items: center; gap: 0.6rem;">
-                                    <a href="<?= htmlspecialchars($whatsappLink) ?>" target="_blank" style="color: #25d366; text-decoration: none; font-weight: 600;" title="Conversar no WhatsApp">
+                                    <a href="javascript:void(0)" onclick='abrirModalWhatsApp(<?= $rPayload ?>)' style="color: #25d366; text-decoration: none; font-weight: 600;" title="Disparar WhatsApp pelo painel">
                                         <i class="fab fa-whatsapp"></i> <?= htmlspecialchars($r['lead_phone']) ?>
                                     </a>
                                     <span style="color: #ccc;">|</span>
@@ -474,9 +486,9 @@ require_once 'includes/header.php';
                                 <button type="button" class="btn btn-sm" onclick='openEditModal(<?= json_encode($r, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)' title="Editar Reserva" style="padding: 0.25rem 0.45rem; background: #0077b6; border-color: #0077b6; color: #fff;">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <a href="<?= htmlspecialchars($whatsappLink) ?>" target="_blank" class="btn btn-sm btn-success" title="WhatsApp Rápido" style="padding: 0.25rem 0.45rem;">
+                                <button type="button" class="btn btn-sm btn-success" title="Disparar WhatsApp pelo painel" style="padding: 0.25rem 0.45rem; background: #25d366; border-color: #25d366; color: #fff;" onclick='abrirModalWhatsApp(<?= $rPayload ?>)'>
                                     <i class="fab fa-whatsapp"></i>
-                                </a>
+                                </button>
                                 <button type="button" class="btn btn-sm" onclick="confirmDeleteReservation(<?= $r['id'] ?>, '<?= htmlspecialchars(addslashes($r['lead_name'])) ?>')" title="Excluir Reserva" style="padding: 0.25rem 0.45rem; background: #e63946; border-color: #e63946; color: #fff;">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
@@ -677,4 +689,7 @@ window.addEventListener('click', function(e) {
 });
 </script>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php 
+require_once 'includes/modal_whatsapp_individual.php';
+require_once 'includes/footer.php'; 
+?>
