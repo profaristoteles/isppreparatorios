@@ -9,6 +9,20 @@ require_once '../db_config.php';
 require_once 'includes/admin_security.php';
 require_once '../includes/reservation_service.php';
 
+// Garantir de forma defensiva a existência das colunas de limites por modalidade
+try {
+    $checkColsCamp = $pdo->query("SHOW COLUMNS FROM reservation_campaigns LIKE 'max_reservations_presencial'")->fetch();
+    if (!$checkColsCamp) {
+        $pdo->exec("ALTER TABLE reservation_campaigns ADD COLUMN max_reservations_presencial INT DEFAULT 0 AFTER max_reservations");
+    }
+    $checkColsCampOn = $pdo->query("SHOW COLUMNS FROM reservation_campaigns LIKE 'max_reservations_online'")->fetch();
+    if (!$checkColsCampOn) {
+        $pdo->exec("ALTER TABLE reservation_campaigns ADD COLUMN max_reservations_online INT DEFAULT 0 AFTER max_reservations_presencial");
+    }
+} catch (Exception $eMigrateCols) {
+    // Prossegue de forma segura
+}
+
 $statusLabels = ReservationService::getCampaignStatusLabels();
 
 // Processar Ações (Salvar / Editar / Excluir / Alternar)

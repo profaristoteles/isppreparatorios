@@ -85,7 +85,7 @@ try {
 } catch (Exception $e) { /* Auto-migração concluída ou em andamento */ }
 
 
-// Auto-migration para Campanhas de Reserva / Lista de Interesse (Verifica todas as 4 tabelas)
+// Auto-migration para Campanhas de Reserva / Lista de Interesse (Verifica tabelas e novas colunas)
 try {
     $tablesNeeded = ['reservation_campaigns', 'reservations', 'reservation_history', 'reservation_notes'];
     $needsMigration = false;
@@ -96,6 +96,15 @@ try {
             break;
         }
     }
+
+    // Se tabelas já existirem, verificar se as novas colunas de limite por modalidade existem
+    if (!$needsMigration) {
+        $colCheck = $pdo->query("SHOW COLUMNS FROM reservation_campaigns LIKE 'max_reservations_presencial'")->fetch();
+        if (!$colCheck) {
+            $needsMigration = true;
+        }
+    }
+
     if ($needsMigration) {
         ob_start();
         require_once __DIR__ . '/migration_reservas.php';
