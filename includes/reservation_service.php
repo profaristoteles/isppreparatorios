@@ -276,39 +276,7 @@ class ReservationService {
             return ['success' => false, 'message' => 'Esta campanha ainda não está disponível para reservas.'];
         }
 
-        // 3. Regra de Limite de Vagas e Lista de Espera (Apenas vagas principais ocupadas, sem contar lista de espera)
-        $isWaitingList = 0;
-        if ($campaign['max_reservations'] > 0) {
-            $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE campaign_id = ? AND is_waiting_list = 0 AND status != 'cancelado'");
-            $stmtCount->execute([$campaignId]);
-            $currentReservations = (int)$stmtCount->fetchColumn();
-
-            if ($currentReservations >= (int)$campaign['max_reservations']) {
-                if ($campaign['allow_waiting_list']) {
-                    $isWaitingList = 1;
-                } else {
-                    return [
-                        'success' => false,
-                        'code' => 'limit_reached',
-                        'message' => 'As reservas para esta turma já foram encerradas (limite de vagas atingido).'
-                    ];
-                }
-            }
-        }
-
-        if ($campaign['status'] === 'reservas_encerradas') {
-            if ($campaign['allow_waiting_list']) {
-                $isWaitingList = 1;
-            } else {
-                return [
-                    'success' => false,
-                    'code' => 'closed',
-                    'message' => 'As reservas para esta turma estão encerradas no momento.'
-                ];
-            }
-        }
-
-        // 4. Resolução da Modalidade (Com proteção contra manipulação manual de POST)
+        // 3. Resolução da Modalidade (Com proteção contra manipulação manual de POST)
         $allowsPresencial = (bool)$campaign['allows_presencial'];
         $allowsOnline = (bool)$campaign['allows_online'];
 
@@ -330,6 +298,74 @@ class ReservationService {
             $preferredModality = 'online';
         } else {
             $preferredModality = 'presencial'; // Fallback seguro
+        }
+
+        // 4. Regra de Limite de Vagas e Lista de Espera (por Modalidade e Geral)
+        $isWaitingList = 0;
+        $limitReachedReason = null;
+
+        if ($campaign['status'] === 'reservas_encerradas') {
+            if ($campaign['allow_waiting_list']) {
+                $isWaitingList = 1;
+                $limitReachedReason = 'encerradas';
+            } else {
+                return [
+                    'success' => false,
+                    'code' => 'closed',
+                    'message' => 'As reservas para esta turma estão encerradas no momento.'
+                ];
+            }
+        } else {
+            // Contagem apenas de reservas regulares ocupadas (não canceladas e que não estejam em lista de espera)
+            $stmtCountTotal = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE campaign_id = ? AND is_waiting_list = 0 AND status != 'cancelado'");
+            $stmtCountTotal->execute([$campaignId]);
+            $currentTotal = (int)$stmtCountTotal->fetchColumn();
+
+            $stmtCountPres = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE campaign_id = ? AND is_waiting_list = 0 AND status != 'cancelado' AND preferred_modality IN ('presencial', 'ambas')");
+            $stmtCountPres->execute([$campaignId]);
+            $currentPresencial = (int)$stmtCountPres->fetchColumn();
+
+            $stmtCountOn = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE campaign_id = ? AND is_waiting_list = 0 AND status != 'cancelado' AND preferred_modality IN ('online', 'ambas')");
+            $stmtCountOn->execute([$campaignId]);
+            $currentOnline = (int)$stmtCountOn->fetchColumn();
+
+            $maxGeneral = (int)($campaign['max_reservations'] ?? 0);
+            $maxPresencial = (int)($campaign['max_reservations_presencial'] ?? 0);
+            $maxOnline = (int)($campaign['max_reservations_online'] ?? 0);
+
+            // Validação de limite exclusivo da modalidade pretendida
+            if ($preferredModality === 'presencial' && $maxPresencial > 0 && $currentPresencial >= $maxPresencial) {
+                $limitReachedReason = 'presencial';
+            } elseif ($preferredModality === 'online' && $maxOnline > 0 && $currentOnline >= $maxOnline) {
+                $limitReachedReason = 'online';
+            } elseif ($preferredModality === 'ambas') {
+                if ($maxPresencial > 0 && $currentPresencial >= $maxPresencial && $maxOnline > 0 && $currentOnline >= $maxOnline) {
+                    $limitReachedReason = 'ambas';
+                }
+            }
+
+            // Validação de limite geral total da turma
+            if (!$limitReachedReason && $maxGeneral > 0 && $currentTotal >= $maxGeneral) {
+                $limitReachedReason = 'geral';
+            }
+
+            if ($limitReachedReason !== null) {
+                if ($campaign['allow_waiting_list']) {
+                    $isWaitingList = 1;
+                } else {
+                    $errorMsg = 'As reservas para esta turma já foram encerradas (limite de vagas atingido).';
+                    if ($limitReachedReason === 'presencial') {
+                        $errorMsg = 'As vagas para a modalidade Presencial desta turma foram esgotadas.';
+                    } elseif ($limitReachedReason === 'online') {
+                        $errorMsg = 'As vagas para a modalidade Online desta turma foram esgotadas.';
+                    }
+                    return [
+                        'success' => false,
+                        'code' => 'limit_reached',
+                        'message' => $errorMsg
+                    ];
+                }
+            }
         }
 
         // 5. Validação de LGPD
@@ -519,7 +555,11 @@ class ReservationService {
                     'is_waiting_list' => (bool)$isWaitingList,
                     'whatsapp_contact_url' => $ispWhatsAppUrl,
                     'message' => $isWaitingList 
-                        ? 'Recebemos seu interesse! Sua reserva foi reativada e registrada na lista de espera.' 
+                        ? (($limitReachedReason === 'presencial')
+                            ? 'As vagas regulares do Presencial foram esgotadas. Sua reserva foi reativada com prioridade na Lista de Espera Presencial!'
+                            : (($limitReachedReason === 'online')
+                                ? 'As vagas regulares do Online foram esgotadas. Sua reserva foi reativada com prioridade na Lista de Espera Online!'
+                                : 'Recebemos seu interesse! Sua reserva foi reativada e registrada na lista de espera.'))
                         : 'Reserva realizada com sucesso!'
                 ];
             } catch (Exception $e) {
@@ -678,7 +718,11 @@ class ReservationService {
                 'is_waiting_list' => (bool)$isWaitingList,
                 'whatsapp_contact_url' => $ispWhatsAppUrl,
                 'message' => $isWaitingList 
-                    ? 'Recebemos seu interesse! Sua vaga foi registrada na nossa lista de espera.' 
+                    ? (($limitReachedReason === 'presencial')
+                        ? 'As vagas regulares do Presencial foram esgotadas. Sua vaga foi registrada com prioridade na Lista de Espera Presencial!'
+                        : (($limitReachedReason === 'online')
+                            ? 'As vagas regulares do Online foram esgotadas. Sua vaga foi registrada com prioridade na Lista de Espera Online!'
+                            : 'Recebemos seu interesse! Sua vaga foi registrada na nossa lista de espera.'))
                     : 'Reserva realizada com sucesso!'
             ];
         } catch (PDOException $e) {

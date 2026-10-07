@@ -31,15 +31,37 @@ $stmtCountMain = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE campaign
 $stmtCountMain->execute([(int)$campaign['id']]);
 $totalVagasRegularesOcupadas = (int)$stmtCountMain->fetchColumn();
 
-// Status e regras
-$status = $campaign['status'];
-$isLimitReached = ($campaign['max_reservations'] > 0 && $totalVagasRegularesOcupadas >= (int)$campaign['max_reservations']);
-$isWaitingList = ($isLimitReached || $status === 'reservas_encerradas') && (bool)$campaign['allow_waiting_list'];
-$isClosed = ($isLimitReached || $status === 'reservas_encerradas') && !$campaign['allow_waiting_list'];
-$isEnrollmentOpen = ($status === 'matriculas_abertas');
+// Contagem de vagas regulares por modalidade
+$stmtCountPres = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE campaign_id = ? AND is_waiting_list = 0 AND status != 'cancelado' AND preferred_modality IN ('presencial', 'ambas')");
+$stmtCountPres->execute([(int)$campaign['id']]);
+$totalPresencialOcupadas = (int)$stmtCountPres->fetchColumn();
+
+$stmtCountOn = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE campaign_id = ? AND is_waiting_list = 0 AND status != 'cancelado' AND preferred_modality IN ('online', 'ambas')");
+$stmtCountOn->execute([(int)$campaign['id']]);
+$totalOnlineOcupadas = (int)$stmtCountOn->fetchColumn();
+
+$maxPresencial = (int)($campaign['max_reservations_presencial'] ?? 0);
+$maxOnline = (int)($campaign['max_reservations_online'] ?? 0);
+$maxGeral = (int)($campaign['max_reservations'] ?? 0);
+
+$isPresencialLimitReached = ($maxPresencial > 0 && $totalPresencialOcupadas >= $maxPresencial);
+$isOnlineLimitReached = ($maxOnline > 0 && $totalOnlineOcupadas >= $maxOnline);
+$isGeneralLimitReached = ($maxGeral > 0 && $totalVagasRegularesOcupadas >= $maxGeral);
 
 $allowsPresencial = (bool)$campaign['allows_presencial'];
 $allowsOnline = (bool)$campaign['allows_online'];
+
+// Verifica se todas as modalidades permitidas estão com vagas esgotadas
+$allModalitiesFull = true;
+if ($allowsPresencial && !$isPresencialLimitReached) $allModalitiesFull = false;
+if ($allowsOnline && !$isOnlineLimitReached) $allModalitiesFull = false;
+
+// Status e regras
+$status = $campaign['status'];
+$isLimitReached = $isGeneralLimitReached || $allModalitiesFull;
+$isWaitingList = ($isLimitReached || $status === 'reservas_encerradas') && (bool)$campaign['allow_waiting_list'];
+$isClosed = ($isLimitReached || $status === 'reservas_encerradas') && !$campaign['allow_waiting_list'];
+$isEnrollmentOpen = ($status === 'matriculas_abertas');
 
 // Perguntas personalizadas (JSON)
 $customFields = [];
@@ -626,6 +648,31 @@ function render_formatted_description($rawText) {
 
 .modality-card-item.selected .modality-card-title {
     color: #ffb266;
+}
+
+.modality-status-pill {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    line-height: 1.2;
+}
+.modality-status-pill.pill-waiting {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.modality-status-pill.pill-closed {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+.modality-status-pill.pill-info {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .modality-radio-indicator {
@@ -1303,33 +1350,66 @@ function render_formatted_description($rawText) {
                                     </div>
 
                                     <!-- Seletor de Modalidade (Apenas Presencial e Online) -->
-                                    <?php if ($allowsPresencial && $allowsOnline): ?>
+                                    <?php if ($allowsPresencial && $allowsOnline): 
+                                        $presencialPermiteEspera = $isPresencialLimitReached && (bool)$campaign['allow_waiting_list'];
+                                        $presencialBloqueado = $isPresencialLimitReached && !$campaign['allow_waiting_list'];
+                                        
+                                        $onlinePermiteEspera = $isOnlineLimitReached && (bool)$campaign['allow_waiting_list'];
+                                        $onlineBloqueado = $isOnlineLimitReached && !$campaign['allow_waiting_list'];
+                                        
+                                        $defaultModality = 'presencial';
+                                        if ($presencialBloqueado && !$onlineBloqueado) {
+                                            $defaultModality = 'online';
+                                        } elseif (!$isPresencialLimitReached) {
+                                            $defaultModality = 'presencial';
+                                        } elseif (!$isOnlineLimitReached) {
+                                            $defaultModality = 'online';
+                                        }
+                                    ?>
                                         <div class="modality-selector-container">
                                             <div class="modality-selector-label">
                                                 <i class="fas fa-graduation-cap"></i> Modalidade de Estudo *
                                             </div>
-                                            <input type="hidden" name="preferred_modality" id="selectedModality" value="presencial" required>
+                                            <input type="hidden" name="preferred_modality" id="selectedModality" value="<?= $defaultModality ?>" required>
 
                                             <div class="modality-cards-group">
                                                 <!-- Card Presencial -->
-                                                <div class="modality-card-item selected" data-value="presencial" onclick="selectModality('presencial')">
+                                                <div class="modality-card-item <?= ($defaultModality === 'presencial') ? 'selected' : '' ?> <?= $presencialBloqueado ? 'disabled-card' : '' ?>" 
+                                                     data-value="presencial" 
+                                                     <?= $presencialBloqueado ? 'style="opacity: 0.45; cursor: not-allowed; pointer-events: none;"' : 'onclick="selectModality(\'presencial\')"' ?>>
                                                     <div class="modality-card-left">
                                                         <span class="modality-badge-icon">🏫</span>
                                                         <div class="modality-card-text">
                                                             <span class="modality-card-title">Presencial</span>
                                                             <span class="modality-card-desc">Em sala de aula</span>
+                                                            <?php if ($presencialPermiteEspera): ?>
+                                                                <span class="modality-status-pill pill-waiting"><i class="fas fa-hourglass-half"></i> Lista de Espera</span>
+                                                            <?php elseif ($presencialBloqueado): ?>
+                                                                <span class="modality-status-pill pill-closed"><i class="fas fa-lock"></i> Vagas Esgotadas</span>
+                                                            <?php elseif ($maxPresencial > 0): ?>
+                                                                <span class="modality-status-pill pill-info"><i class="fas fa-ticket-alt"></i> <?= max(0, $maxPresencial - $totalPresencialOcupadas) ?> vagas restantes</span>
+                                                            <?php endif; ?>
                                                         </div>
                                                     </div>
                                                     <div class="modality-radio-indicator"><div class="dot"></div></div>
                                                 </div>
 
                                                 <!-- Card Online -->
-                                                <div class="modality-card-item" data-value="online" onclick="selectModality('online')">
+                                                <div class="modality-card-item <?= ($defaultModality === 'online') ? 'selected' : '' ?> <?= $onlineBloqueado ? 'disabled-card' : '' ?>" 
+                                                     data-value="online" 
+                                                     <?= $onlineBloqueado ? 'style="opacity: 0.45; cursor: not-allowed; pointer-events: none;"' : 'onclick="selectModality(\'online\')"' ?>>
                                                     <div class="modality-card-left">
                                                         <span class="modality-badge-icon">💻</span>
                                                         <div class="modality-card-text">
                                                             <span class="modality-card-title">Online</span>
                                                             <span class="modality-card-desc">Ao vivo / Plataforma</span>
+                                                            <?php if ($onlinePermiteEspera): ?>
+                                                                <span class="modality-status-pill pill-waiting"><i class="fas fa-hourglass-half"></i> Lista de Espera</span>
+                                                            <?php elseif ($onlineBloqueado): ?>
+                                                                <span class="modality-status-pill pill-closed"><i class="fas fa-lock"></i> Vagas Esgotadas</span>
+                                                            <?php elseif ($maxOnline > 0): ?>
+                                                                <span class="modality-status-pill pill-info"><i class="fas fa-ticket-alt"></i> <?= max(0, $maxOnline - $totalOnlineOcupadas) ?> vagas restantes</span>
+                                                            <?php endif; ?>
                                                         </div>
                                                     </div>
                                                     <div class="modality-radio-indicator"><div class="dot"></div></div>
@@ -1601,6 +1681,11 @@ function render_formatted_description($rawText) {
 
 <script>
 // 1. Função Interativa para Seleção dos Cards de Modalidade
+const modalityWaitingStatus = {
+    'presencial': <?= (($isPresencialLimitReached && (bool)$campaign['allow_waiting_list']) || $isWaitingList) ? 'true' : 'false' ?>,
+    'online': <?= (($isOnlineLimitReached && (bool)$campaign['allow_waiting_list']) || $isWaitingList) ? 'true' : 'false' ?>
+};
+
 function selectModality(val) {
     const hiddenInput = document.getElementById('selectedModality');
     if (hiddenInput) {
@@ -1614,6 +1699,14 @@ function selectModality(val) {
             card.classList.remove('selected');
         }
     });
+
+    const btnSubmit = document.getElementById('btnSubmitReserva');
+    if (btnSubmit) {
+        const isWaiting = modalityWaitingStatus[val] || false;
+        btnSubmit.innerHTML = isWaiting 
+            ? '<span>Entrar na Lista de Espera</span> <i class="fas fa-arrow-right"></i>' 
+            : '<span>Quero Participar Desta Turma</span> <i class="fas fa-arrow-right"></i>';
+    }
 }
 
 // 2. Scroll Suave para o Formulário (Usado no Mobile Sticky CTA)

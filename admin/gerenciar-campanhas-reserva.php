@@ -36,6 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
         $class_start_date = !empty($_POST['class_start_date']) ? $_POST['class_start_date'] : null;
         $max_reservations = max(0, (int)($_POST['max_reservations'] ?? 0));
+        $max_reservations_presencial = max(0, (int)($_POST['max_reservations_presencial'] ?? 0));
+        $max_reservations_online = max(0, (int)($_POST['max_reservations_online'] ?? 0));
         $show_counter = !empty($_POST['show_counter']) ? 1 : 0;
         $allow_waiting_list = !empty($_POST['allow_waiting_list']) ? 1 : 0;
         
@@ -89,16 +91,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("UPDATE reservation_campaigns SET 
                     title = ?, slug = ?, short_description = ?, description = ?, image = ?, 
                     city = ?, state = ?, location = ?, target_audience = ?, start_date = ?, end_date = ?, 
-                    class_start_date = ?, max_reservations = ?, show_counter = ?, allow_waiting_list = ?, 
-                    allows_presencial = ?, allows_online = ?, status = ?, custom_fields_json = ?, 
-                    enrollment_link = ?, enrollment_button_text = ?, meta_title = ?, meta_description = ? 
+                    class_start_date = ?, max_reservations = ?, max_reservations_presencial = ?, max_reservations_online = ?, 
+                    show_counter = ?, allow_waiting_list = ?, allows_presencial = ?, allows_online = ?, 
+                    status = ?, custom_fields_json = ?, enrollment_link = ?, enrollment_button_text = ?, 
+                    meta_title = ?, meta_description = ? 
                     WHERE id = ?");
                 $stmt->execute([
                     $title, $slug, $short_description, $description, $imageName,
                     $city, $state, $location, $target_audience, $start_date, $end_date,
-                    $class_start_date, $max_reservations, $show_counter, $allow_waiting_list,
-                    $allows_presencial, $allows_online, $status, $custom_fields_json,
-                    $enrollment_link, $enrollment_button_text, $meta_title, $meta_description,
+                    $class_start_date, $max_reservations, $max_reservations_presencial, $max_reservations_online,
+                    $show_counter, $allow_waiting_list, $allows_presencial, $allows_online,
+                    $status, $custom_fields_json, $enrollment_link, $enrollment_button_text,
+                    $meta_title, $meta_description,
                     $id
                 ]);
                 $_SESSION['msg'] = "Campanha '{$title}' atualizada com sucesso!";
@@ -106,14 +110,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Inserir Nova
                 $stmt = $pdo->prepare("INSERT INTO reservation_campaigns (
                     title, slug, short_description, description, image, city, state, location, target_audience,
-                    start_date, end_date, class_start_date, max_reservations, show_counter, allow_waiting_list,
-                    allows_presencial, allows_online, status, custom_fields_json, enrollment_link, enrollment_button_text,
-                    meta_title, meta_description, active
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
+                    start_date, end_date, class_start_date, max_reservations, max_reservations_presencial, max_reservations_online, 
+                    show_counter, allow_waiting_list, allows_presencial, allows_online, status, custom_fields_json, 
+                    enrollment_link, enrollment_button_text, meta_title, meta_description, active
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
                 $stmt->execute([
                     $title, $slug, $short_description, $description, $imageName, $city, $state, $location, $target_audience,
-                    $start_date, $end_date, $class_start_date, $max_reservations, $show_counter, $allow_waiting_list,
-                    $allows_presencial, $allows_online, $status, $custom_fields_json, $enrollment_link, $enrollment_button_text,
+                    $start_date, $end_date, $class_start_date, $max_reservations, $max_reservations_presencial, $max_reservations_online,
+                    $show_counter, $allow_waiting_list, $allows_presencial, $allows_online,
+                    $status, $custom_fields_json, $enrollment_link, $enrollment_button_text,
                     $meta_title, $meta_description
                 ]);
                 $_SESSION['msg'] = "Nova campanha '{$title}' criada com sucesso!";
@@ -161,9 +166,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Carregar campanhas com contagem de reservas por modalidade
 $sql = "SELECT c.*, 
         (SELECT COUNT(*) FROM reservations r WHERE r.campaign_id = c.id AND r.status != 'cancelado') as total_reservas,
-        (SELECT COUNT(*) FROM reservations r WHERE r.campaign_id = c.id AND r.preferred_modality = 'presencial' AND r.status != 'cancelado') as res_presencial,
-        (SELECT COUNT(*) FROM reservations r WHERE r.campaign_id = c.id AND r.preferred_modality = 'online' AND r.status != 'cancelado') as res_online,
-        (SELECT COUNT(*) FROM reservations r WHERE r.campaign_id = c.id AND r.preferred_modality = 'ambas' AND r.status != 'cancelado') as res_ambas,
+        (SELECT COUNT(*) FROM reservations r WHERE r.campaign_id = c.id AND r.is_waiting_list = 0 AND r.preferred_modality = 'presencial' AND r.status != 'cancelado') as res_presencial,
+        (SELECT COUNT(*) FROM reservations r WHERE r.campaign_id = c.id AND r.is_waiting_list = 0 AND r.preferred_modality = 'online' AND r.status != 'cancelado') as res_online,
+        (SELECT COUNT(*) FROM reservations r WHERE r.campaign_id = c.id AND r.is_waiting_list = 0 AND r.preferred_modality = 'ambas' AND r.status != 'cancelado') as res_ambas,
+        (SELECT COUNT(*) FROM reservations r WHERE r.campaign_id = c.id AND r.is_waiting_list = 1 AND r.status != 'cancelado') as total_espera,
         (SELECT COUNT(*) FROM reservations r WHERE r.campaign_id = c.id AND r.status = 'matriculado') as total_matriculados
         FROM reservation_campaigns c 
         ORDER BY c.id DESC";
@@ -254,12 +260,28 @@ require_once 'includes/header.php';
                         <td>
                             <strong><?= $camp['total_reservas'] ?></strong>
                             <?php if ($camp['max_reservations'] > 0): ?>
-                                <small style="color: #888;">/ <?= $camp['max_reservations'] ?> máx</small>
+                                <small style="color: #888;">/ <?= $camp['max_reservations'] ?> geral</small>
                             <?php endif; ?>
-                            <div style="font-size: 0.75rem; color: #666; margin-top: 3px;">
-                                <span>Pres: <strong><?= $camp['res_presencial'] ?></strong></span> | 
-                                <span>On: <strong><?= $camp['res_online'] ?></strong></span> | 
-                                <span>Ambas: <strong><?= $camp['res_ambas'] ?></strong></span>
+                            <?php if (!empty($camp['total_espera']) && $camp['total_espera'] > 0): ?>
+                                <span class="badge badge-warning" style="font-size: 0.7rem; margin-left: 3px;" title="Candidatos na Lista de Espera">+<?= $camp['total_espera'] ?> espera</span>
+                            <?php endif; ?>
+                            <div style="font-size: 0.75rem; color: #555; margin-top: 4px; display: flex; flex-direction: column; gap: 2px;">
+                                <div>
+                                    <span>🏫 Pres: <strong><?= $camp['res_presencial'] ?></strong></span>
+                                    <?php if (!empty($camp['max_reservations_presencial']) && $camp['max_reservations_presencial'] > 0): ?>
+                                        <small style="color: <?= ($camp['res_presencial'] >= $camp['max_reservations_presencial']) ? '#dc3545' : '#888' ?>; font-weight: <?= ($camp['res_presencial'] >= $camp['max_reservations_presencial']) ? '700' : 'normal' ?>;">
+                                            / <?= $camp['max_reservations_presencial'] ?> <?= ($camp['res_presencial'] >= $camp['max_reservations_presencial']) ? '(Esgotado)' : 'máx' ?>
+                                        </small>
+                                    <?php endif; ?>
+                                </div>
+                                <div>
+                                    <span>💻 On: <strong><?= $camp['res_online'] ?></strong></span>
+                                    <?php if (!empty($camp['max_reservations_online']) && $camp['max_reservations_online'] > 0): ?>
+                                        <small style="color: <?= ($camp['res_online'] >= $camp['max_reservations_online']) ? '#dc3545' : '#888' ?>; font-weight: <?= ($camp['res_online'] >= $camp['max_reservations_online']) ? '700' : 'normal' ?>;">
+                                            / <?= $camp['max_reservations_online'] ?> <?= ($camp['res_online'] >= $camp['max_reservations_online']) ? '(Esgotado)' : 'máx' ?>
+                                        </small>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </td>
                         <td>
@@ -443,14 +465,44 @@ require_once 'includes/header.php';
             </div>
         </div>
 
-        <!-- Limites, Contadores e Status -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
-            <div class="form-group" style="margin: 0;">
-                <label>Limite de Reservas (0 = ilimitado)</label>
-                <input type="number" name="max_reservations" class="form-control" min="0" value="<?= htmlspecialchars($editCampaign['max_reservations'] ?? 0) ?>">
+        <!-- Limites de Vagas por Modalidade e Geral -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem;">
+            <div style="font-weight: 700; color: #03045e; margin-bottom: 0.8rem; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <span><i class="fas fa-users-cog" style="color: #ff8000;"></i> Limite de Quantidade de Vagas por Modalidade</span>
+                <span style="font-size: 0.8rem; color: #64748b; font-weight: normal;"><i class="fas fa-info-circle"></i> Defina 0 para ilimitado</span>
             </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 0.4rem;">
+                        <span style="font-size: 1.1rem;">🏫</span> Limite Presencial (0 = ilimitado)
+                    </label>
+                    <input type="number" name="max_reservations_presencial" class="form-control" min="0" value="<?= htmlspecialchars($editCampaign['max_reservations_presencial'] ?? 0) ?>" placeholder="0 = ilimitado">
+                    <small style="color: #64748b; font-size: 0.78rem; display: block; margin-top: 3px;">Máx. de vagas para a turma Presencial</small>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 0.4rem;">
+                        <span style="font-size: 1.1rem;">💻</span> Limite Online (0 = ilimitado)
+                    </label>
+                    <input type="number" name="max_reservations_online" class="form-control" min="0" value="<?= htmlspecialchars($editCampaign['max_reservations_online'] ?? 0) ?>" placeholder="0 = ilimitado">
+                    <small style="color: #64748b; font-size: 0.78rem; display: block; margin-top: 3px;">Máx. de vagas para a turma Online</small>
+                </div>
+
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 0.4rem;">
+                        <span style="font-size: 1.1rem;">🌐</span> Limite Total Geral (Opcional)
+                    </label>
+                    <input type="number" name="max_reservations" class="form-control" min="0" value="<?= htmlspecialchars($editCampaign['max_reservations'] ?? 0) ?>" placeholder="0 = sem teto geral">
+                    <small style="color: #64748b; font-size: 0.78rem; display: block; margin-top: 3px;">Teto global combinando ambas modalidades</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status da Campanha, Contador e Lista de Espera -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; align-items: center;">
             <div class="form-group" style="margin: 0;">
-                <label>Status da Campanha</label>
+                <label style="font-weight: 600;">Status da Campanha</label>
                 <select name="status" class="form-control">
                     <?php foreach ($statusLabels as $val => $lbl): ?>
                         <option value="<?= $val ?>" <?= (($editCampaign['status'] ?? 'reservas_abertas') === $val) ? 'selected' : '' ?>><?= $lbl ?></option>
@@ -458,16 +510,18 @@ require_once 'includes/header.php';
                 </select>
             </div>
             <div class="form-group" style="margin: 0; display: flex; flex-direction: column; justify-content: center;">
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin: 0;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin: 0; font-weight: 600;">
                     <input type="checkbox" name="show_counter" value="1" <?= (!isset($editCampaign) || !empty($editCampaign['show_counter'])) ? 'checked' : '' ?>>
                     <span>Mostrar Contador Público</span>
                 </label>
+                <small style="color: #64748b; font-size: 0.78rem; margin-top: 3px;">Exibe na Landing Page o total de interessados</small>
             </div>
             <div class="form-group" style="margin: 0; display: flex; flex-direction: column; justify-content: center;">
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin: 0;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin: 0; font-weight: 600;">
                     <input type="checkbox" name="allow_waiting_list" value="1" <?= (!isset($editCampaign) || !empty($editCampaign['allow_waiting_list'])) ? 'checked' : '' ?>>
                     <span>Permitir Lista de Espera</span>
                 </label>
+                <small style="color: #64748b; font-size: 0.78rem; margin-top: 3px;">Ao atingir limite, insere na lista de espera</small>
             </div>
         </div>
 

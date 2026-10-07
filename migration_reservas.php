@@ -24,6 +24,8 @@ try {
         end_date DATE DEFAULT NULL,
         class_start_date DATE DEFAULT NULL,
         max_reservations INT DEFAULT 0,
+        max_reservations_presencial INT DEFAULT 0,
+        max_reservations_online INT DEFAULT 0,
         show_counter TINYINT(1) DEFAULT 1,
         allow_waiting_list TINYINT(1) DEFAULT 1,
         allows_presencial TINYINT(1) DEFAULT 1,
@@ -42,6 +44,18 @@ try {
         INDEX idx_campaign_active (active)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
     $pdo->exec($sqlCampaigns);
+
+    // Auto-migration incremental: limites de vagas por modalidade em reservation_campaigns
+    try {
+        $colsCampPres = $pdo->query("SHOW COLUMNS FROM reservation_campaigns LIKE 'max_reservations_presencial'")->fetchAll();
+        if (empty($colsCampPres)) {
+            $pdo->exec("ALTER TABLE reservation_campaigns ADD COLUMN max_reservations_presencial INT DEFAULT 0 AFTER max_reservations");
+        }
+        $colsCampOn = $pdo->query("SHOW COLUMNS FROM reservation_campaigns LIKE 'max_reservations_online'")->fetchAll();
+        if (empty($colsCampOn)) {
+            $pdo->exec("ALTER TABLE reservation_campaigns ADD COLUMN max_reservations_online INT DEFAULT 0 AFTER max_reservations_presencial");
+        }
+    } catch (Exception $eCampCols) {}
 
     // 2. Tabela de Reservas (Vínculo Lead <-> Campanha)
     $sqlReservations = "CREATE TABLE IF NOT EXISTS reservations (

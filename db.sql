@@ -151,6 +151,8 @@ CREATE TABLE IF NOT EXISTS reservation_campaigns (
     end_date DATE DEFAULT NULL,
     class_start_date DATE DEFAULT NULL,
     max_reservations INT DEFAULT 0,
+    max_reservations_presencial INT DEFAULT 0,
+    max_reservations_online INT DEFAULT 0,
     show_counter TINYINT(1) DEFAULT 1,
     allow_waiting_list TINYINT(1) DEFAULT 1,
     allows_presencial TINYINT(1) DEFAULT 1,
