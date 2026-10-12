@@ -100,13 +100,14 @@ require_once 'includes/header.php';
         <div class="form-group" id="status_filter_group" style="display: none;">
             <label><i class="fas fa-filter" style="color: #0077b6;"></i> Status da Reserva:</label>
             <select id="filter_status" class="form-control" onchange="carregarContatosDestino()">
+                <option value="">Todas as Reservas (Sem restrição de status)</option>
                 <option value="active">Reservas Ativas (Todas exceto Canceladas)</option>
                 <option value="nova">Apenas Novas Reservas</option>
                 <option value="interessado">Interessados</option>
                 <option value="contatado">Contatados</option>
                 <option value="aguardando_matricula">Aguardando Matrícula</option>
                 <option value="matriculado">Já Matriculados</option>
-                <option value="all">Todas as Reservas (Inclusive Canceladas)</option>
+                <option value="cancelado">Apenas Canceladas</option>
             </select>
         </div>
 
@@ -279,10 +280,12 @@ function carregarContatosDestino() {
             }
             badge.innerText = data.count + ' contatos' + labelSuffix;
         } else {
-            badge.innerText = '0 contatos';
+            console.error("Erro AJAX contatos:", data);
+            badge.innerText = '0 contatos' + (data.message ? ' (' + data.message + ')' : '');
         }
     })
-    .catch(() => {
+    .catch((err) => {
+        console.error("Erro requisição:", err);
         badge.innerText = 'Erro ao carregar';
     });
 }

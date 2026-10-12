@@ -57,31 +57,33 @@ if ($action === 'fetch_recipients') {
             $whereSql = " WHERE ((l.phone_normalized IS NOT NULL AND l.phone_normalized != '') OR (l.phone_original IS NOT NULL AND l.phone_original != '')) ";
             $params = [];
 
-            if ($status === 'active' || empty($status)) {
-                $whereSql .= " AND r.status != 'cancelado' ";
-            } elseif ($status !== 'all') {
-                $whereSql .= " AND r.status = ? ";
-                $params[] = $status;
+            if (!empty($status)) {
+                if ($status === 'active' || $status === 'sem_cancelados') {
+                    $whereSql .= " AND (r.status IS NULL OR r.status NOT IN ('cancelado', 'cancelada')) ";
+                } else {
+                    $whereSql .= " AND r.status = ? ";
+                    $params[] = $status;
+                }
             }
 
             if ($modality === 'online') {
-                $whereSql .= " AND r.preferred_modality = 'online' ";
+                $whereSql .= " AND (LOWER(TRIM(r.preferred_modality)) = 'online' OR LOWER(TRIM(r.preferred_modality)) LIKE '%online%') ";
             } elseif ($modality === 'online_ambas') {
-                $whereSql .= " AND r.preferred_modality IN ('online', 'ambas') ";
+                $whereSql .= " AND (LOWER(TRIM(r.preferred_modality)) IN ('online', 'ambas') OR LOWER(TRIM(r.preferred_modality)) LIKE '%online%') ";
             } elseif ($modality === 'presencial') {
-                $whereSql .= " AND r.preferred_modality = 'presencial' ";
+                $whereSql .= " AND (LOWER(TRIM(r.preferred_modality)) = 'presencial' OR LOWER(TRIM(r.preferred_modality)) LIKE '%presencial%') ";
             } elseif ($modality === 'presencial_ambas') {
-                $whereSql .= " AND r.preferred_modality IN ('presencial', 'ambas') ";
+                $whereSql .= " AND (LOWER(TRIM(r.preferred_modality)) IN ('presencial', 'ambas') OR LOWER(TRIM(r.preferred_modality)) LIKE '%presencial%') ";
             } elseif ($modality === 'ambas') {
-                $whereSql .= " AND r.preferred_modality = 'ambas' ";
+                $whereSql .= " AND LOWER(TRIM(r.preferred_modality)) = 'ambas' ";
             }
 
-            $sql = "SELECT DISTINCT l.id, l.name, l.email, l.phone_original, l.phone_normalized, r.preferred_modality, c.title as campaign_title 
+            $sql = "SELECT DISTINCT r.id AS reservation_id, l.id, l.name, l.email, l.phone_original, l.phone_normalized, r.preferred_modality, c.title as campaign_title 
                     FROM reservations r 
                     JOIN leads l ON r.lead_id = l.id 
                     LEFT JOIN reservation_campaigns c ON r.campaign_id = c.id 
                     $whereSql 
-                    ORDER BY r.id DESC";
+                    ORDER BY l.id DESC";
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $recipients = $stmt->fetchAll();
@@ -91,31 +93,33 @@ if ($action === 'fetch_recipients') {
                           AND ((l.phone_normalized IS NOT NULL AND l.phone_normalized != '') OR (l.phone_original IS NOT NULL AND l.phone_original != '')) ";
             $params = [$filterId];
 
-            if ($status === 'active' || empty($status)) {
-                $whereSql .= " AND r.status != 'cancelado' ";
-            } elseif ($status !== 'all') {
-                $whereSql .= " AND r.status = ? ";
-                $params[] = $status;
+            if (!empty($status)) {
+                if ($status === 'active' || $status === 'sem_cancelados') {
+                    $whereSql .= " AND (r.status IS NULL OR r.status NOT IN ('cancelado', 'cancelada')) ";
+                } else {
+                    $whereSql .= " AND r.status = ? ";
+                    $params[] = $status;
+                }
             }
 
             if ($modality === 'online') {
-                $whereSql .= " AND r.preferred_modality = 'online' ";
+                $whereSql .= " AND (LOWER(TRIM(r.preferred_modality)) = 'online' OR LOWER(TRIM(r.preferred_modality)) LIKE '%online%') ";
             } elseif ($modality === 'online_ambas') {
-                $whereSql .= " AND r.preferred_modality IN ('online', 'ambas') ";
+                $whereSql .= " AND (LOWER(TRIM(r.preferred_modality)) IN ('online', 'ambas') OR LOWER(TRIM(r.preferred_modality)) LIKE '%online%') ";
             } elseif ($modality === 'presencial') {
-                $whereSql .= " AND r.preferred_modality = 'presencial' ";
+                $whereSql .= " AND (LOWER(TRIM(r.preferred_modality)) = 'presencial' OR LOWER(TRIM(r.preferred_modality)) LIKE '%presencial%') ";
             } elseif ($modality === 'presencial_ambas') {
-                $whereSql .= " AND r.preferred_modality IN ('presencial', 'ambas') ";
+                $whereSql .= " AND (LOWER(TRIM(r.preferred_modality)) IN ('presencial', 'ambas') OR LOWER(TRIM(r.preferred_modality)) LIKE '%presencial%') ";
             } elseif ($modality === 'ambas') {
-                $whereSql .= " AND r.preferred_modality = 'ambas' ";
+                $whereSql .= " AND LOWER(TRIM(r.preferred_modality)) = 'ambas' ";
             }
 
-            $sql = "SELECT DISTINCT l.id, l.name, l.email, l.phone_original, l.phone_normalized, r.preferred_modality, c.title as campaign_title 
+            $sql = "SELECT DISTINCT r.id AS reservation_id, l.id, l.name, l.email, l.phone_original, l.phone_normalized, r.preferred_modality, c.title as campaign_title 
                     FROM reservations r 
                     JOIN leads l ON r.lead_id = l.id 
                     LEFT JOIN reservation_campaigns c ON r.campaign_id = c.id 
                     $whereSql 
-                    ORDER BY r.id DESC";
+                    ORDER BY l.id DESC";
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $recipients = $stmt->fetchAll();
@@ -124,13 +128,13 @@ if ($action === 'fetch_recipients') {
             $ids = array_filter(array_map('intval', $idsRaw));
             if (!empty($ids)) {
                 $inPlaceholders = implode(',', array_fill(0, count($ids), '?'));
-                $sql = "SELECT DISTINCT l.id, l.name, l.email, l.phone_original, l.phone_normalized, r.preferred_modality, c.title as campaign_title 
+                $sql = "SELECT DISTINCT r.id AS reservation_id, l.id, l.name, l.email, l.phone_original, l.phone_normalized, r.preferred_modality, c.title as campaign_title 
                         FROM reservations r 
                         JOIN leads l ON r.lead_id = l.id 
                         LEFT JOIN reservation_campaigns c ON r.campaign_id = c.id 
                         WHERE r.id IN ($inPlaceholders) 
                           AND ((l.phone_normalized IS NOT NULL AND l.phone_normalized != '') OR (l.phone_original IS NOT NULL AND l.phone_original != '')) 
-                        ORDER BY r.id DESC";
+                        ORDER BY l.id DESC";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute(array_values($ids));
                 $recipients = $stmt->fetchAll();
