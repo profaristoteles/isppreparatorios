@@ -117,7 +117,7 @@ require_once 'includes/header.php';
             <i class="fas fa-check-circle"></i> Destinatários carregados a partir das reservas selecionadas no painel.
         </div>
 
-        <div style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 12px 16px; border-radius: 6px; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 12px 16px; border-radius: 6px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <span style="font-size: 0.88rem; color: #555;">Destinatários com WhatsApp válido:</span>
             </div>
@@ -125,6 +125,52 @@ require_once 'includes/header.php';
                 <strong id="recipient_count_badge" style="font-size: 1.15rem; color: #03045e;">
                     <i class="fas fa-spinner fa-spin"></i>
                 </strong>
+            </div>
+        </div>
+
+        <!-- Painel de Seleção e Sorteio Aleatório de Contatos -->
+        <div id="recipients_selection_card" style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 14px; border-radius: 8px; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                <label style="font-weight: 700; color: #03045e; margin: 0; font-size: 0.92rem;">
+                    <i class="fas fa-user-check"></i> Seleção de Envio: <span id="selected_count_text" style="color: #0077b6;">0 selecionados</span>
+                </label>
+                <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selecionarTodosContatos(true)" style="padding: 2px 8px; font-size: 0.78rem;">
+                        <i class="fas fa-check-square"></i> Marcar Todos
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selecionarTodosContatos(false)" style="padding: 2px 8px; font-size: 0.78rem;">
+                        <i class="far fa-square"></i> Desmarcar Todos
+                    </button>
+                </div>
+            </div>
+
+            <!-- Caixa de Sorteio / Seleção Aleatória -->
+            <div style="background: #e7f5ff; border: 1px solid #bde0fe; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #0077b6;">
+                        <i class="fas fa-dice"></i> Selecionar Aleatoriamente:
+                    </span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="number" id="random_count_input" class="form-control" style="width: 85px; padding: 4px 8px; height: 32px; font-size: 0.85rem;" min="1" placeholder="Ex: 30">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="selecionarAleatorios()" style="padding: 4px 12px; font-size: 0.82rem; height: 32px; white-space: nowrap; font-weight: 600;">
+                            <i class="fas fa-random"></i> Sortear
+                        </button>
+                    </div>
+                </div>
+                <small style="color: #555; display: block; margin-top: 4px; font-size: 0.78rem;">
+                    Informe a quantidade desejada (ex: <strong>30</strong>) para selecionar contatos de forma 100% aleatória dentre os encontrados.
+                </small>
+                <div id="random_feedback" style="display: none; font-size: 0.8rem; font-weight: 600; color: #28a745; margin-top: 5px;"></div>
+            </div>
+
+            <!-- Busca rápida na lista de contatos -->
+            <div style="margin-bottom: 8px;">
+                <input type="text" id="filter_recipient_search" class="form-control" placeholder="🔍 Filtrar por nome ou WhatsApp na lista..." oninput="filtrarListaDestinatarios()" style="padding: 4px 10px; font-size: 0.82rem; height: 30px;">
+            </div>
+
+            <!-- Lista de contatos rolável com checkboxes -->
+            <div id="recipients_list_container" style="max-height: 220px; overflow-y: auto; background: #fff; border: 1px solid #ced4da; border-radius: 6px; padding: 4px;">
+                <div style="color: #888; text-align: center; font-size: 0.85rem; padding: 12px;">Aguardando contatos...</div>
             </div>
         </div>
 
@@ -264,7 +310,12 @@ function carregarContatosDestino() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            globalRecipients = data.recipients || [];
+            // Inicializa cada contato com selected = true por padrão
+            globalRecipients = (data.recipients || []).map(r => ({
+                ...r,
+                selected: true
+            }));
+
             let labelSuffix = '';
             if ((grp === 'all_reservations' || grp === 'reservations_campaign') && modality) {
                 const modLabels = {
@@ -279,15 +330,144 @@ function carregarContatosDestino() {
                 }
             }
             badge.innerText = data.count + ' contatos' + labelSuffix;
+            renderizarListaDestinatarios();
         } else {
+            globalRecipients = [];
             console.error("Erro AJAX contatos:", data);
             badge.innerText = '0 contatos' + (data.message ? ' (' + data.message + ')' : '');
+            renderizarListaDestinatarios();
         }
     })
     .catch((err) => {
+        globalRecipients = [];
         console.error("Erro requisição:", err);
         badge.innerText = 'Erro ao carregar';
+        renderizarListaDestinatarios();
     });
+}
+
+function renderizarListaDestinatarios() {
+    const container = document.getElementById('recipients_list_container');
+    if (!container) return;
+
+    if (globalRecipients.length === 0) {
+        container.innerHTML = '<div style="color: #888; text-align: center; font-size: 0.85rem; padding: 12px;">Nenhum contato encontrado com esses filtros.</div>';
+        atualizarContadorSelecionados();
+        return;
+    }
+
+    const searchTerm = (document.getElementById('filter_recipient_search')?.value || '').toLowerCase().trim();
+
+    let html = '';
+    globalRecipients.forEach((r, idx) => {
+        const isChecked = r.selected !== false;
+        const searchMatch = !searchTerm || r.name.toLowerCase().includes(searchTerm) || r.phone.includes(searchTerm);
+        const displayStyle = searchMatch ? 'flex' : 'none';
+
+        html += `
+        <label class="recipient-row" data-idx="${idx}" style="display: ${displayStyle}; align-items: center; justify-content: space-between; padding: 6px 8px; border-bottom: 1px solid #f1f3f5; margin: 0; cursor: pointer; font-size: 0.84rem; user-select: none;">
+            <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                <input type="checkbox" class="recipient-chk" data-idx="${idx}" ${isChecked ? 'checked' : ''} onchange="toggleRecipient(${idx}, this.checked)" style="cursor: pointer;">
+                <span style="font-weight: 600; color: #222; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; max-width: 170px;" title="${r.name}">${r.name}</span>
+                <span style="color: #666; font-size: 0.78rem; font-family: monospace;">(${r.phone})</span>
+            </div>
+            ${r.modality ? `<span class="badge badge-info" style="font-size: 0.72rem; padding: 2px 6px;">${r.modality}</span>` : ''}
+        </label>
+        `;
+    });
+
+    container.innerHTML = html;
+    atualizarContadorSelecionados();
+}
+
+function toggleRecipient(idx, isChecked) {
+    if (globalRecipients[idx]) {
+        globalRecipients[idx].selected = isChecked;
+    }
+    atualizarContadorSelecionados();
+}
+
+function selecionarTodosContatos(marcar) {
+    globalRecipients.forEach(r => {
+        r.selected = marcar;
+    });
+    renderizarListaDestinatarios();
+}
+
+function selecionarAleatorios() {
+    const input = document.getElementById('random_count_input');
+    const feedback = document.getElementById('random_feedback');
+    const total = globalRecipients.length;
+
+    if (total === 0) {
+        alert('Nenhum contato disponível para sortear.');
+        return;
+    }
+
+    let qtd = parseInt(input.value);
+    if (isNaN(qtd) || qtd <= 0) {
+        alert(`Informe uma quantidade válida de contatos (entre 1 e ${total}).`);
+        input.focus();
+        return;
+    }
+
+    if (qtd > total) {
+        qtd = total;
+        input.value = total;
+    }
+
+    // Criar array de índices e aplicar embaralhamento Fisher-Yates
+    const indices = Array.from({ length: total }, (_, i) => i);
+    for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+
+    // Selecionar exatamente os N sorteados
+    const chosenIndices = new Set(indices.slice(0, qtd));
+
+    globalRecipients.forEach((r, idx) => {
+        r.selected = chosenIndices.has(idx);
+    });
+
+    renderizarListaDestinatarios();
+
+    if (feedback) {
+        feedback.innerText = `🎲 ${qtd} contatos sorteados aleatoriamente com sucesso!`;
+        feedback.style.display = 'block';
+        setTimeout(() => {
+            feedback.style.display = 'none';
+        }, 4000);
+    }
+}
+
+function filtrarListaDestinatarios() {
+    const searchTerm = (document.getElementById('filter_recipient_search')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('.recipient-row');
+    rows.forEach(row => {
+        const idx = row.getAttribute('data-idx');
+        const r = globalRecipients[idx];
+        if (r) {
+            const match = !searchTerm || r.name.toLowerCase().includes(searchTerm) || r.phone.includes(searchTerm);
+            row.style.display = match ? 'flex' : 'none';
+        }
+    });
+}
+
+function atualizarContadorSelecionados() {
+    const selectedCount = globalRecipients.filter(r => r.selected !== false).length;
+    const totalCount = globalRecipients.length;
+
+    const lbl = document.getElementById('selected_count_text');
+    if (lbl) {
+        lbl.innerText = `${selectedCount} de ${totalCount} selecionados`;
+    }
+
+    const btnStart = document.getElementById('btnStartBroadcast');
+    if (btnStart && !isBroadcasting) {
+        btnStart.innerHTML = `<i class="fab fa-whatsapp"></i> Iniciar Disparo para ${selectedCount} Contato(s)`;
+        btnStart.disabled = (selectedCount === 0);
+    }
 }
 
 function inserirTag(tag) {
@@ -358,13 +538,16 @@ async function iniciarDisparoEmMassa() {
         return;
     }
 
-    if (globalRecipients.length === 0) {
-        alert('Nenhum destinatário disponível para disparo no grupo selecionado.');
+    // Filtra apenas os contatos selecionados com checkbox
+    const activeRecipients = globalRecipients.filter(r => r.selected !== false);
+
+    if (activeRecipients.length === 0) {
+        alert('Nenhum destinatário selecionado. Por favor, marque pelo menos um contato na lista ou use o botão Sortear.');
         return;
     }
 
     const delay = parseInt(document.getElementById('delay_seconds').value) || 8;
-    const confirmMsg = `Confirmar disparo para ${globalRecipients.length} contatos com intervalo de ${delay} segundos entre cada mensagem?`;
+    const confirmMsg = `Confirmar disparo para os ${activeRecipients.length} contatos selecionados com intervalo de ${delay} segundos entre cada mensagem?`;
     if (!confirm(confirmMsg)) {
         return;
     }
@@ -377,11 +560,11 @@ async function iniciarDisparoEmMassa() {
     document.getElementById('progress_container').style.display = 'block';
 
     const logBox = document.getElementById('broadcast_log');
-    logBox.innerHTML = `[${new Date().toLocaleTimeString()}] Iniciando disparo para ${globalRecipients.length} contatos...\n`;
+    logBox.innerHTML = `[${new Date().toLocaleTimeString()}] Iniciando disparo para ${activeRecipients.length} contatos selecionados...\n`;
 
     let successCount = 0;
     let failedCount = 0;
-    const total = globalRecipients.length;
+    const total = activeRecipients.length;
 
     for (let i = 0; i < total; i++) {
         if (shouldStop) {
@@ -389,7 +572,7 @@ async function iniciarDisparoEmMassa() {
             break;
         }
 
-        const r = globalRecipients[i];
+        const r = activeRecipients[i];
         document.getElementById('progress_status_text').innerText = `Enviando ${i + 1} de ${total} para ${r.name}...`;
 
         const formData = new FormData();
