@@ -227,7 +227,15 @@ require_once 'includes/header.php';
         <h2><i class="fas fa-clipboard-list"></i> Gestão de Reservas / Interessados (<?= $totalReservas ?>)</h2>
         <p style="color: #666; margin: 0; font-size: 0.9rem;">Acompanhe o funil de interessados, entre em contato via WhatsApp e gerencie conversões.</p>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="disparo-massa-whatsapp.php?<?= http_build_query([
+            'target_group' => $campaign_id > 0 ? 'reservations_campaign' : 'all_reservations',
+            'campaign_id'  => $campaign_id,
+            'modality'     => $modality_filter,
+            'status'       => $status_filter
+        ]) ?>" class="btn" style="background: #25d366; border-color: #25d366; color: #fff; font-weight: 600;" title="Abrir ferramenta de disparo em massa com os filtros atuais">
+            <i class="fab fa-whatsapp"></i> Disparo em Massa WhatsApp
+        </a>
         <a href="export_reservas_csv.php?<?= $queryString ?>" class="btn btn-success">
             <i class="fas fa-file-excel"></i> Exportar CSV
         </a>
@@ -329,6 +337,9 @@ require_once 'includes/header.php';
             <span style="font-weight: 600; font-size: 0.9rem; color: #03045e;"><i class="fas fa-tasks"></i> Ações em Massa:</span>
             <select name="bulk_operation" class="form-control" style="width: auto; padding: 0.4rem 0.8rem;">
                 <option value="">Selecione uma ação...</option>
+                <optgroup label="Comunicação / WhatsApp">
+                    <option value="broadcast_whatsapp">💬 Disparo em Massa WhatsApp para Selecionadas</option>
+                </optgroup>
                 <optgroup label="Alterar Status Comercial">
                     <?php foreach ($statusLabels as $k => $lbl): ?>
                         <option value="status_<?= $k ?>">Mudar para: <?= $lbl ?></option>
@@ -672,6 +683,11 @@ function handleBulkSubmit() {
     const checked = document.querySelectorAll('.resCheckbox:checked');
     if (checked.length === 0) {
         alert('Selecione pelo menos uma reserva na tabela marcando a caixa de seleção.');
+        return false;
+    }
+    if (op === 'broadcast_whatsapp') {
+        const ids = Array.from(checked).map(cb => cb.value).join(',');
+        window.location.href = 'disparo-massa-whatsapp.php?target_group=selected_reservations&selected_ids=' + encodeURIComponent(ids);
         return false;
     }
     if (op === 'delete_selected') {

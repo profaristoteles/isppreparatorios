@@ -58,6 +58,7 @@ require_once 'includes/header.php';
                 <option value="reservations_campaign">📌 Alunos de uma Campanha Específica de Reserva</option>
                 <option value="all_events">📅 Alunos Inscritos em Eventos/Lives</option>
                 <option value="all_contacts">🌐 Todos os Contatos Cadastrados (Base Geral Unificada)</option>
+                <option value="selected_reservations" id="opt_selected_reservations" style="display: none;">📋 Reservas Selecionadas no Painel</option>
             </select>
         </div>
 
@@ -79,6 +80,40 @@ require_once 'includes/header.php';
                     <option value="<?= $rc['id'] ?>"><?= htmlspecialchars($rc['title']) ?></option>
                 <?php endforeach; ?>
             </select>
+        </div>
+
+        <!-- Filtro por Tipo / Modalidade da Reserva (Online vs Presencial) -->
+        <div class="form-group" id="modality_filter_group" style="display: none;">
+            <label><i class="fas fa-laptop-house" style="color: #0077b6;"></i> Tipo / Modalidade da Reserva:</label>
+            <select id="filter_modality" class="form-control" onchange="carregarContatosDestino()">
+                <option value="">Todas as Modalidades (Presencial e Online)</option>
+                <option value="online">💻 Apenas Reserva Online</option>
+                <option value="online_ambas">💻 Online + Ambas (Todos com interesse no Online)</option>
+                <option value="presencial">🏫 Apenas Reserva Presencial</option>
+                <option value="presencial_ambas">🏫 Presencial + Ambas (Todos com interesse no Presencial)</option>
+                <option value="ambas">🔄 Apenas Ambas (Presencial + Online)</option>
+            </select>
+            <small style="color: #666;">Filtre para disparar apenas para quem reservou online ou presencial.</small>
+        </div>
+
+        <!-- Filtro por Status Comercial da Reserva -->
+        <div class="form-group" id="status_filter_group" style="display: none;">
+            <label><i class="fas fa-filter" style="color: #0077b6;"></i> Status da Reserva:</label>
+            <select id="filter_status" class="form-control" onchange="carregarContatosDestino()">
+                <option value="active">Reservas Ativas (Todas exceto Canceladas)</option>
+                <option value="nova">Apenas Novas Reservas</option>
+                <option value="interessado">Interessados</option>
+                <option value="contatado">Contatados</option>
+                <option value="aguardando_matricula">Aguardando Matrícula</option>
+                <option value="matriculado">Já Matriculados</option>
+                <option value="all">Todas as Reservas (Inclusive Canceladas)</option>
+            </select>
+        </div>
+
+        <input type="hidden" id="filter_selected_ids" value="">
+
+        <div id="selected_notice" style="display: none; background: #e7f5ff; border: 1px solid #bde0fe; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem; color: #0077b6; margin-bottom: 1.2rem;">
+            <i class="fas fa-check-circle"></i> Destinatários carregados a partir das reservas selecionadas no painel.
         </div>
 
         <div style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 12px 16px; border-radius: 6px; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
@@ -126,6 +161,8 @@ require_once 'includes/header.php';
             <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
                 <button type="button" class="badge badge-info" style="cursor: pointer; border: none; padding: 5px 8px;" onclick="inserirTag('{primeiro_nome}')">{primeiro_nome}</button>
                 <button type="button" class="badge badge-info" style="cursor: pointer; border: none; padding: 5px 8px;" onclick="inserirTag('{nome}')">{nome}</button>
+                <button type="button" class="badge badge-info" style="cursor: pointer; border: none; padding: 5px 8px;" onclick="inserirTag('{modalidade}')">{modalidade}</button>
+                <button type="button" class="badge badge-info" style="cursor: pointer; border: none; padding: 5px 8px;" onclick="inserirTag('{campanha}')">{campanha}</button>
                 <button type="button" class="badge badge-info" style="cursor: pointer; border: none; padding: 5px 8px;" onclick="inserirTag('{link_site}')">{link_site}</button>
             </div>
         </div>
@@ -180,8 +217,18 @@ function atualizarPublicoAlvo() {
     const grp = document.getElementById('target_group').value;
     const chanGrp = document.getElementById('channel_filter_group');
     const campGrp = document.getElementById('campaign_filter_group');
+    const modGrp = document.getElementById('modality_filter_group');
+    const statusGrp = document.getElementById('status_filter_group');
+    const selNotice = document.getElementById('selected_notice');
+
     if (chanGrp) chanGrp.style.display = (grp === 'leads_channel') ? 'block' : 'none';
     if (campGrp) campGrp.style.display = (grp === 'reservations_campaign') ? 'block' : 'none';
+
+    const isReservation = (grp === 'all_reservations' || grp === 'reservations_campaign');
+    if (modGrp) modGrp.style.display = isReservation ? 'block' : 'none';
+    if (statusGrp) statusGrp.style.display = isReservation ? 'block' : 'none';
+    if (selNotice) selNotice.style.display = (grp === 'selected_reservations') ? 'block' : 'none';
+
     carregarContatosDestino();
 }
 
@@ -193,14 +240,21 @@ function carregarContatosDestino() {
     } else if (grp === 'reservations_campaign') {
         filterId = document.getElementById('filter_campaign_id').value;
     }
-    const badge = document.getElementById('recipient_count_badge');
 
+    const modality = document.getElementById('filter_modality') ? document.getElementById('filter_modality').value : '';
+    const status = document.getElementById('filter_status') ? document.getElementById('filter_status').value : '';
+    const selectedIds = document.getElementById('filter_selected_ids') ? document.getElementById('filter_selected_ids').value : '';
+
+    const badge = document.getElementById('recipient_count_badge');
     badge.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
     const formData = new FormData();
     formData.append('action', 'fetch_recipients');
     formData.append('target_group', grp);
     formData.append('filter_id', filterId);
+    formData.append('modality', modality);
+    formData.append('status', status);
+    formData.append('selected_ids', selectedIds);
 
     fetch('ajax_whatsapp_broadcast.php', {
         method: 'POST',
@@ -210,7 +264,20 @@ function carregarContatosDestino() {
     .then(data => {
         if (data.success) {
             globalRecipients = data.recipients || [];
-            badge.innerText = data.count + ' contatos';
+            let labelSuffix = '';
+            if ((grp === 'all_reservations' || grp === 'reservations_campaign') && modality) {
+                const modLabels = {
+                    'online': 'Online',
+                    'online_ambas': 'Online + Ambas',
+                    'presencial': 'Presencial',
+                    'presencial_ambas': 'Presencial + Ambas',
+                    'ambas': 'Ambas'
+                };
+                if (modLabels[modality]) {
+                    labelSuffix = ` (${modLabels[modality]})`;
+                }
+            }
+            badge.innerText = data.count + ' contatos' + labelSuffix;
         } else {
             badge.innerText = '0 contatos';
         }
@@ -254,6 +321,8 @@ function enviarMensagemTeste() {
     formData.append('phone', phone);
     formData.append('name', 'Admin');
     formData.append('email', 'admin@isp.com.br');
+    formData.append('modality', 'Online');
+    formData.append('campaign', 'Curso Preparatório');
     formData.append('message', msg);
 
     fetch('ajax_whatsapp_broadcast.php', {
@@ -325,6 +394,8 @@ async function iniciarDisparoEmMassa() {
         formData.append('phone', r.phone);
         formData.append('name', r.name);
         formData.append('email', r.email);
+        formData.append('modality', r.modality || '');
+        formData.append('campaign', r.campaign || '');
         formData.append('message', msg);
 
         try {
@@ -333,7 +404,8 @@ async function iniciarDisparoEmMassa() {
 
             if (resJson.success) {
                 successCount++;
-                logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ✅ ${r.name} (${r.phone}): Enviado\n`;
+                const modTag = r.modality ? ` [${r.modality}]` : '';
+                logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ✅ ${r.name} (${r.phone})${modTag}: Enviado\n`;
             } else {
                 failedCount++;
                 logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ❌ ${r.name} (${r.phone}): ${resJson.message}\n`;
@@ -371,9 +443,35 @@ function cancelarDisparo() {
     document.getElementById('btnCancelBroadcast').innerText = 'Parando...';
 }
 
-// Inicializa a contagem ao abrir
+// Inicializa a contagem e filtros com suporte a parâmetros da URL
 document.addEventListener('DOMContentLoaded', () => {
-    carregarContatosDestino();
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTargetGroup = urlParams.get('target_group') || '';
+    const initialCampaignId = urlParams.get('campaign_id') || '';
+    const initialModality = urlParams.get('modality') || '';
+    const initialStatus = urlParams.get('status') || '';
+    const initialSelectedIds = urlParams.get('selected_ids') || '';
+
+    if (initialSelectedIds) {
+        const optSel = document.getElementById('opt_selected_reservations');
+        if (optSel) optSel.style.display = 'block';
+        document.getElementById('target_group').value = 'selected_reservations';
+        document.getElementById('filter_selected_ids').value = initialSelectedIds;
+    } else if (initialTargetGroup) {
+        document.getElementById('target_group').value = initialTargetGroup;
+    }
+
+    if (initialCampaignId && document.getElementById('filter_campaign_id')) {
+        document.getElementById('filter_campaign_id').value = initialCampaignId;
+    }
+    if (initialModality && document.getElementById('filter_modality')) {
+        document.getElementById('filter_modality').value = initialModality;
+    }
+    if (initialStatus && document.getElementById('filter_status')) {
+        document.getElementById('filter_status').value = initialStatus;
+    }
+
+    atualizarPublicoAlvo();
 });
 </script>
 

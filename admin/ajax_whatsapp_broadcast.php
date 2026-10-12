@@ -22,6 +22,9 @@ $action = trim($_POST['action'] ?? '');
 if ($action === 'fetch_recipients') {
     $targetGroup = trim($_POST['target_group'] ?? 'all_leads');
     $filterId    = (int)($_POST['filter_id'] ?? 0);
+    $modality    = trim($_POST['modality'] ?? '');
+    $status      = trim($_POST['status'] ?? 'active');
+    $selectedIds = trim($_POST['selected_ids'] ?? '');
 
     $recipients = [];
 
@@ -51,23 +54,87 @@ if ($action === 'fetch_recipients') {
             $recipients = $stmt->fetchAll();
         } elseif ($targetGroup === 'all_reservations') {
             // Alunos que possuem reserva de turma registrada
-            $stmt = $pdo->query("SELECT DISTINCT l.id, l.name, l.email, l.phone_original, l.phone_normalized 
-                                 FROM reservations r 
-                                 JOIN leads l ON r.lead_id = l.id 
-                                 WHERE (l.phone_normalized IS NOT NULL AND l.phone_normalized != '') 
-                                    OR (l.phone_original IS NOT NULL AND l.phone_original != '') 
-                                 ORDER BY l.id DESC");
+            $whereSql = " WHERE ((l.phone_normalized IS NOT NULL AND l.phone_normalized != '') OR (l.phone_original IS NOT NULL AND l.phone_original != '')) ";
+            $params = [];
+
+            if ($status === 'active' || empty($status)) {
+                $whereSql .= " AND r.status != 'cancelado' ";
+            } elseif ($status !== 'all') {
+                $whereSql .= " AND r.status = ? ";
+                $params[] = $status;
+            }
+
+            if ($modality === 'online') {
+                $whereSql .= " AND r.preferred_modality = 'online' ";
+            } elseif ($modality === 'online_ambas') {
+                $whereSql .= " AND r.preferred_modality IN ('online', 'ambas') ";
+            } elseif ($modality === 'presencial') {
+                $whereSql .= " AND r.preferred_modality = 'presencial' ";
+            } elseif ($modality === 'presencial_ambas') {
+                $whereSql .= " AND r.preferred_modality IN ('presencial', 'ambas') ";
+            } elseif ($modality === 'ambas') {
+                $whereSql .= " AND r.preferred_modality = 'ambas' ";
+            }
+
+            $sql = "SELECT DISTINCT l.id, l.name, l.email, l.phone_original, l.phone_normalized, r.preferred_modality, c.title as campaign_title 
+                    FROM reservations r 
+                    JOIN leads l ON r.lead_id = l.id 
+                    LEFT JOIN reservation_campaigns c ON r.campaign_id = c.id 
+                    $whereSql 
+                    ORDER BY r.id DESC";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
             $recipients = $stmt->fetchAll();
         } elseif ($targetGroup === 'reservations_campaign' && $filterId > 0) {
             // Alunos de uma campanha de reserva específica
-            $stmt = $pdo->prepare("SELECT DISTINCT l.id, l.name, l.email, l.phone_original, l.phone_normalized 
-                                   FROM reservations r 
-                                   JOIN leads l ON r.lead_id = l.id 
-                                   WHERE r.campaign_id = ? 
-                                     AND ((l.phone_normalized IS NOT NULL AND l.phone_normalized != '') OR (l.phone_original IS NOT NULL AND l.phone_original != ''))
-                                   ORDER BY l.id DESC");
-            $stmt->execute([$filterId]);
+            $whereSql = " WHERE r.campaign_id = ? 
+                          AND ((l.phone_normalized IS NOT NULL AND l.phone_normalized != '') OR (l.phone_original IS NOT NULL AND l.phone_original != '')) ";
+            $params = [$filterId];
+
+            if ($status === 'active' || empty($status)) {
+                $whereSql .= " AND r.status != 'cancelado' ";
+            } elseif ($status !== 'all') {
+                $whereSql .= " AND r.status = ? ";
+                $params[] = $status;
+            }
+
+            if ($modality === 'online') {
+                $whereSql .= " AND r.preferred_modality = 'online' ";
+            } elseif ($modality === 'online_ambas') {
+                $whereSql .= " AND r.preferred_modality IN ('online', 'ambas') ";
+            } elseif ($modality === 'presencial') {
+                $whereSql .= " AND r.preferred_modality = 'presencial' ";
+            } elseif ($modality === 'presencial_ambas') {
+                $whereSql .= " AND r.preferred_modality IN ('presencial', 'ambas') ";
+            } elseif ($modality === 'ambas') {
+                $whereSql .= " AND r.preferred_modality = 'ambas' ";
+            }
+
+            $sql = "SELECT DISTINCT l.id, l.name, l.email, l.phone_original, l.phone_normalized, r.preferred_modality, c.title as campaign_title 
+                    FROM reservations r 
+                    JOIN leads l ON r.lead_id = l.id 
+                    LEFT JOIN reservation_campaigns c ON r.campaign_id = c.id 
+                    $whereSql 
+                    ORDER BY r.id DESC";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
             $recipients = $stmt->fetchAll();
+        } elseif ($targetGroup === 'selected_reservations' && !empty($selectedIds)) {
+            $idsRaw = explode(',', $selectedIds);
+            $ids = array_filter(array_map('intval', $idsRaw));
+            if (!empty($ids)) {
+                $inPlaceholders = implode(',', array_fill(0, count($ids), '?'));
+                $sql = "SELECT DISTINCT l.id, l.name, l.email, l.phone_original, l.phone_normalized, r.preferred_modality, c.title as campaign_title 
+                        FROM reservations r 
+                        JOIN leads l ON r.lead_id = l.id 
+                        LEFT JOIN reservation_campaigns c ON r.campaign_id = c.id 
+                        WHERE r.id IN ($inPlaceholders) 
+                          AND ((l.phone_normalized IS NOT NULL AND l.phone_normalized != '') OR (l.phone_original IS NOT NULL AND l.phone_original != '')) 
+                        ORDER BY r.id DESC";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute(array_values($ids));
+                $recipients = $stmt->fetchAll();
+            }
         } elseif ($targetGroup === 'all_events') {
             $stmt = $pdo->query("SELECT id, name, email, phone as phone_original, phone_normalized 
                                  FROM event_registrations 
@@ -97,6 +164,11 @@ if ($action === 'fetch_recipients') {
     // Normaliza os telefones e remove duplicatas por telefone
     $uniqueRecipients = [];
     $seenPhones = [];
+    $modMap = [
+        'online'     => 'Online',
+        'presencial' => 'Presencial',
+        'ambas'      => 'Presencial + Online'
+    ];
 
     foreach ($recipients as $r) {
         $phone = preg_replace('/[^0-9]/', '', $r['phone_normalized'] ?: $r['phone_original']);
@@ -106,11 +178,16 @@ if ($action === 'fetch_recipients') {
 
         if (strlen($phone) >= 12 && !isset($seenPhones[$phone])) {
             $seenPhones[$phone] = true;
+            $modalityKey = $r['preferred_modality'] ?? '';
+            $modalityLabel = $modMap[$modalityKey] ?? ($modalityKey ? ucfirst($modalityKey) : '');
+
             $uniqueRecipients[] = [
-                'id'    => $r['id'],
-                'name'  => trim($r['name'] ?: 'Aluno'),
-                'email' => trim($r['email'] ?: ''),
-                'phone' => $phone
+                'id'       => $r['id'],
+                'name'     => trim($r['name'] ?: 'Aluno'),
+                'email'    => trim($r['email'] ?: ''),
+                'phone'    => $phone,
+                'modality' => $modalityLabel,
+                'campaign' => trim($r['campaign_title'] ?? '')
             ];
         }
     }
@@ -128,6 +205,8 @@ if ($action === 'send_single_message') {
     $phone       = trim($_POST['phone'] ?? '');
     $name        = trim($_POST['name'] ?? 'Aluno');
     $email       = trim($_POST['email'] ?? '');
+    $modality    = trim($_POST['modality'] ?? '');
+    $campaign    = trim($_POST['campaign'] ?? '');
     $messageTpl  = trim($_POST['message'] ?? '');
 
     if (empty($phone) || empty($messageTpl)) {
@@ -147,12 +226,16 @@ if ($action === 'send_single_message') {
         '{primeiro_nome}',
         '{email}',
         '{telefone}',
+        '{modalidade}',
+        '{campanha}',
         '{link_site}'
     ], [
         $name,
         $firstName,
         $email,
         $phone,
+        $modality,
+        $campaign,
         'https://isppreparatorios.com.br'
     ], $messageTpl);
 
