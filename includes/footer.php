@@ -158,14 +158,17 @@ $site_config = $site_config ?? get_config($pdo);
                 styleEl.textContent = `
                     #lc_chat_layout,
                     [id*="chat-widget"],
-                    iframe[src*="leadconnectorhq"],
-                    iframe[src*="widgets.leadconnectorhq"],
                     div[class*="chat-widget"],
                     div[id*="lc_chat"],
-                    .woot-widget-holder,
-                    .woot--bubble-holder,
-                    iframe[src*="evocrm"] {
+                    #evo-widget-bubble,
+                    .evo-widget-bubble,
+                    .woot--bubble-holder {
                         bottom: ${chatOffset}px !important;
+                    }
+                    #evo-widget-holder,
+                    .evo-widget-holder,
+                    .woot-widget-holder {
+                        bottom: ${chatOffset + 68}px !important;
                     }
                 `;
             } else {
@@ -311,7 +314,13 @@ $site_config = $site_config ?? get_config($pdo);
         var SDK_BASE = 'https://evocrm.isentidos.net.br';
         var WIDGET_BASE = 'https://evocrm.isentidos.net.br';
         var s = d.createElement(t); var x = d.getElementsByTagName(t)[0];
-        window.evoChatSettings = {"position":"right","type":"standard","launcherTitle":"Chat com a equipe","apiBase":"https://evocrmapi.isentidos.net.br"};
+        window.evoChatSettings = {
+          "position": "right",
+          "type": "standard",
+          "launcherTitle": "Chat com a equipe",
+          "widgetColor": "#ff8000",
+          "apiBase": "https://evocrmapi.isentidos.net.br"
+        };
         s.src = SDK_BASE + '/widget-sdk/sdk.min.js'; s.async = true; s.defer = true;
         x.parentNode.insertBefore(s,x);
         s.onload = function(){

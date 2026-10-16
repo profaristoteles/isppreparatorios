@@ -130,6 +130,37 @@ try {
     }
 } catch (Exception $e) { /* Auto-migração concluída ou em andamento */ }
 
+// Auto-migration: Atualizar itens do menu para a nova plataforma
+try {
+    $hasPlataforma = $pdo->query("SELECT COUNT(*) FROM menu_items WHERE label = 'Plataforma'")->fetchColumn();
+    $hasLegacyItems = $pdo->query("SELECT COUNT(*) FROM menu_items WHERE label IN ('Diferenciais', 'Já sou Aluno(a)')")->fetchColumn();
+    
+    if (!$hasPlataforma || $hasLegacyItems > 0) {
+        $pdo->exec("TRUNCATE TABLE menu_items");
+        $stmtInit = $pdo->prepare("INSERT INTO menu_items (label, url, order_index, is_button, target_blank) VALUES (?, ?, ?, ?, ?)");
+        $novosItens = [
+            ['Início', '/index.php#inicio', 1, 0, 0],
+            ['Cursos', '/cursos.php', 2, 0, 0],
+            ['Plataforma', '/index.php#plataforma', 3, 0, 0],
+            ['Questões', '/index.php#banco-questoes', 4, 0, 0],
+            ['Modalidades', '/index.php#modalidades', 5, 0, 0],
+            ['Eventos', '/eventos.php', 6, 0, 0],
+            ['Aulas Gratuitas', '/aulas-gratuitas', 7, 0, 0],
+            ['Editais', '/editais.php', 8, 0, 0],
+            ['Apostilas', '/apostilas.php', 9, 0, 0],
+            ['Blog', '/blog.php', 10, 0, 0],
+            ['Dúvidas', '/index.php#faq', 11, 0, 0],
+            ['Área do Aluno', 'https://aluno.isppreparatorios.com.br', 12, 1, 1],
+        ];
+        foreach ($novosItens as $it) {
+            $stmtInit->execute($it);
+        }
+    } else {
+        $pdo->exec("UPDATE menu_items SET label = 'Área do Aluno', url = 'https://aluno.isppreparatorios.com.br', is_button = 1, target_blank = 1 WHERE url LIKE '%classbuild%' OR label LIKE '%Aluno%'");
+        $pdo->exec("UPDATE menu_items SET label = 'Questões' WHERE label = 'Banco de Questões'");
+    }
+} catch (Exception $eMenu) { /* auto-migration silenciosa */ }
+
 // Auto-migration: colunas SEO de posts (meta_title, meta_description, slug, image_alt)
 // Garante que existam E tenham tamanho suficiente (VARCHAR 500)
 try {

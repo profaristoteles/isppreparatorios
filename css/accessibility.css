@@ -236,31 +236,62 @@ body.font-size-3 { font-size: 22px !important; }
     }
 }
 
-/* === Chat Widget (EvoCRM / Flutuante) === */
-#lc_chat_layout,
-[id*="chat-widget"],
-iframe[src*="leadconnectorhq"],
-iframe[src*="widgets.leadconnectorhq"],
-.woot-widget-holder,
-.woot--bubble-holder,
-iframe[src*="evocrm"] {
+/* === Chat Widget (EvoCRM / Janela Compacta no Canto) === */
+#evo-widget-holder,
+.evo-widget-holder,
+.woot-widget-holder {
     position: fixed !important;
-    bottom: 20px !important;
+    width: 380px !important;
+    height: 580px !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: calc(100vh - 110px) !important;
     right: 20px !important;
-    z-index: 99998 !important;
+    bottom: 86px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45) !important;
+    overflow: hidden !important;
+    z-index: 2147483000 !important;
 }
 
-/* No mobile, garante que o chat não fique sobre o banner LGPD nem vaze na tela */
+#evo-widget-iframe,
+.evo-widget-iframe,
+.woot-widget-holder iframe,
+iframe[src*="evocrm"] {
+    position: static !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border: none !important;
+    border-radius: 16px !important;
+    display: block !important;
+}
+
+#evo-widget-bubble,
+.evo-widget-bubble,
+.woot--bubble-holder {
+    position: fixed !important;
+    right: 20px !important;
+    bottom: 20px !important;
+    z-index: 2147483001 !important;
+}
+
+/* No mobile, dimensões seguras para manter formato de janela no canto */
 @media (max-width: 768px) {
-    #lc_chat_layout,
-    [id*="chat-widget"],
-    iframe[src*="leadconnectorhq"],
-    iframe[src*="widgets.leadconnectorhq"],
-    div[class*="chat-widget"],
-    div[id*="lc_chat"],
-    .woot-widget-holder,
-    .woot--bubble-holder,
-    iframe[src*="evocrm"] {
+    #evo-widget-holder,
+    .evo-widget-holder,
+    .woot-widget-holder {
+        width: calc(100vw - 24px) !important;
+        height: calc(100vh - 120px) !important;
+        max-width: calc(100vw - 24px) !important;
         right: 12px !important;
+        bottom: 80px !important;
+    }
+    #evo-widget-bubble,
+    .evo-widget-bubble,
+    .woot--bubble-holder {
+        right: 12px !important;
+        bottom: 16px !important;
     }
 }
+

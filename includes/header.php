@@ -101,7 +101,7 @@ $menu_items = $pdo->query("SELECT * FROM menu_items ORDER BY order_index ASC")->
             $secondary_items = [];
             $button_items = [];
             
-            $secondary_labels = ['aulas gratuitas', 'editais', 'apostilas', 'blog'];
+            $secondary_labels = ['aulas gratuitas', 'editais', 'apostilas', 'blog', 'dúvidas', 'faq', 'perguntas frequentes'];
             
             foreach($menu_items as $item) {
                 if ($item['label'] === 'Depoimentos' && $tem_depoimentos == 0) continue;
@@ -119,9 +119,10 @@ $menu_items = $pdo->query("SELECT * FROM menu_items ORDER BY order_index ASC")->
             <?php foreach($primary_items as $item): ?>
                 <?php 
                     $target = $item['target_blank'] ? 'target="_blank" rel="noopener noreferrer"' : '';
-                    $aria = $item['target_blank'] ? 'aria-label="' . htmlspecialchars($item['label']) . ' - abre em nova aba"' : '';
+                    $label = $item['label'] === 'Banco de Questões' ? 'Questões' : $item['label'];
+                    $aria = $item['target_blank'] ? 'aria-label="' . htmlspecialchars($label) . ' - abre em nova aba"' : '';
                 ?>
-                <a href="<?= htmlspecialchars($item['url']) ?>" <?= $target ?> role="menuitem" <?= $aria ?>><?= htmlspecialchars($item['label']) ?></a>
+                <a href="<?= htmlspecialchars($item['url']) ?>" <?= $target ?> role="menuitem" <?= $aria ?>><?= htmlspecialchars($label) ?></a>
             <?php endforeach; ?>
 
             <?php if(!empty($secondary_items)): ?>
@@ -147,14 +148,15 @@ $menu_items = $pdo->query("SELECT * FROM menu_items ORDER BY order_index ASC")->
                 <?php 
                     $is_aluno = (stripos($item['label'], 'aluno') !== false);
                     $btn_class = $is_aluno ? 'nav-btn-aluno' : 'nav-btn-alt';
+                    $btn_label = $is_aluno ? 'Área do Aluno' : $item['label'];
                     $target = $item['target_blank'] ? 'target="_blank" rel="noopener noreferrer"' : '';
-                    $aria = $item['target_blank'] ? 'aria-label="' . htmlspecialchars($item['label']) . ' - abre em nova aba"' : '';
+                    $aria = $item['target_blank'] ? 'aria-label="' . htmlspecialchars($btn_label) . ' - abre em nova aba"' : '';
                 ?>
                 <a href="<?= htmlspecialchars($item['url']) ?>" class="<?= $btn_class ?>" <?= $target ?> role="menuitem" <?= $aria ?>>
                     <?php if($is_aluno): ?>
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" style="margin-right: 4px;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     <?php endif; ?>
-                    <?= htmlspecialchars($item['label']) ?>
+                    <?= htmlspecialchars($btn_label) ?>
                 </a>
             <?php endforeach; ?>
         </div>
