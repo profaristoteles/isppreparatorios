@@ -25,17 +25,17 @@ try {
     $count = $pdo->query("SELECT COUNT(*) FROM menu_items")->fetchColumn();
     if ($count <= 1) {
         $itens = [
-            ['Início', '/index.php', 1, 0, 0],
-            ['Diferenciais', '/index.php#diferenciais', 2, 0, 0],
-            ['Cursos', '/cursos.php', 3, 0, 0],
-            ['Aulas Gratuitas', '/aulas-gratuitas', 4, 0, 0],
-            ['Editais', '/editais.php', 5, 0, 0],
-            ['Eventos (Aulas/Lives)', '/eventos.php', 6, 0, 0],
-            ['Modalidades', '/index.php#modalidades', 7, 0, 0],
-            ['Depoimentos', '/index.php#depoimentos', 8, 0, 0],
-            ['Blog', '/blog.php', 9, 0, 0],
-            ['Apostilas', '/apostilas.php', 10, 0, 0],
-            ['Já sou Aluno(a)', 'https://ispreparatorios.classbuild.com', 11, 1, 1],
+            ['Cursos', '/cursos.php', 1, 0, 0],
+            ['Plataforma', '/index.php#plataforma', 2, 0, 0],
+            ['Banco de Questões', '/index.php#banco-questoes', 3, 0, 0],
+            ['Modalidades', '/index.php#modalidades', 4, 0, 0],
+            ['Eventos', '/eventos.php', 5, 0, 0],
+            ['Dúvidas', '/index.php#faq', 6, 0, 0],
+            ['Aulas Gratuitas', '/aulas-gratuitas', 7, 0, 0],
+            ['Editais', '/editais.php', 8, 0, 0],
+            ['Apostilas', '/apostilas.php', 9, 0, 0],
+            ['Blog', '/blog.php', 10, 0, 0],
+            ['Área do Aluno', 'https://aluno.isppreparatorios.com.br', 11, 1, 1],
         ];
 
         $stmt = $pdo->prepare("INSERT IGNORE INTO menu_items (label, url, order_index, is_button, target_blank) VALUES (?, ?, ?, ?, ?)");

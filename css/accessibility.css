@@ -236,25 +236,31 @@ body.font-size-3 { font-size: 22px !important; }
     }
 }
 
-/* === Chat Widget (LeadConnector) — Flutuante === */
+/* === Chat Widget (EvoCRM / Flutuante) === */
 #lc_chat_layout,
 [id*="chat-widget"],
 iframe[src*="leadconnectorhq"],
-iframe[src*="widgets.leadconnectorhq"] {
+iframe[src*="widgets.leadconnectorhq"],
+.woot-widget-holder,
+.woot--bubble-holder,
+iframe[src*="evocrm"] {
     position: fixed !important;
     bottom: 20px !important;
     right: 20px !important;
     z-index: 99998 !important;
 }
 
-/* No mobile, garante que o chat não fique sobre o banner LGPD */
+/* No mobile, garante que o chat não fique sobre o banner LGPD nem vaze na tela */
 @media (max-width: 768px) {
     #lc_chat_layout,
     [id*="chat-widget"],
     iframe[src*="leadconnectorhq"],
     iframe[src*="widgets.leadconnectorhq"],
     div[class*="chat-widget"],
-    div[id*="lc_chat"] {
+    div[id*="lc_chat"],
+    .woot-widget-holder,
+    .woot--bubble-holder,
+    iframe[src*="evocrm"] {
         right: 12px !important;
     }
 }

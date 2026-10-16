@@ -90,22 +90,72 @@ $menu_items = $pdo->query("SELECT * FROM menu_items ORDER BY order_index ASC")->
                 <?php endif; ?>
             </div>
         </a>
-        <button class="mobile-menu-toggle" aria-label="Abrir menu de navegação" aria-expanded="false" style="display: none; cursor: pointer; color: var(--text-primary); background: none; border: none;">
+        <button class="mobile-menu-toggle" aria-label="Abrir menu de navegação" aria-expanded="false" style="display: none; cursor: pointer; color: var(--text-primary); background: none; border: none; padding: 8px;">
             <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true">
                 <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
             </svg>
         </button>
-        <div class="nav-links" role="menubar">
-            <?php foreach($menu_items as $item): ?>
+        <?php
+            // Separar itens principais, secundários (dropdown) e botões de destaque
+            $primary_items = [];
+            $secondary_items = [];
+            $button_items = [];
+            
+            $secondary_labels = ['aulas gratuitas', 'editais', 'apostilas', 'blog'];
+            
+            foreach($menu_items as $item) {
+                if ($item['label'] === 'Depoimentos' && $tem_depoimentos == 0) continue;
+                
+                if (!empty($item['is_button'])) {
+                    $button_items[] = $item;
+                } elseif (in_array(mb_strtolower(trim($item['label'])), $secondary_labels)) {
+                    $secondary_items[] = $item;
+                } else {
+                    $primary_items[] = $item;
+                }
+            }
+        ?>
+        <div class="nav-links" role="menubar" id="primary-navigation">
+            <?php foreach($primary_items as $item): ?>
                 <?php 
-                    // Pular Depoimentos se a condição não for satisfeita (mantendo a regra original)
-                    if ($item['label'] === 'Depoimentos' && $tem_depoimentos == 0) continue; 
-                    
-                    $class = $item['is_button'] ? 'nav-btn-alt' : '';
                     $target = $item['target_blank'] ? 'target="_blank" rel="noopener noreferrer"' : '';
                     $aria = $item['target_blank'] ? 'aria-label="' . htmlspecialchars($item['label']) . ' - abre em nova aba"' : '';
                 ?>
-                <a href="<?= htmlspecialchars($item['url']) ?>" class="<?= $class ?>" <?= $target ?> role="menuitem" <?= $aria ?>><?= htmlspecialchars($item['label']) ?></a>
+                <a href="<?= htmlspecialchars($item['url']) ?>" <?= $target ?> role="menuitem" <?= $aria ?>><?= htmlspecialchars($item['label']) ?></a>
+            <?php endforeach; ?>
+
+            <?php if(!empty($secondary_items)): ?>
+                <!-- Dropdown Mais Recursos (Acessível) -->
+                <div class="nav-dropdown" role="none">
+                    <button type="button" class="nav-dropdown-toggle" id="nav-more-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="nav-more-menu">
+                        <span>Mais</span>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+                    </button>
+                    <div id="nav-more-menu" class="nav-dropdown-menu" role="menu" aria-labelledby="nav-more-toggle">
+                        <?php foreach($secondary_items as $item): ?>
+                            <?php 
+                                $target = $item['target_blank'] ? 'target="_blank" rel="noopener noreferrer"' : '';
+                                $aria = $item['target_blank'] ? 'aria-label="' . htmlspecialchars($item['label']) . ' - abre em nova aba"' : '';
+                            ?>
+                            <a href="<?= htmlspecialchars($item['url']) ?>" <?= $target ?> role="menuitem" <?= $aria ?>><?= htmlspecialchars($item['label']) ?></a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php foreach($button_items as $item): ?>
+                <?php 
+                    $is_aluno = (stripos($item['label'], 'aluno') !== false);
+                    $btn_class = $is_aluno ? 'nav-btn-aluno' : 'nav-btn-alt';
+                    $target = $item['target_blank'] ? 'target="_blank" rel="noopener noreferrer"' : '';
+                    $aria = $item['target_blank'] ? 'aria-label="' . htmlspecialchars($item['label']) . ' - abre em nova aba"' : '';
+                ?>
+                <a href="<?= htmlspecialchars($item['url']) ?>" class="<?= $btn_class ?>" <?= $target ?> role="menuitem" <?= $aria ?>>
+                    <?php if($is_aluno): ?>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" style="margin-right: 4px;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <?php endif; ?>
+                    <?= htmlspecialchars($item['label']) ?>
+                </a>
             <?php endforeach; ?>
         </div>
     </nav>
