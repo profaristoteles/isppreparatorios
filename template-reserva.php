@@ -78,7 +78,7 @@ if (!empty($campaign['custom_fields_json'])) {
 function render_formatted_description($rawText) {
     if (empty($rawText)) return '';
     
-    // Se o texto já contiver tags HTML ricas (<p>, <div>, <ul>, etc.)
+    // Se o texto já contiver tags HTML de bloco (<p>, <div>, <ul>, <ol>, <h2>, <h3>, <h4>, <table>)
     if (preg_match('/<\s*(p|div|ul|ol|h2|h3|h4|table)\b/i', $rawText)) {
         return '<div class="reserva-custom-html">' . $rawText . '</div>';
     }
@@ -88,7 +88,7 @@ function render_formatted_description($rawText) {
     $inList = false;
 
     foreach ($lines as $line) {
-        $trimmed = trim($line);
+        $trimmed = trim(strip_tags($line));
         if (empty($trimmed)) {
             if ($inList) {
                 $output .= '</ul></div>';
@@ -103,7 +103,10 @@ function render_formatted_description($rawText) {
                 $output .= '<div class="reserva-bullet-wrapper"><ul class="reserva-bullet-list">';
                 $inList = true;
             }
-            $output .= '<li><i class="fas fa-check-circle"></i> <span>' . htmlspecialchars($m[2]) . '</span></li>';
+            $itemText = htmlspecialchars($m[2]);
+            // Destaca rótulo inicial antes de dois-pontos (ex: "Carga horária: 90 horas")
+            $itemText = preg_replace('/^([^:]{2,45}:)\s*/u', '<strong>$1</strong> ', $itemText);
+            $output .= '<li><i class="fas fa-check-circle" aria-hidden="true"></i> <span>' . $itemText . '</span></li>';
             continue;
         }
 
@@ -112,9 +115,12 @@ function render_formatted_description($rawText) {
             $inList = false;
         }
 
-        // Detecta títulos/seções chave
-        if (preg_match('/^(Disciplinas|Horários|Pacotes|Bônus|Modalidades|Carga horária|Público-alvo|Metodologia)[\w\s]*:/i', $trimmed)) {
-            $output .= '<h4 class="reserva-content-section-title"><i class="fas fa-layer-group"></i> ' . htmlspecialchars($trimmed) . '</h4>';
+        // Detecta títulos/seções chave (com ou sem dois-pontos no final)
+        $isKnownHeading = preg_match('/^(Para quem|O que voc[êe]|Formato|Plataforma|Como funciona|Disciplinas|Hor[áa]rios|Pacotes|B[ôo]nus|Modalidades|Carga hor[áa]ria|P[úu]blico|Metodologia|Estrutura|Investimento|Diferenciais|Cronograma|Sobre)\b/iu', $trimmed);
+        $isShortTitleLine = (mb_strlen($trimmed) <= 55 && !preg_match('/[\.\!\?;]$/u', $trimmed));
+
+        if ($isKnownHeading || $isShortTitleLine) {
+            $output .= '<h4 class="reserva-content-section-title"><i class="fas fa-layer-group" aria-hidden="true"></i> ' . htmlspecialchars(rtrim($trimmed, ':')) . '</h4>';
         } else {
             $output .= '<p class="reserva-content-paragraph">' . htmlspecialchars($trimmed) . '</p>';
         }
@@ -128,12 +134,15 @@ function render_formatted_description($rawText) {
 }
 ?>
 
+<!-- FontAwesome 6 para ícones da Landing Page -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
 <!-- Estilos Dedicados e Otimizados para a Landing Page de Reservas -->
 <style>
 /* === Cores e Variáveis da LP === */
 :root {
     --lp-bg: #030438;
-    --lp-card-bg: rgba(7, 12, 38, 0.88);
+    --lp-card-bg: rgba(7, 12, 38, 0.92);
     --lp-card-border: rgba(255, 255, 255, 0.12);
     --lp-accent: #ff8000;
     --lp-accent-glow: rgba(255, 128, 0, 0.35);
@@ -150,8 +159,8 @@ function render_formatted_description($rawText) {
     color: #ffffff;
     font-family: 'Poppins', sans-serif;
     min-height: 100vh;
-    padding-top: 95px; /* Espaço para não encavalar com o menu fixo */
-    padding-bottom: 6rem;
+    padding-top: 92px; /* Espaço para não encavalar com o menu fixo */
+    padding-bottom: 4rem;
     position: relative;
     overflow-x: hidden;
 }
@@ -178,31 +187,47 @@ function render_formatted_description($rawText) {
 
 /* Hero Section */
 .reserva-hero-section {
-    padding: 2.5rem 0 3.5rem;
+    padding: 1.8rem 0 2.5rem;
 }
 
 .reserva-hero-grid {
     display: grid;
-    grid-template-columns: 1.25fr 0.95fr;
+    grid-template-columns: minmax(0, 1.22fr) minmax(380px, 0.98fr);
+    grid-template-rows: auto 1fr;
     grid-template-areas: 
         "header form"
         "details form";
-    gap: 2rem 3.5rem;
+    gap: 1.25rem 2.75rem;
     align-items: start;
 }
 
 .reserva-hero-header {
     grid-area: header;
+    min-width: 0;
+}
+
+.reserva-sticky-col {
+    grid-area: form;
+    position: sticky;
+    top: 92px;
+    z-index: 10;
+    min-width: 0;
 }
 
 .reserva-hero-details {
     grid-area: details;
+    min-width: 0;
+}
+
+/* Atalhos rápidos exclusivos para telas Mobile/Tablet */
+.mobile-quick-nav {
+    display: none;
 }
 
 @media (max-width: 992px) {
     .reserva-page-wrapper {
-        padding-top: 80px;
-        padding-bottom: 5rem;
+        padding-top: 82px;
+        padding-bottom: 5.5rem;
     }
     .reserva-hero-section {
         padding: 1rem 0 2rem;
@@ -210,20 +235,63 @@ function render_formatted_description($rawText) {
     .reserva-hero-grid {
         display: flex;
         flex-direction: column;
-        gap: 1.8rem;
+        gap: 1.5rem;
     }
     .reserva-hero-header {
         order: 1;
         width: 100%;
     }
-    .reserva-sticky-col {
+    .reserva-hero-details {
         order: 2;
+        width: 100%;
+    }
+    .reserva-sticky-col {
+        order: 3;
         position: static !important;
         width: 100%;
     }
-    .reserva-hero-details {
-        order: 3;
-        width: 100%;
+    .mobile-quick-nav {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.65rem;
+        margin-top: 1.1rem;
+    }
+    .mobile-quick-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        padding: 0.75rem 0.85rem;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        line-height: 1.25;
+        border: none;
+        font-family: inherit;
+    }
+    .mobile-quick-btn.btn-primary-jump {
+        background: linear-gradient(135deg, #ff8000 0%, #ff5500 100%);
+        color: #ffffff;
+        box-shadow: 0 6px 18px rgba(255, 128, 0, 0.35);
+    }
+    .mobile-quick-btn.btn-secondary-jump {
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #e2e8f0;
+    }
+    /* Evita que o botão flutuante de acessibilidade cubra a barra de CTA mobile */
+    #accessibility-widget {
+        bottom: 84px !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .mobile-quick-nav {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -329,20 +397,27 @@ function render_formatted_description($rawText) {
 /* Quick Specs Grid */
 .reserva-specs-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 0;
+}
+
+.spec-item-card.spec-full-width {
+    grid-column: 1 / -1;
 }
 
 @media (max-width: 576px) {
     .reserva-specs-grid {
         grid-template-columns: 1fr 1fr;
         gap: 0.6rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 0;
+    }
+    .spec-item-card.spec-mobile-full {
+        grid-column: 1 / -1;
     }
     .spec-item-card {
-        padding: 0.75rem 0.65rem !important;
-        gap: 0.6rem !important;
+        padding: 0.75rem 0.7rem !important;
+        gap: 0.65rem !important;
         border-radius: 10px !important;
     }
     .spec-icon-box {
@@ -355,8 +430,14 @@ function render_formatted_description($rawText) {
         font-size: 0.68rem !important;
     }
     .spec-text-box .spec-value {
-        font-size: 0.85rem !important;
+        font-size: 0.86rem !important;
         word-break: break-word;
+    }
+}
+
+@media (max-width: 370px) {
+    .reserva-specs-grid {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -364,12 +445,13 @@ function render_formatted_description($rawText) {
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.09);
     border-radius: 12px;
-    padding: 1.1rem;
+    padding: 0.95rem 1rem;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.85rem;
     backdrop-filter: blur(8px);
     transition: transform 0.2s ease, border-color 0.2s ease;
+    min-width: 0;
 }
 
 .spec-item-card:hover {
@@ -378,33 +460,38 @@ function render_formatted_description($rawText) {
 }
 
 .spec-icon-box {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
     border-radius: 10px;
     background: linear-gradient(135deg, rgba(255, 128, 0, 0.25), rgba(3, 4, 94, 0.4));
     border: 1px solid rgba(255, 128, 0, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     color: var(--lp-accent);
     flex-shrink: 0;
 }
 
+.spec-text-box {
+    min-width: 0;
+}
+
 .spec-text-box .spec-label {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
     color: var(--lp-text-muted);
     letter-spacing: 0.5px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .spec-text-box .spec-value {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: #ffffff;
     line-height: 1.3;
+    display: block;
 }
 
 /* Caixa de Atenção/LGPD */
@@ -413,35 +500,31 @@ function render_formatted_description($rawText) {
     border: 1px solid rgba(0, 195, 255, 0.3);
     border-left: 5px solid #00c3ff;
     border-radius: 10px;
-    padding: 1.2rem 1.4rem;
+    padding: 1rem 1.25rem;
     display: flex;
-    gap: 1rem;
+    gap: 0.9rem;
     align-items: flex-start;
-    margin-top: 2rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
 }
 
 .reserva-info-banner i {
     color: #00c3ff;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     margin-top: 0.15rem;
+    flex-shrink: 0;
 }
 
 .reserva-info-banner p {
     margin: 0;
-    font-size: 0.92rem;
-    line-height: 1.6;
+    font-size: 0.9rem;
+    line-height: 1.55;
     color: #e2e8f0;
 }
 
 /* ============================================================
    FORMULÁRIO LATERAL DE RESERVA (GLASSMORPHISM DE ALTO IMPACTO)
    ============================================================ */
-.reserva-sticky-col {
-    position: sticky;
-    top: 100px;
-    z-index: 10;
-}
-
 .reserva-form-card {
     background: var(--lp-card-bg);
     border: 1px solid var(--lp-card-border);
@@ -453,7 +536,7 @@ function render_formatted_description($rawText) {
 
 .reserva-form-banner {
     width: 100%;
-    height: 190px;
+    height: 170px;
     position: relative;
     background: #020220;
     overflow: hidden;
@@ -469,45 +552,52 @@ function render_formatted_description($rawText) {
 .reserva-form-banner-overlay {
     position: absolute;
     bottom: 0; left: 0; right: 0;
-    height: 80px;
+    height: 70px;
     background: linear-gradient(to top, rgba(7, 12, 38, 1), transparent);
 }
 
 .reserva-form-content {
-    padding: 2rem;
+    padding: 1.65rem 1.75rem;
 }
 
 .reserva-form-header {
     text-align: center;
-    margin-bottom: 1.8rem;
+    margin-bottom: 1.35rem;
 }
 
 .reserva-form-header h2 {
-    font-size: 1.55rem;
+    font-size: 1.45rem;
     font-weight: 800;
     color: #ffffff;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
     letter-spacing: -0.3px;
 }
 
 .reserva-form-header p {
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     color: var(--lp-text-muted);
     margin: 0;
-    line-height: 1.5;
+    line-height: 1.45;
 }
 
 /* Inputs do Formulário */
 .reserva-form-group {
-    margin-bottom: 1.1rem;
+    margin-bottom: 0.9rem;
+}
+
+.reserva-contact-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
 }
 
 .reserva-form-group label {
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
     color: #e2e8f0;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
+    line-height: 1.35;
 }
 
 .reserva-input-wrapper {
@@ -518,15 +608,15 @@ function render_formatted_description($rawText) {
 
 .reserva-input-wrapper i {
     position: absolute;
-    left: 1rem;
+    left: 0.9rem;
     color: #718096;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     pointer-events: none;
     transition: color 0.2s ease;
 }
 
 .reserva-input-wrapper .reserva-control {
-    padding-left: 2.7rem;
+    padding-left: 2.5rem;
 }
 
 .reserva-control {
@@ -534,12 +624,24 @@ function render_formatted_description($rawText) {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 10px;
-    padding: 0.8rem 1rem;
+    padding: 0.72rem 0.9rem;
     color: #ffffff;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-family: inherit;
     transition: all 0.25s ease;
     box-sizing: border-box;
+}
+
+select.reserva-control {
+    background-color: #0d132a;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+select.reserva-control option {
+    background-color: #0d132a;
+    color: #ffffff;
+    padding: 0.5rem;
 }
 
 .reserva-control::placeholder {
@@ -778,14 +880,14 @@ function render_formatted_description($rawText) {
    SEÇÕES COMPLEMENTARES DE CONTEÚDO E AUTORIDADE
    ============================================================ */
 .reserva-details-section {
-    padding: 3rem 0;
+    padding: 2.5rem 0;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .reserva-section-heading {
     text-align: center;
     max-width: 750px;
-    margin: 0 auto 3rem;
+    margin: 0 auto 2rem;
 }
 
 .reserva-section-heading .section-pretitle {
@@ -795,11 +897,11 @@ function render_formatted_description($rawText) {
     font-weight: 700;
     letter-spacing: 1.5px;
     display: block;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
 }
 
 .reserva-section-heading h3 {
-    font-size: 2.1rem;
+    font-size: clamp(1.55rem, 3vw, 2.1rem);
     font-weight: 800;
     color: #ffffff;
     line-height: 1.25;
@@ -809,15 +911,15 @@ function render_formatted_description($rawText) {
 .reserva-cards-trio {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3.5rem;
+    gap: 1.35rem;
+    margin-bottom: 2.75rem;
 }
 
 .reserva-feature-box {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
-    padding: 2rem;
+    padding: 1.75rem;
     backdrop-filter: blur(8px);
     transition: transform 0.25s ease, border-color 0.25s ease;
 }
@@ -828,28 +930,28 @@ function render_formatted_description($rawText) {
 }
 
 .reserva-feature-box .feat-icon {
-    width: 52px;
-    height: 52px;
+    width: 50px;
+    height: 50px;
     border-radius: 12px;
     background: rgba(255, 128, 0, 0.15);
     border: 1px solid rgba(255, 128, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
+    font-size: 1.35rem;
     color: var(--lp-accent);
-    margin-bottom: 1.2rem;
+    margin-bottom: 1rem;
 }
 
 .reserva-feature-box h4 {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: #ffffff;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.5rem;
 }
 
 .reserva-feature-box p {
-    font-size: 0.95rem;
+    font-size: 0.94rem;
     line-height: 1.6;
     color: var(--lp-text-muted);
     margin: 0;
@@ -858,33 +960,42 @@ function render_formatted_description($rawText) {
 /* Renderização da Descrição Formatada */
 .reserva-formatted-card {
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 16px;
-    padding: 2.2rem;
-    margin-bottom: 3rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 1.5rem 1.6rem;
+    margin-bottom: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.reserva-formatted-card > *:first-child {
+    margin-top: 0 !important;
+}
+
+.reserva-formatted-card > *:last-child {
+    margin-bottom: 0 !important;
 }
 
 .reserva-content-section-title {
-    font-size: 1.2rem;
+    font-size: 1.08rem;
     font-weight: 700;
     color: var(--lp-accent);
-    margin: 1.5rem 0 0.8rem;
+    margin: 1.35rem 0 0.65rem;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.55rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding-bottom: 0.4rem;
 }
 
 .reserva-content-paragraph {
-    font-size: 1.02rem;
-    line-height: 1.75;
+    font-size: 0.96rem;
+    line-height: 1.68;
     color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 1rem;
+    margin-bottom: 0.85rem;
 }
 
 .reserva-bullet-wrapper {
-    margin: 1rem 0 1.5rem;
+    margin: 0.65rem 0 1.15rem;
 }
 
 .reserva-bullet-list {
@@ -892,34 +1003,110 @@ function render_formatted_description($rawText) {
     padding: 0;
     margin: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
 }
 
 .reserva-bullet-list li {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 8px;
-    padding: 0.75rem 1rem;
+    padding: 0.65rem 0.9rem;
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.95rem;
+    align-items: flex-start;
+    gap: 0.65rem;
+    font-size: 0.93rem;
+    line-height: 1.5;
     color: #edf2f7;
 }
 
 .reserva-bullet-list li i {
     color: #38a169;
-    font-size: 1rem;
+    font-size: 0.95rem;
+    margin-top: 0.22rem;
     flex-shrink: 0;
+}
+
+.reserva-bullet-list li strong {
+    color: #ffffff;
+}
+
+/* Suporte rico para HTML customizado na descrição (.reserva-custom-html) */
+.reserva-custom-html {
+    font-size: 0.96rem;
+    line-height: 1.68;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.reserva-custom-html > *:first-child {
+    margin-top: 0 !important;
+}
+
+.reserva-custom-html > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+.reserva-custom-html h2,
+.reserva-custom-html h3,
+.reserva-custom-html h4,
+.reserva-custom-html h5 {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: var(--lp-accent);
+    margin: 1.35rem 0 0.6rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.reserva-custom-html p {
+    margin: 0 0 0.85rem;
+    line-height: 1.68;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.reserva-custom-html ul,
+.reserva-custom-html ol {
+    list-style: none;
+    padding: 0;
+    margin: 0.6rem 0 1.15rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+}
+
+.reserva-custom-html li {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    padding: 0.65rem 0.9rem 0.65rem 2.1rem;
+    position: relative;
+    font-size: 0.93rem;
+    line-height: 1.5;
+    color: #edf2f7;
+}
+
+.reserva-custom-html li::before {
+    content: "\f058";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: #38a169;
+    position: absolute;
+    left: 0.75rem;
+    top: 0.68rem;
+    font-size: 0.92rem;
+}
+
+.reserva-custom-html strong {
+    color: #ffffff;
+    font-weight: 700;
 }
 
 /* Timeline: Como Funciona a Reserva */
 .reserva-steps-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3.5rem;
+    gap: 1.35rem;
+    margin-bottom: 2.75rem;
 }
 
 .reserva-step-card {
@@ -927,10 +1114,10 @@ function render_formatted_description($rawText) {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 14px;
-    padding: 2rem 1.6rem;
+    padding: 1.85rem 1.6rem 1.65rem;
 }
 
-.step-number {
+.reserva-step-card .step-number {
     position: absolute;
     top: -14px;
     left: 20px;
@@ -940,6 +1127,7 @@ function render_formatted_description($rawText) {
     font-weight: 800;
     width: 28px;
     height: 28px;
+    margin-bottom: 0;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -951,7 +1139,7 @@ function render_formatted_description($rawText) {
     font-size: 1.15rem;
     font-weight: 700;
     color: #fff;
-    margin: 0.4rem 0 0.5rem;
+    margin: 0.25rem 0 0.5rem;
 }
 
 .reserva-step-card p {
@@ -961,13 +1149,20 @@ function render_formatted_description($rawText) {
     margin: 0;
 }
 
-/* FAQ Accordion */
+/* FAQ Accordion — Grid de 2 Colunas no Desktop e 1 Coluna no Mobile */
 .faq-accordion-group {
-    max-width: 850px;
-    margin: 0 auto 3rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.9rem;
+    max-width: 100%;
+    margin: 0 auto 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (max-width: 768px) {
+    .faq-accordion-group {
+        grid-template-columns: 1fr;
+    }
 }
 
 .faq-item {
@@ -975,7 +1170,7 @@ function render_formatted_description($rawText) {
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     overflow: hidden;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .faq-item.active {
@@ -984,20 +1179,23 @@ function render_formatted_description($rawText) {
 }
 
 .faq-question {
-    padding: 1.2rem 1.5rem;
+    padding: 1.15rem 1.35rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 0.8rem;
     cursor: pointer;
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: 1rem;
     color: #ffffff;
     user-select: none;
+    line-height: 1.35;
 }
 
 .faq-question i {
     color: var(--lp-accent);
     transition: transform 0.3s ease;
+    flex-shrink: 0;
 }
 
 .faq-item.active .faq-question i {
@@ -1006,10 +1204,12 @@ function render_formatted_description($rawText) {
 
 .faq-answer {
     display: none;
-    padding: 0 1.5rem 1.4rem;
-    font-size: 0.95rem;
-    line-height: 1.7;
+    padding: 0 1.35rem 1.25rem;
+    font-size: 0.93rem;
+    line-height: 1.65;
     color: var(--lp-text-muted);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 0.9rem;
 }
 
 .faq-item.active .faq-answer {
@@ -1056,19 +1256,38 @@ function render_formatted_description($rawText) {
         padding: 0 1rem;
     }
     .reserva-main-title {
-        font-size: clamp(1.6rem, 6.5vw, 2.1rem);
-        line-height: 1.2;
-        margin-bottom: 0.9rem;
+        font-size: clamp(1.55rem, 6.2vw, 2.05rem);
+        line-height: 1.22;
+        margin-bottom: 0.85rem;
     }
     .reserva-lead-desc {
         font-size: 0.95rem;
         line-height: 1.6;
-        margin-bottom: 1.2rem;
+        margin-bottom: 1.15rem;
     }
     .reserva-counter-pill {
-        padding: 0.4rem 0.9rem;
+        padding: 0.45rem 0.9rem;
         font-size: 0.82rem;
-        margin-bottom: 1.2rem;
+        margin-bottom: 1.15rem;
+    }
+    .reserva-formatted-card {
+        padding: 1.2rem 1rem;
+    }
+    .reserva-content-section-title {
+        font-size: 1rem;
+        margin: 1.15rem 0 0.55rem;
+    }
+    .reserva-content-paragraph,
+    .reserva-custom-html {
+        font-size: 0.92rem;
+    }
+    .reserva-bullet-list li,
+    .reserva-custom-html li {
+        font-size: 0.89rem;
+        padding: 0.6rem 0.8rem;
+    }
+    .reserva-custom-html li {
+        padding-left: 1.95rem;
     }
     .reserva-form-card {
         border-radius: 16px;
@@ -1080,7 +1299,7 @@ function render_formatted_description($rawText) {
         padding: 1.3rem 1rem;
     }
     .reserva-form-header {
-        margin-bottom: 1.2rem;
+        margin-bottom: 1.15rem;
     }
     .reserva-form-header h2 {
         font-size: 1.35rem;
@@ -1089,7 +1308,11 @@ function render_formatted_description($rawText) {
         font-size: 0.82rem;
     }
     .reserva-form-group {
-        margin-bottom: 0.95rem;
+        margin-bottom: 0.9rem;
+    }
+    .reserva-contact-row {
+        grid-template-columns: 1fr !important;
+        gap: 0 !important;
     }
     .reserva-control {
         font-size: 16px !important; /* Previne auto-zoom no Safari / iOS */
@@ -1104,7 +1327,7 @@ function render_formatted_description($rawText) {
         font-size: 0.9rem;
     }
     .reserva-city-state-row {
-        grid-template-columns: 1fr 72px !important;
+        grid-template-columns: 1fr 76px !important;
         gap: 0.5rem !important;
     }
     .modality-selector-container {
@@ -1133,10 +1356,18 @@ function render_formatted_description($rawText) {
         font-size: 0.95rem;
         min-height: 48px;
     }
+    .faq-question {
+        padding: 1rem 1.1rem;
+        font-size: 0.95rem;
+    }
+    .faq-answer {
+        padding: 0.8rem 1.1rem 1.1rem;
+        font-size: 0.89rem;
+    }
 }
 </style>
 
-<main class="reserva-page-wrapper">
+<div class="reserva-page-wrapper">
     <!-- Hero Section Principal -->
     <section class="reserva-hero-section">
         <div class="reserva-container">
@@ -1210,9 +1441,16 @@ function render_formatted_description($rawText) {
                     <?php endif; ?>
 
                     <!-- Grid de Destaques Rápidos -->
+                    <?php
+                        $specCardsCount = 0;
+                        if (!empty($campaign['class_start_date'])) $specCardsCount++;
+                        if (!empty($campaign['city'])) $specCardsCount++;
+                        if ($allowsPresencial || $allowsOnline) $specCardsCount++;
+                        $specRenderedIndex = 0;
+                    ?>
                     <div class="reserva-specs-grid">
-                        <?php if (!empty($campaign['class_start_date'])): ?>
-                            <div class="spec-item-card">
+                        <?php if (!empty($campaign['class_start_date'])): $specRenderedIndex++; ?>
+                            <div class="spec-item-card <?= ($specCardsCount % 2 === 1 && $specRenderedIndex === $specCardsCount) ? 'spec-mobile-full' : '' ?>">
                                 <div class="spec-icon-box"><i class="fas fa-calendar-alt"></i></div>
                                 <div class="spec-text-box">
                                     <span class="spec-label">Previsão de Início</span>
@@ -1221,8 +1459,8 @@ function render_formatted_description($rawText) {
                             </div>
                         <?php endif; ?>
 
-                        <?php if (!empty($campaign['city'])): ?>
-                            <div class="spec-item-card">
+                        <?php if (!empty($campaign['city'])): $specRenderedIndex++; ?>
+                            <div class="spec-item-card <?= ($specCardsCount % 2 === 1 && $specRenderedIndex === $specCardsCount) ? 'spec-mobile-full' : '' ?>">
                                 <div class="spec-icon-box"><i class="fas fa-map-marked-alt"></i></div>
                                 <div class="spec-text-box">
                                     <span class="spec-label">Localização</span>
@@ -1231,18 +1469,26 @@ function render_formatted_description($rawText) {
                             </div>
                         <?php endif; ?>
 
-                        <?php if ($allowsPresencial && $allowsOnline): ?>
-                            <div class="spec-item-card">
+                        <?php if ($allowsPresencial || $allowsOnline): $specRenderedIndex++; ?>
+                            <div class="spec-item-card <?= ($specCardsCount % 2 === 1 && $specRenderedIndex === $specCardsCount) ? 'spec-mobile-full' : '' ?>">
                                 <div class="spec-icon-box"><i class="fas fa-chalkboard"></i></div>
                                 <div class="spec-text-box">
                                     <span class="spec-label">Formato de Aula</span>
-                                    <span class="spec-value">Presencial ou Online</span>
+                                    <span class="spec-value">
+                                        <?php if ($allowsPresencial && $allowsOnline): ?>
+                                            Presencial ou Online
+                                        <?php elseif ($allowsPresencial): ?>
+                                            Presencial
+                                        <?php else: ?>
+                                            Online (Ao Vivo)
+                                        <?php endif; ?>
+                                    </span>
                                 </div>
                             </div>
                         <?php endif; ?>
 
                         <?php if (!empty($campaign['target_audience'])): ?>
-                            <div class="spec-item-card" style="grid-column: 1 / -1;">
+                            <div class="spec-item-card spec-full-width">
                                 <div class="spec-icon-box"><i class="fas fa-bullseye"></i></div>
                                 <div class="spec-text-box">
                                     <span class="spec-label">Público-Alvo</span>
@@ -1252,9 +1498,21 @@ function render_formatted_description($rawText) {
                         <?php endif; ?>
                     </div>
 
+                    <!-- Barra de Acesso Rápido Mobile para garantir 100% de acessibilidade às informações e ao formulário -->
+                    <div class="mobile-quick-nav" aria-label="Atalhos rápidos da página">
+                        <button type="button" onclick="scrollToForm()" class="mobile-quick-btn btn-primary-jump">
+                            <i class="fas fa-check-circle"></i> Fazer Pré-Reserva
+                        </button>
+                        <?php if (!empty($campaign['description'])): ?>
+                            <button type="button" onclick="scrollToDetails()" class="mobile-quick-btn btn-secondary-jump">
+                                <i class="fas fa-list-ul"></i> Estrutura da Turma
+                            </button>
+                        <?php endif; ?>
+                    </div>
+
                 </div>
 
-                <!-- Bloco 2: Formulário Lateral de Reserva (No mobile posicionado logo após os destaques) -->
+                <!-- Bloco 2: Formulário Lateral de Reserva -->
                 <div class="reserva-sticky-col" id="colunaFormulario">
                     <div class="reserva-form-card">
                         
@@ -1316,21 +1574,22 @@ function render_formatted_description($rawText) {
                                         </div>
                                     </div>
 
-                                    <!-- WhatsApp -->
-                                    <div class="reserva-form-group">
-                                        <label for="phone_field">WhatsApp com DDD *</label>
-                                        <div class="reserva-input-wrapper">
-                                            <i class="fab fa-whatsapp" style="font-size: 1.1rem;"></i>
-                                            <input type="tel" name="phone" id="phone_field" required class="reserva-control" placeholder="(99) 99999-9999" inputmode="numeric" autocomplete="tel">
+                                    <!-- WhatsApp e E-mail (Lado a lado no Desktop, empilhados no Mobile) -->
+                                    <div class="reserva-contact-row">
+                                        <div class="reserva-form-group">
+                                            <label for="phone_field">WhatsApp com DDD *</label>
+                                            <div class="reserva-input-wrapper">
+                                                <i class="fab fa-whatsapp" style="font-size: 1.05rem;"></i>
+                                                <input type="tel" name="phone" id="phone_field" required class="reserva-control" placeholder="(99) 99999-9999" inputmode="numeric" autocomplete="tel">
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <!-- E-mail -->
-                                    <div class="reserva-form-group">
-                                        <label for="email_field">Seu Melhor E-mail *</label>
-                                        <div class="reserva-input-wrapper">
-                                            <i class="fas fa-envelope"></i>
-                                            <input type="email" name="email" id="email_field" required class="reserva-control" placeholder="exemplo@email.com" inputmode="email" autocomplete="email" autocapitalize="none">
+                                        <div class="reserva-form-group">
+                                            <label for="email_field">Seu Melhor E-mail *</label>
+                                            <div class="reserva-input-wrapper">
+                                                <i class="fas fa-envelope"></i>
+                                                <input type="email" name="email" id="email_field" required class="reserva-control" placeholder="exemplo@email.com" inputmode="email" autocomplete="email" autocapitalize="none">
+                                            </div>
                                         </div>
                                     </div>
 
@@ -1434,16 +1693,16 @@ function render_formatted_description($rawText) {
                                             }
                                         ?>
                                             <div class="reserva-form-group">
-                                                <label><?= htmlspecialchars($fieldLabel) ?></label>
+                                                <label for="custom_field_<?= htmlspecialchars($fKey) ?>"><?= htmlspecialchars($fieldLabel) ?></label>
                                                 <?php if (!empty($fConfig['options']) && is_array($fConfig['options'])): ?>
-                                                    <select name="custom_<?= htmlspecialchars($fKey) ?>" class="reserva-control" style="background: #111728;">
+                                                    <select name="custom_<?= htmlspecialchars($fKey) ?>" id="custom_field_<?= htmlspecialchars($fKey) ?>" class="reserva-control">
                                                         <option value="">Selecione uma opção...</option>
                                                         <?php foreach ($fConfig['options'] as $opt): ?>
                                                             <option value="<?= htmlspecialchars($opt) ?>"><?= htmlspecialchars($opt) ?></option>
                                                         <?php endforeach; ?>
                                                     </select>
                                                 <?php else: ?>
-                                                    <input type="text" name="custom_<?= htmlspecialchars($fKey) ?>" class="reserva-control" placeholder="<?= htmlspecialchars($fConfig['placeholder'] ?? '') ?>">
+                                                    <input type="text" name="custom_<?= htmlspecialchars($fKey) ?>" id="custom_field_<?= htmlspecialchars($fKey) ?>" class="reserva-control" placeholder="<?= htmlspecialchars($fConfig['placeholder'] ?? '') ?>">
                                                 <?php endif; ?>
                                             </div>
                                         <?php endforeach; ?>
@@ -1514,7 +1773,7 @@ function render_formatted_description($rawText) {
                 </div>
 
                 <!-- Bloco 3: Detalhes Complementares e Estrutura da Turma -->
-                <div class="reserva-hero-details">
+                <div class="reserva-hero-details" id="secaoEstruturaTurma">
                     
                     <!-- Aviso de Segurança e Compromisso Zero -->
                     <div class="reserva-info-banner">
@@ -1526,12 +1785,12 @@ function render_formatted_description($rawText) {
 
                     <!-- Descrição Detalhada da Turma -->
                     <?php if (!empty($campaign['description'])): ?>
-                        <div class="reserva-hero-description-block" style="margin: 2rem 0 1.5rem;">
-                            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;">
-                                <span style="background: rgba(255, 128, 0, 0.2); color: #ff9d3b; width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">📋</span>
-                                <h3 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin: 0;">Estrutura e Informações da Turma</h3>
+                        <div class="reserva-hero-description-block" style="margin: 0;">
+                            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.85rem;">
+                                <span style="background: rgba(255, 128, 0, 0.2); color: #ff9d3b; width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">📋</span>
+                                <h3 style="font-size: 1.2rem; font-weight: 700; color: #ffffff; margin: 0;">Estrutura e Informações da Turma</h3>
                             </div>
-                            <div class="reserva-formatted-card" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 1.6rem; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+                            <div class="reserva-formatted-card">
                                 <?= render_formatted_description($campaign['description']) ?>
                             </div>
                         </div>
@@ -1609,39 +1868,39 @@ function render_formatted_description($rawText) {
 
             <div class="faq-accordion-group">
                 <div class="faq-item active">
-                    <div class="faq-question">
+                    <div class="faq-question" role="button" tabindex="0" aria-expanded="true">
                         <span>A reserva de interesse possui algum custo?</span>
-                        <i class="fas fa-chevron-down"></i>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
                     </div>
                     <div class="faq-answer">
                         Não! A pré-reserva de interesse é <strong>100% gratuita</strong>. Ela serve para você garantir prioridade na vaga e receber em primeira mão a liberação das matrículas com os valores promocionais de primeiro lote.
                     </div>
                 </div>
 
-                <div class="faq-item">
-                    <div class="faq-question">
+                <div class="faq-item active">
+                    <div class="faq-question" role="button" tabindex="0" aria-expanded="true">
                         <span>Quando serão divulgados os valores oficiais e cronograma?</span>
-                        <i class="fas fa-chevron-down"></i>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
                     </div>
                     <div class="faq-answer">
                         Assim que a turma atingir o quórum de interessados, a coordenação pedagógica do ISP entrará em contato via WhatsApp e e-mail com a tabela de valores promocionais, formas de parcelamento e cronograma de aulas.
                     </div>
                 </div>
 
-                <div class="faq-item">
-                    <div class="faq-question">
+                <div class="faq-item active">
+                    <div class="faq-question" role="button" tabindex="0" aria-expanded="true">
                         <span>Como funciona a modalidade Online / Ao Vivo?</span>
-                        <i class="fas fa-chevron-down"></i>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
                     </div>
                     <div class="faq-answer">
                         Na modalidade online, você assiste às transmissões em tempo real com possibilidade de interagir e tirar dúvidas com o professor, além de contar com o replay de todas as aulas gravadas na plataforma de estudos para assistir quando e onde quiser.
                     </div>
                 </div>
 
-                <div class="faq-item">
-                    <div class="faq-question">
+                <div class="faq-item active">
+                    <div class="faq-question" role="button" tabindex="0" aria-expanded="true">
                         <span>O que acontece se as vagas principais forem preenchidas?</span>
-                        <i class="fas fa-chevron-down"></i>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
                     </div>
                     <div class="faq-answer">
                         Caso as vagas da turma regular estejam preenchidas, você entra automaticamente na Lista de Espera. Havendo desistências ou abertura de turmas adicionais, os inscritos da lista são convocados na ordem rigorosa de inscrição.
@@ -1651,7 +1910,7 @@ function render_formatted_description($rawText) {
 
             <!-- Se Matrículas Oficiais Já Estiverem Abertas -->
             <?php if ($isEnrollmentOpen && !empty($campaign['enrollment_link'])): ?>
-                <div style="text-align: center; background: linear-gradient(135deg, rgba(40,167,69,0.15), rgba(3,4,94,0.4)); border: 1px solid rgba(40,167,69,0.4); padding: 3rem 2rem; border-radius: 20px; margin-top: 3rem;">
+                <div style="text-align: center; background: linear-gradient(135deg, rgba(40,167,69,0.15), rgba(3,4,94,0.4)); border: 1px solid rgba(40,167,69,0.4); padding: 3rem 2rem; border-radius: 20px; margin-top: 2rem;">
                     <span style="background: #28a745; color: #fff; padding: 0.3rem 0.9rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">
                         Inscrições Definitivas Liberadas
                     </span>
@@ -1674,10 +1933,10 @@ function render_formatted_description($rawText) {
     <div class="mobile-sticky-cta-bar cta-hidden" id="mobileStickyCta">
         <button type="button" onclick="scrollToForm()" class="btn-submit-reserva" style="padding: 0.85rem 1.2rem; font-size: 0.95rem;">
             <span>⚡ <?= $isWaitingList ? 'Entrar na Lista de Espera' : 'Garantir Vaga na Turma' ?></span>
-            <i class="fas fa-arrow-up"></i>
+            <i class="fas fa-arrow-down" id="mobileStickyIcon"></i>
         </button>
     </div>
-</main>
+</div>
 
 <script>
 // 1. Função Interativa para Seleção dos Cards de Modalidade
@@ -1709,28 +1968,48 @@ function selectModality(val) {
     }
 }
 
-// 2. Scroll Suave para o Formulário (Usado no Mobile Sticky CTA)
+// 2. Scroll Suave para o Formulário e para a Estrutura da Turma (Usado nos Atalhos Mobile)
 function scrollToForm() {
     const formEl = document.getElementById('colunaFormulario');
     if (formEl) {
-        formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const headerOffset = 84;
+        const elementPosition = formEl.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
         setTimeout(() => {
             const firstInput = document.getElementById('name_field');
-            if (firstInput) firstInput.focus();
-        }, 500);
+            if (firstInput) firstInput.focus({ preventScroll: true });
+        }, 550);
+    }
+}
+
+function scrollToDetails() {
+    const detailsEl = document.getElementById('secaoEstruturaTurma');
+    if (detailsEl) {
+        const headerOffset = 84;
+        const elementPosition = detailsEl.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 3. Acordeão Interativo de FAQ
+    // 3. Acordeão Interativo de FAQ (Acessível por Clique e Teclado)
     const faqItems = document.querySelectorAll('.faq-item');
     faqItems.forEach(item => {
         const question = item.querySelector('.faq-question');
-        question.addEventListener('click', () => {
-            const wasActive = item.classList.contains('active');
-            faqItems.forEach(i => i.classList.remove('active'));
-            if (!wasActive) {
-                item.classList.add('active');
+        if (!question) return;
+
+        const toggleFaq = () => {
+            const isNowActive = item.classList.toggle('active');
+            question.setAttribute('aria-expanded', isNowActive ? 'true' : 'false');
+        };
+
+        question.addEventListener('click', toggleFaq);
+        question.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleFaq();
             }
         });
     });
@@ -1890,6 +2169,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    const stickyIcon = document.getElementById('mobileStickyIcon');
+
+    function updateStickyIconDirection() {
+        if (!stickyIcon || !colunaForm) return;
+        const rect = colunaForm.getBoundingClientRect();
+        stickyIcon.className = (rect.bottom < 0) ? 'fas fa-arrow-up' : 'fas fa-arrow-down';
+    }
+
     if (colunaForm && stickyBar && 'IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -1898,17 +2185,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (entry.isIntersecting) {
                     hideStickyBar();
                 } else {
-                    // Se o usuário rolou para baixo do formulário (ex: lendo o FAQ ou autoridade), mostra a barra como atalho
-                    const rect = colunaForm.getBoundingClientRect();
-                    if (rect.bottom < 0) {
-                        showStickyBar();
-                    } else {
-                        hideStickyBar();
-                    }
+                    updateStickyIconDirection();
+                    showStickyBar();
                 }
             });
         }, {
-            threshold: 0.05
+            threshold: 0.08
         });
 
         observer.observe(colunaForm);
@@ -1922,7 +2204,11 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 if (!formSubmittedSuccessfully && colunaForm) {
                     const rect = colunaForm.getBoundingClientRect();
-                    if (rect.bottom < 0) showStickyBar();
+                    const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+                    if (!isVisible) {
+                        updateStickyIconDirection();
+                        showStickyBar();
+                    }
                 }
             }, 200);
         });
