@@ -66,6 +66,11 @@ $total_campanhas = count($campanhas_reserva);
             <span>📚 Cursos Disponíveis</span>
             <span class="count-badge"><?= $total_cursos ?></span>
         </button>
+
+        <button type="button" class="course-filter-btn" data-filter="questoes" onclick="filterCourses('questoes')">
+            <span>🎯 Banco de Questões</span>
+            <span class="count-badge">4 Planos</span>
+        </button>
     </div>
     
     <!-- Grid Unificado -->
@@ -158,6 +163,196 @@ $total_campanhas = count($campanhas_reserva);
         <?php endforeach; ?>
 
     </div>
+
+    <!-- 3. PLANOS DE ASSINATURA DO BANCO DE QUESTÕES -->
+    <div id="planos-questoes" class="banco-plans-wrapper reveal" aria-labelledby="planos-questoes-cursos-heading">
+        <div class="banco-plans-header">
+            <span class="hero-pre-title" style="color: var(--brand-orange); font-family: var(--font-mono); letter-spacing: 2px; font-size: 0.85rem; font-weight: 700;">ASSINATURAS RECORRENTES</span>
+            <h2 id="planos-questoes-cursos-heading" style="font-size: clamp(1.75rem, 3.5vw, 2.5rem); font-weight: 800; color: #ffffff; line-height: 1.2; margin: 0.5rem 0 1rem;">Planos do Banco de Questões do ISP</h2>
+            <p>
+                Assine o acesso exclusivo ao nosso sistema de treinamento por questões comentadas, filtros avançados por banca e geração de cadernos em PDF.
+            </p>
+        </div>
+
+        <div class="banco-plans-grid">
+            <!-- 1. PLANO MENSAL -->
+            <article class="banco-plan-card" aria-label="Plano Mensal do Banco de Questões">
+                <span class="banco-plan-badge">Flexibilidade Total</span>
+                <h3 class="banco-plan-name">Plano Mensal</h3>
+                <p class="banco-plan-desc">Ideal para conhecer a plataforma ou reforçar o treino no mês da sua prova.</p>
+
+                <div class="banco-plan-price-box">
+                    <span class="banco-plan-equiv-label">Assinatura mensal</span>
+                    <div class="banco-plan-price-main">
+                        <span class="banco-plan-currency">R$</span>
+                        <span class="banco-plan-amount">14,97</span>
+                        <span class="banco-plan-period">/mês</span>
+                    </div>
+                    <span class="banco-plan-billing-note">Renovação mensal automática</span>
+                </div>
+
+                <ul class="banco-plan-features">
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Acesso completo ao acervo de questões</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Filtros por banca, ano, cargo e disciplina</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Geração de listas e cadernos em PDF</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Gabaritos, resoluções e painel de desempenho</span>
+                    </li>
+                </ul>
+
+                <a href="https://portal.isentidos.com.br/p/PGbOrGhvRssv62TCbOPu2kkAH4vdID1N7w911sT44JkZU6hy" target="_blank" rel="noopener noreferrer" class="banco-plan-cta">
+                    Assinar Plano Mensal &rarr;
+                </a>
+                <div class="banco-plan-payments" aria-label="Formas de pagamento aceitas">
+                    <span class="banco-plan-pay-tag">PIX</span>
+                    <span class="banco-plan-pay-tag">Cartão</span>
+                    <span class="banco-plan-pay-tag">Boleto</span>
+                </div>
+            </article>
+
+            <!-- 2. PLANO TRIMESTRAL -->
+            <article class="banco-plan-card" aria-label="Plano Trimestral do Banco de Questões">
+                <span class="banco-plan-badge badge-savings">Reta Final • Economize 22%</span>
+                <h3 class="banco-plan-name">Plano Trimestral</h3>
+                <p class="banco-plan-desc">Excelente para ciclos intensivos de pós-edital e revisão prática direcionada.</p>
+
+                <div class="banco-plan-price-box">
+                    <span class="banco-plan-equiv-label">Equivalente a</span>
+                    <div class="banco-plan-price-main">
+                        <span class="banco-plan-currency">R$</span>
+                        <span class="banco-plan-amount">11,67</span>
+                        <span class="banco-plan-period">/mês</span>
+                    </div>
+                    <span class="banco-plan-billing-note"><strong>R$ 35,00</strong> cobrados a cada trimestre</span>
+                </div>
+
+                <ul class="banco-plan-features">
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span><strong>3 meses</strong> de acesso ininterrupto</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Filtros por banca, ano, cargo e disciplina</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Geração de listas e cadernos em PDF</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Estatísticas de evolução + Tutor com IA</span>
+                    </li>
+                </ul>
+
+                <a href="https://portal.isentidos.com.br/p/tG90jccjhrLcdSdLfDlwVn7nx45AR5bUgU9AQi8GVHwxhfk9" target="_blank" rel="noopener noreferrer" class="banco-plan-cta">
+                    Assinar Plano Trimestral &rarr;
+                </a>
+                <div class="banco-plan-payments" aria-label="Formas de pagamento aceitas">
+                    <span class="banco-plan-pay-tag">PIX</span>
+                    <span class="banco-plan-pay-tag">Cartão</span>
+                </div>
+            </article>
+
+            <!-- 3. PLANO SEMESTRAL -->
+            <article class="banco-plan-card" aria-label="Plano Semestral do Banco de Questões">
+                <span class="banco-plan-badge badge-savings">Consistência • Economize 26%</span>
+                <h3 class="banco-plan-name">Plano Semestral</h3>
+                <p class="banco-plan-desc">Preparação sólida de médio prazo para dominar as bancas da sua área.</p>
+
+                <div class="banco-plan-price-box">
+                    <span class="banco-plan-equiv-label">Equivalente a</span>
+                    <div class="banco-plan-price-main">
+                        <span class="banco-plan-currency">R$</span>
+                        <span class="banco-plan-amount">11,00</span>
+                        <span class="banco-plan-period">/mês</span>
+                    </div>
+                    <span class="banco-plan-billing-note"><strong>R$ 66,00</strong> cobrados a cada semestre</span>
+                </div>
+
+                <ul class="banco-plan-features">
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span><strong>6 meses</strong> de acesso completo</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Filtros por banca, ano, cargo e disciplina</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Geração de listas e cadernos em PDF</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Estatísticas de evolução + Tutor com IA</span>
+                    </li>
+                </ul>
+
+                <a href="https://portal.isentidos.com.br/p/v0qc6eJ5Pf6aXmkmW6N0XVidvsP3nS4eoioZxunsLtt7N9rw" target="_blank" rel="noopener noreferrer" class="banco-plan-cta">
+                    Assinar Plano Semestral &rarr;
+                </a>
+                <div class="banco-plan-payments" aria-label="Formas de pagamento aceitas">
+                    <span class="banco-plan-pay-tag">PIX</span>
+                    <span class="banco-plan-pay-tag">Cartão</span>
+                </div>
+            </article>
+
+            <!-- 4. PLANO ANUAL (DESTAQUE) -->
+            <article class="banco-plan-card banco-plan-featured" aria-label="Plano Anual do Banco de Questões - Mais Vantajoso">
+                <span class="banco-plan-badge badge-featured">🔥 Mais Vantajoso • -33%</span>
+                <h3 class="banco-plan-name">Plano Anual</h3>
+                <p class="banco-plan-desc">Melhor custo-benefício para preparação contínua até a sua nomeação.</p>
+
+                <div class="banco-plan-price-box">
+                    <span class="banco-plan-equiv-label">Equivalente a apenas</span>
+                    <div class="banco-plan-price-main">
+                        <span class="banco-plan-currency">R$</span>
+                        <span class="banco-plan-amount">9,97</span>
+                        <span class="banco-plan-period">/mês</span>
+                    </div>
+                    <span class="banco-plan-billing-note"><strong>R$ 119,64</strong> cobrados anualmente</span>
+                </div>
+
+                <ul class="banco-plan-features">
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span><strong>12 meses</strong> de acesso ilimitado ao sistema</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Filtros por banca, ano, cargo e disciplina</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Geração de cadernos em PDF + Novas questões</span>
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        <span>Gabaritos comentados, métricas e Tutor IA</span>
+                    </li>
+                </ul>
+
+                <a href="https://portal.isentidos.com.br/p/DNHHN8hbbcC5A5BXxJgqwTyjrNrPPIo26bdqvpkeEuaWiQ0b" target="_blank" rel="noopener noreferrer" class="banco-plan-cta">
+                    Assinar Plano Anual &rarr;
+                </a>
+                <div class="banco-plan-payments" aria-label="Formas de pagamento aceitas">
+                    <span class="banco-plan-pay-tag">PIX</span>
+                    <span class="banco-plan-pay-tag">Cartão</span>
+                </div>
+            </article>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -235,6 +430,24 @@ function filterCourses(category) {
             btn.classList.remove('active');
         }
     });
+
+    const coursesGrid = document.getElementById('courses-grid');
+    const planosQuestoes = document.getElementById('planos-questoes');
+
+    if (category === 'questoes') {
+        if (coursesGrid) coursesGrid.style.display = 'none';
+        if (planosQuestoes) {
+            planosQuestoes.style.display = 'block';
+            planosQuestoes.style.marginTop = '1rem';
+        }
+        return;
+    }
+
+    if (coursesGrid) coursesGrid.style.display = 'grid';
+    if (planosQuestoes) {
+        planosQuestoes.style.display = (category === 'all') ? 'block' : 'none';
+        planosQuestoes.style.marginTop = '4rem';
+    }
 
     // Filtra cards
     const cards = document.querySelectorAll('.course-item-card');
