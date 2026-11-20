@@ -308,7 +308,7 @@ $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id
             </p>
         </div>
         
-        <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 1.8rem;">
+        <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 1.8rem;">
             <!-- Campanhas de Pré-Reserva Ativas -->
             <?php if(!empty($campanhas_destaque)): ?>
                 <?php foreach($campanhas_destaque as $camp): 
@@ -319,10 +319,10 @@ $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id
                         $modality_str = 'Online';
                     }
                 ?>
-                <div class="feature-card reveal" style="display: flex; flex-direction: column; padding: 1.25rem;">
+                <div class="feature-card reveal" style="display: flex; flex-direction: column; padding: 1.25rem; border-radius: 12px;">
                     <div style="position: relative; margin-bottom: 1.2rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border);">
                         <?php if(!empty($camp['image'])): ?>
-                            <img src="/uploads/<?= htmlspecialchars($camp['image']) ?>" alt="<?= htmlspecialchars($camp['title']) ?>" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;" loading="lazy">
+                            <img src="/uploads/<?= htmlspecialchars($camp['image']) ?>" alt="<?= htmlspecialchars($camp['title']) ?>" style="width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover; margin-bottom: 0; border-bottom: none; display: block;" loading="lazy">
                         <?php else: ?>
                             <div style="width: 100%; aspect-ratio: 1/1; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
                                 <span style="color: var(--text-secondary);">Sem Imagem</span>
@@ -339,11 +339,11 @@ $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id
                         </div>
                     </div>
                     
-                    <h3 style="font-size: 1.2rem; margin-bottom: 1rem; flex-grow: 1; line-height: 1.4;"><?= htmlspecialchars($camp['title']) ?></h3>
+                    <h3 style="font-size: 1.15rem; margin-bottom: 1rem; flex-grow: 1; line-height: 1.4;"><?= htmlspecialchars($camp['title']) ?></h3>
                     
-                    <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; gap: 0.5rem; flex-wrap: wrap;">
+                    <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; gap: 0.75rem; flex-wrap: wrap;">
                         <span style="font-family: var(--font-mono); color: var(--brand-orange); font-size: 0.85rem; font-weight: 600;">Reserva Gratuita</span>
-                        <a href="/reserva/<?= htmlspecialchars($camp['slug']) ?>" class="btn" style="flex: 1; min-width: 120px; text-align: center; padding: 0.7rem 1rem; font-size: 0.8rem; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar interesse</a>
+                        <a href="/reserva/<?= htmlspecialchars($camp['slug']) ?>" class="btn" style="flex: 1; min-width: 120px; text-align: center; padding: 0.75rem 1rem; font-size: 0.8rem; border-radius: 6px; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar interesse</a>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -352,10 +352,10 @@ $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id
             <!-- Cursos Regulares -->
             <?php foreach($cursos_destaque as $c): ?>
             <?php $is_reserva = ($c['status'] ?? 'Disponível') == 'Pegando Reserva'; ?>
-            <div class="feature-card reveal" style="display: flex; flex-direction: column; padding: 1.25rem;">
+            <div class="feature-card reveal" style="display: flex; flex-direction: column; padding: 1.25rem; border-radius: 12px;">
                 <div style="position: relative; margin-bottom: 1.2rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border);">
                     <?php if(!empty($c['thumbnail'])): ?>
-                        <img src="/uploads/<?= htmlspecialchars($c['thumbnail']) ?>" alt="<?= htmlspecialchars($c['image_alt'] ?: $c['title']) ?>" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;" loading="lazy">
+                        <img src="/uploads/<?= htmlspecialchars($c['thumbnail']) ?>" alt="<?= htmlspecialchars($c['image_alt'] ?: $c['title']) ?>" style="width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover; margin-bottom: 0; border-bottom: none; display: block;" loading="lazy">
                     <?php else: ?>
                         <div style="width: 100%; aspect-ratio: 1/1; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
                             <span style="color: var(--text-secondary);">Sem Imagem</span>
@@ -373,19 +373,19 @@ $depoimentos = $pdo->query("SELECT * FROM depoimentos WHERE active=1 ORDER BY id
                     </div>
                 </div>
                 
-                <h3 style="font-size: 1.2rem; margin-bottom: 1rem; flex-grow: 1; line-height: 1.4;"><?= htmlspecialchars($c['title']) ?></h3>
+                <h3 style="font-size: 1.15rem; margin-bottom: 1rem; flex-grow: 1; line-height: 1.4;"><?= htmlspecialchars($c['title']) ?></h3>
                 
-                <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; gap: 0.5rem; flex-wrap: wrap;">
+                <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; gap: 0.75rem; flex-wrap: wrap;">
                     <?php if($is_reserva): ?>
                         <span style="font-family: var(--font-mono); color: var(--brand-orange); font-size: 0.85rem; font-weight: 600;">Valores sob consulta</span>
-                        <a href="<?= !empty($c['slug']) ? '/curso/'.$c['slug'] : 'curso-detalhes.php?id='.$c['id'] ?>" class="btn" style="flex: 1; min-width: 120px; text-align: center; padding: 0.7rem 1rem; font-size: 0.8rem; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar interesse</a>
+                        <a href="<?= !empty($c['slug']) ? '/curso/'.$c['slug'] : 'curso-detalhes.php?id='.$c['id'] ?>" class="btn" style="flex: 1; min-width: 120px; text-align: center; padding: 0.75rem 1rem; font-size: 0.8rem; border-radius: 6px; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar interesse</a>
                     <?php else: ?>
                         <?php if($c['price'] > 0): ?>
                             <span style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1.15rem; font-weight: 700;">R$ <?= number_format($c['price'], 2, ',', '.') ?></span>
                         <?php else: ?>
                             <span style="font-family: var(--font-mono); color: var(--brand-orange); font-size: 0.85rem; font-weight: 600;">Condições no curso</span>
                         <?php endif; ?>
-                        <a href="<?= !empty($c['slug']) ? '/curso/'.$c['slug'] : 'curso-detalhes.php?id='.$c['id'] ?>" class="btn" style="flex: 1; min-width: 120px; text-align: center; padding: 0.7rem 1rem; font-size: 0.8rem;">Conhecer o curso</a>
+                        <a href="<?= !empty($c['slug']) ? '/curso/'.$c['slug'] : 'curso-detalhes.php?id='.$c['id'] ?>" class="btn" style="flex: 1; min-width: 120px; text-align: center; padding: 0.75rem 1rem; font-size: 0.8rem; border-radius: 6px;">Conhecer o curso</a>
                     <?php endif; ?>
                 </div>
             </div>

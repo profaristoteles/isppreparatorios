@@ -14,10 +14,11 @@ $total_cursos = count($cursos);
 $total_campanhas = count($campanhas_reserva);
 ?>
 
-<div class="container section-padding">
-    <div class="section-header reveal" style="text-align: center; margin-bottom: 2rem;">
-        <span class="hero-pre-title" style="color: var(--brand-orange); font-family: var(--font-mono); letter-spacing: 2px; font-size: 0.85rem; font-weight: 700;">PREPARAÇÃO FOCADA & APROVAÇÃO</span>
-        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; margin-top: 0.4rem;">Cursos e Turmas</h1>
+<section class="section-padding" style="padding-top: 8rem; padding-bottom: 5rem;">
+<div class="container">
+    <div class="section-header reveal" style="text-align: center; margin-bottom: 2.5rem;">
+        <span class="hero-pre-title" style="color: var(--brand-orange); font-family: var(--font-mono); letter-spacing: 2px; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5rem;">PREPARAÇÃO FOCADA & APROVAÇÃO</span>
+        <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; margin-top: 0.2rem;">Cursos e Turmas</h1>
         <p style="color: var(--text-secondary); max-width: 650px; margin: 0.8rem auto 0; font-size: 1.05rem;">
             Escolha sua preparação direcionada para Concursos de Educação Especial e Magistério. Conheça nossos cursos disponíveis e turmas com pré-reserva aberta.
         </p>
@@ -46,35 +47,28 @@ $total_campanhas = count($campanhas_reserva);
             </button>
         </div>
     </div>
-    <?php endif; ?>
 
-    <!-- Barra de Filtros / Abas -->
+    <!-- Barra de Filtros / Abas (exibida quando há campanhas e cursos para filtrar) -->
     <div class="filter-tabs-container reveal" style="display: flex; justify-content: center; gap: 0.6rem; margin-bottom: 2.5rem; flex-wrap: wrap;">
         <button type="button" class="course-filter-btn active" data-filter="all" onclick="filterCourses('all')">
             <span>Todos</span>
             <span class="count-badge"><?= $total_cursos + $total_campanhas ?></span>
         </button>
 
-        <?php if ($total_campanhas > 0): ?>
         <button type="button" class="course-filter-btn highlight-tab" data-filter="reserva" onclick="filterCourses('reserva')">
             <span>🔥 Pré-Reservas Abertas</span>
             <span class="count-badge count-highlight"><?= $total_campanhas ?></span>
         </button>
-        <?php endif; ?>
 
         <button type="button" class="course-filter-btn" data-filter="regular" onclick="filterCourses('regular')">
             <span>📚 Cursos Disponíveis</span>
             <span class="count-badge"><?= $total_cursos ?></span>
         </button>
-
-        <button type="button" class="course-filter-btn" data-filter="questoes" onclick="filterCourses('questoes')">
-            <span>🎯 Banco de Questões</span>
-            <span class="count-badge">4 Planos</span>
-        </button>
     </div>
+    <?php endif; ?>
     
-    <!-- Grid Unificado -->
-    <div id="courses-grid" class="grid" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 1.8rem;">
+    <!-- Grid Unificado (3 colunas no desktop) -->
+    <div id="courses-grid" class="grid" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 1.8rem;">
         
         <?php if ($total_cursos == 0 && $total_campanhas == 0): ?>
             <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem;">
@@ -91,10 +85,10 @@ $total_campanhas = count($campanhas_reserva);
                 $modality_str = 'Online';
             }
         ?>
-        <div class="feature-card course-item-card reveal" data-category="reserva" style="display: flex; flex-direction: column; padding: 1.2rem;">
+        <div class="feature-card course-item-card reveal" data-category="reserva" style="display: flex; flex-direction: column; padding: 1.25rem; border-radius: 12px;">
             <div style="position: relative; margin-bottom: 1.2rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border);">
                 <?php if(!empty($camp['image'])): ?>
-                    <img src="uploads/<?= htmlspecialchars($camp['image']) ?>" alt="<?= htmlspecialchars($camp['title']) ?>" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; transition: transform 0.3s ease;">
+                    <img src="uploads/<?= htmlspecialchars($camp['image']) ?>" alt="<?= htmlspecialchars($camp['title']) ?>" style="width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover; margin-bottom: 0; border-bottom: none; display: block; transition: transform 0.3s ease;">
                 <?php else: ?>
                     <div style="width: 100%; aspect-ratio: 1/1; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
                         <span style="color: var(--text-secondary);">Sem Imagem</span>
@@ -111,11 +105,11 @@ $total_campanhas = count($campanhas_reserva);
                 </div>
             </div>
             
-            <h3 style="font-size: 1.2rem; margin-bottom: 1rem; flex-grow: 1; line-height: 1.4;"><?= htmlspecialchars($camp['title']) ?></h3>
+            <h3 style="font-size: 1.15rem; margin-bottom: 1rem; flex-grow: 1; line-height: 1.4;"><?= htmlspecialchars($camp['title']) ?></h3>
             
-            <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; gap: 0.5rem; flex-wrap: wrap;">
+            <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; gap: 0.75rem; flex-wrap: wrap;">
                 <span style="font-family: var(--font-mono); color: var(--brand-orange); font-size: 0.85rem; font-weight: 600;">Reserva Gratuita</span>
-                <a href="/reserva/<?= htmlspecialchars($camp['slug']) ?>" class="btn" style="flex: 1; min-width: 100px; text-align: center; padding: 0.7rem 1rem; font-size: 0.8rem; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar</a>
+                <a href="/reserva/<?= htmlspecialchars($camp['slug']) ?>" class="btn" style="flex: 1; min-width: 110px; text-align: center; padding: 0.75rem 1rem; font-size: 0.8rem; border-radius: 6px; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar</a>
             </div>
         </div>
         <?php endforeach; ?>
@@ -123,10 +117,10 @@ $total_campanhas = count($campanhas_reserva);
         <!-- 2. CURSOS REGULARES / EXISTENTES -->
         <?php foreach($cursos as $c): ?>
         <?php $is_reserva = ($c['status'] ?? 'Disponível') == 'Pegando Reserva'; ?>
-        <div class="feature-card course-item-card reveal" data-category="regular" style="display: flex; flex-direction: column; padding: 1.2rem;">
+        <div class="feature-card course-item-card reveal" data-category="regular" style="display: flex; flex-direction: column; padding: 1.25rem; border-radius: 12px;">
             <div style="position: relative; margin-bottom: 1.2rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border);">
                 <?php if($c['thumbnail']): ?>
-                    <img src="uploads/<?= $c['thumbnail'] ?>" alt="<?= htmlspecialchars($c['image_alt'] ?: $c['title']) ?>" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; transition: transform 0.3s ease;">
+                    <img src="uploads/<?= $c['thumbnail'] ?>" alt="<?= htmlspecialchars($c['image_alt'] ?: $c['title']) ?>" style="width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover; margin-bottom: 0; border-bottom: none; display: block; transition: transform 0.3s ease;">
                 <?php else: ?>
                     <div style="width: 100%; aspect-ratio: 1/1; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
                         <span style="color: var(--text-secondary);">Sem Imagem</span>
@@ -139,221 +133,34 @@ $total_campanhas = count($campanhas_reserva);
                     <?php else: ?>
                         <span style="background: rgba(16, 185, 129, 0.85); color: #fff; font-size: 0.68rem; font-family: var(--font-mono); padding: 0.3rem 0.6rem; border-radius: 20px; font-weight: 700; backdrop-filter: blur(4px);">MATRÍCULAS ABERTAS</span>
                     <?php endif; ?>
-                    <span style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); color: #fff; font-size: 0.7rem; font-family: var(--font-mono); padding: 0.3rem 0.6rem; border-radius: 20px; font-weight: 500; border: 1px solid rgba(255,255,255,0.1);">⏱ <?= htmlspecialchars($c['duration']) ?></span>
+                    <?php if(!empty($c['duration'])): ?>
+                        <span style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); color: #fff; font-size: 0.7rem; font-family: var(--font-mono); padding: 0.3rem 0.6rem; border-radius: 20px; font-weight: 500; border: 1px solid rgba(255,255,255,0.1);">⏱ <?= htmlspecialchars($c['duration']) ?></span>
+                    <?php endif; ?>
                     <span style="background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); color: #fff; font-size: 0.7rem; font-family: var(--font-mono); padding: 0.3rem 0.6rem; border-radius: 20px; font-weight: 500; border: 1px solid rgba(255,255,255,0.1);">📍 <?= htmlspecialchars($c['modality'] ?: 'Presencial e Online') ?></span>
                 </div>
             </div>
             
-            <h3 style="font-size: 1.2rem; margin-bottom: 1rem; flex-grow: 1; line-height: 1.4;"><?= htmlspecialchars($c['title']) ?></h3>
+            <h3 style="font-size: 1.15rem; margin-bottom: 1rem; flex-grow: 1; line-height: 1.4;"><?= htmlspecialchars($c['title']) ?></h3>
             
-            <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; gap: 0.5rem; flex-wrap: wrap;">
+            <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; gap: 0.75rem; flex-wrap: wrap;">
                 <?php if($is_reserva): ?>
                     <span style="font-family: var(--font-mono); color: var(--brand-orange); font-size: 0.85rem; font-weight: 600;">Sob consulta</span>
-                    <a href="<?= !empty($c['slug']) ? '/curso/'.$c['slug'] : 'curso-detalhes.php?id='.$c['id'] ?>" class="btn" style="flex: 1; min-width: 100px; text-align: center; padding: 0.7rem 1rem; font-size: 0.8rem; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar</a>
+                    <a href="<?= !empty($c['slug']) ? '/curso/'.$c['slug'] : 'curso-detalhes.php?id='.$c['id'] ?>" class="btn" style="flex: 1; min-width: 110px; text-align: center; padding: 0.75rem 1rem; font-size: 0.8rem; border-radius: 6px; background: var(--brand-orange); color: #fff; border-color: var(--brand-orange);">Reservar</a>
                 <?php else: ?>
                     <?php if($c['price'] > 0): ?>
-                        <span style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1.2rem; font-weight: 700;">R$ <?= number_format($c['price'], 2, ',', '.') ?></span>
+                        <span style="font-family: var(--font-mono); color: var(--text-primary); font-size: 1.15rem; font-weight: 700;">R$ <?= number_format($c['price'], 2, ',', '.') ?></span>
                     <?php else: ?>
-                        <span style="font-family: var(--font-mono); color: var(--text-secondary); font-size: 0.85rem;">Consulte valores</span>
+                        <span style="font-family: var(--font-mono); color: var(--brand-orange); font-size: 0.85rem; font-weight: 600;">Condições no curso</span>
                     <?php endif; ?>
-                    <a href="<?= !empty($c['slug']) ? '/curso/'.$c['slug'] : 'curso-detalhes.php?id='.$c['id'] ?>" class="btn" style="flex: 1; min-width: 100px; text-align: center; padding: 0.7rem 1rem; font-size: 0.8rem;">Saiba Mais</a>
+                    <a href="<?= !empty($c['slug']) ? '/curso/'.$c['slug'] : 'curso-detalhes.php?id='.$c['id'] ?>" class="btn" style="flex: 1; min-width: 110px; text-align: center; padding: 0.75rem 1rem; font-size: 0.8rem; border-radius: 6px;">Saiba Mais</a>
                 <?php endif; ?>
             </div>
         </div>
         <?php endforeach; ?>
 
     </div>
-
-    <!-- 3. PLANOS DE ASSINATURA DO BANCO DE QUESTÕES -->
-    <div id="planos-questoes" class="banco-plans-wrapper reveal" aria-labelledby="planos-questoes-cursos-heading">
-        <div class="banco-plans-header">
-            <span class="hero-pre-title" style="color: var(--brand-orange); font-family: var(--font-mono); letter-spacing: 2px; font-size: 0.85rem; font-weight: 700;">ASSINATURAS RECORRENTES</span>
-            <h2 id="planos-questoes-cursos-heading" style="font-size: clamp(1.75rem, 3.5vw, 2.5rem); font-weight: 800; color: #ffffff; line-height: 1.2; margin: 0.5rem 0 1rem;">Planos do Banco de Questões do ISP</h2>
-            <p>
-                Assine o acesso exclusivo ao nosso sistema de treinamento por questões comentadas, filtros avançados por banca e geração de cadernos em PDF.
-            </p>
-        </div>
-
-        <div class="banco-plans-grid">
-            <!-- 1. PLANO MENSAL -->
-            <article class="banco-plan-card" aria-label="Plano Mensal do Banco de Questões">
-                <span class="banco-plan-badge">Flexibilidade Total</span>
-                <h3 class="banco-plan-name">Plano Mensal</h3>
-                <p class="banco-plan-desc">Ideal para conhecer a plataforma ou reforçar o treino no mês da sua prova.</p>
-
-                <div class="banco-plan-price-box">
-                    <span class="banco-plan-equiv-label">Assinatura mensal</span>
-                    <div class="banco-plan-price-main">
-                        <span class="banco-plan-currency">R$</span>
-                        <span class="banco-plan-amount">14,97</span>
-                        <span class="banco-plan-period">/mês</span>
-                    </div>
-                    <span class="banco-plan-billing-note">Renovação mensal automática</span>
-                </div>
-
-                <ul class="banco-plan-features">
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Acesso completo ao acervo de questões</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Filtros por banca, ano, cargo e disciplina</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Geração de listas e cadernos em PDF</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Gabaritos, resoluções e painel de desempenho</span>
-                    </li>
-                </ul>
-
-                <a href="https://portal.isentidos.com.br/p/PGbOrGhvRssv62TCbOPu2kkAH4vdID1N7w911sT44JkZU6hy" target="_blank" rel="noopener noreferrer" class="banco-plan-cta">
-                    Assinar Plano Mensal &rarr;
-                </a>
-                <div class="banco-plan-payments" aria-label="Formas de pagamento aceitas">
-                    <span class="banco-plan-pay-tag">PIX</span>
-                    <span class="banco-plan-pay-tag">Cartão</span>
-                    <span class="banco-plan-pay-tag">Boleto</span>
-                </div>
-            </article>
-
-            <!-- 2. PLANO TRIMESTRAL -->
-            <article class="banco-plan-card" aria-label="Plano Trimestral do Banco de Questões">
-                <span class="banco-plan-badge badge-savings">Reta Final • Economize 22%</span>
-                <h3 class="banco-plan-name">Plano Trimestral</h3>
-                <p class="banco-plan-desc">Excelente para ciclos intensivos de pós-edital e revisão prática direcionada.</p>
-
-                <div class="banco-plan-price-box">
-                    <span class="banco-plan-equiv-label">Equivalente a</span>
-                    <div class="banco-plan-price-main">
-                        <span class="banco-plan-currency">R$</span>
-                        <span class="banco-plan-amount">11,67</span>
-                        <span class="banco-plan-period">/mês</span>
-                    </div>
-                    <span class="banco-plan-billing-note"><strong>R$ 35,00</strong> cobrados a cada trimestre</span>
-                </div>
-
-                <ul class="banco-plan-features">
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span><strong>3 meses</strong> de acesso ininterrupto</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Filtros por banca, ano, cargo e disciplina</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Geração de listas e cadernos em PDF</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Estatísticas de evolução + Tutor com IA</span>
-                    </li>
-                </ul>
-
-                <a href="https://portal.isentidos.com.br/p/tG90jccjhrLcdSdLfDlwVn7nx45AR5bUgU9AQi8GVHwxhfk9" target="_blank" rel="noopener noreferrer" class="banco-plan-cta">
-                    Assinar Plano Trimestral &rarr;
-                </a>
-                <div class="banco-plan-payments" aria-label="Formas de pagamento aceitas">
-                    <span class="banco-plan-pay-tag">PIX</span>
-                    <span class="banco-plan-pay-tag">Cartão</span>
-                </div>
-            </article>
-
-            <!-- 3. PLANO SEMESTRAL -->
-            <article class="banco-plan-card" aria-label="Plano Semestral do Banco de Questões">
-                <span class="banco-plan-badge badge-savings">Consistência • Economize 26%</span>
-                <h3 class="banco-plan-name">Plano Semestral</h3>
-                <p class="banco-plan-desc">Preparação sólida de médio prazo para dominar as bancas da sua área.</p>
-
-                <div class="banco-plan-price-box">
-                    <span class="banco-plan-equiv-label">Equivalente a</span>
-                    <div class="banco-plan-price-main">
-                        <span class="banco-plan-currency">R$</span>
-                        <span class="banco-plan-amount">11,00</span>
-                        <span class="banco-plan-period">/mês</span>
-                    </div>
-                    <span class="banco-plan-billing-note"><strong>R$ 66,00</strong> cobrados a cada semestre</span>
-                </div>
-
-                <ul class="banco-plan-features">
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span><strong>6 meses</strong> de acesso completo</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Filtros por banca, ano, cargo e disciplina</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Geração de listas e cadernos em PDF</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Estatísticas de evolução + Tutor com IA</span>
-                    </li>
-                </ul>
-
-                <a href="https://portal.isentidos.com.br/p/v0qc6eJ5Pf6aXmkmW6N0XVidvsP3nS4eoioZxunsLtt7N9rw" target="_blank" rel="noopener noreferrer" class="banco-plan-cta">
-                    Assinar Plano Semestral &rarr;
-                </a>
-                <div class="banco-plan-payments" aria-label="Formas de pagamento aceitas">
-                    <span class="banco-plan-pay-tag">PIX</span>
-                    <span class="banco-plan-pay-tag">Cartão</span>
-                </div>
-            </article>
-
-            <!-- 4. PLANO ANUAL (DESTAQUE) -->
-            <article class="banco-plan-card banco-plan-featured" aria-label="Plano Anual do Banco de Questões - Mais Vantajoso">
-                <span class="banco-plan-badge badge-featured">🔥 Mais Vantajoso • -33%</span>
-                <h3 class="banco-plan-name">Plano Anual</h3>
-                <p class="banco-plan-desc">Melhor custo-benefício para preparação contínua até a sua nomeação.</p>
-
-                <div class="banco-plan-price-box">
-                    <span class="banco-plan-equiv-label">Equivalente a apenas</span>
-                    <div class="banco-plan-price-main">
-                        <span class="banco-plan-currency">R$</span>
-                        <span class="banco-plan-amount">9,97</span>
-                        <span class="banco-plan-period">/mês</span>
-                    </div>
-                    <span class="banco-plan-billing-note"><strong>R$ 119,64</strong> cobrados anualmente</span>
-                </div>
-
-                <ul class="banco-plan-features">
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span><strong>12 meses</strong> de acesso ilimitado ao sistema</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Filtros por banca, ano, cargo e disciplina</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Geração de cadernos em PDF + Novas questões</span>
-                    </li>
-                    <li>
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        <span>Gabaritos comentados, métricas e Tutor IA</span>
-                    </li>
-                </ul>
-
-                <a href="https://portal.isentidos.com.br/p/DNHHN8hbbcC5A5BXxJgqwTyjrNrPPIo26bdqvpkeEuaWiQ0b" target="_blank" rel="noopener noreferrer" class="banco-plan-cta">
-                    Assinar Plano Anual &rarr;
-                </a>
-                <div class="banco-plan-payments" aria-label="Formas de pagamento aceitas">
-                    <span class="banco-plan-pay-tag">PIX</span>
-                    <span class="banco-plan-pay-tag">Cartão</span>
-                </div>
-            </article>
-        </div>
-    </div>
 </div>
+</section>
 
 <style>
 /* Estilos das Abas de Filtro */
